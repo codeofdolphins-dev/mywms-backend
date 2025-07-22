@@ -1,0 +1,45 @@
+<a href="/vehicle/addVehicle" id="addVehicle" type="button" class="btn btn-primary m-b-10 m-l-5" style="float: right;">Add New Vehicle</a>
+
+<table id="example" class="display" style="width:100%">
+  <thead>
+    <tr>
+      <th>Srl No.</th>
+      <th>Vehicle No.</th>
+      <th>RC No.</th>
+      <th>Chassis No.</th>
+      <th>Engine No.</th>
+      <th>Vehicle Type</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% data.map((row, i)=> { %>
+      <tr>
+        <td>
+          <%= i+1 %>
+        </td>
+        <td>
+          <%= row.number %>
+        </td>
+        <td>
+          <%= row.rc_no %>
+        </td>
+        <td>
+          <%= row.chassis_no %>
+        </td>
+        <td>
+          <%= row.engine_no %>
+        </td>
+        <td>
+          <%= row.type %>
+        </td>
+        <td>
+          <div class="icon">
+             <div class="ti-trash icon-name delete-btn" data-id="<%= row.id %>"></div>
+            <a href="/vehicle/editVehicle?id=<%= row.id %>" class="ti-pencil icon-name edit-btn"></a>
+          </div>
+        </td>
+      </tr>
+      <% }); %>
+  </tbody>
+</table>

@@ -1,0 +1,64 @@
+<div >
+    <div class="card alert">
+        <div class="card-header">
+            <% if (data) { %>
+                <h4>Edit Vehicle Details</h4>
+            <% } else { %>
+                <h4>Add Vehicle</h4>             
+            <% } %>
+             
+        </div>
+        <div class="card-body">
+            <div class="basic-form">
+                <form method="post" id="addVehicle"
+                    <% if (data) { %>
+                        action="/vehicle/editVehicle"
+                    <% } %>
+                >
+                    <div class="form-group">
+                        <label>Vehicle Number</label>
+                        <input type="text" id="v_number" name="v_number" class="form-control" placeholder="Vehicle Number" required 
+                            <% if (data) { %>
+                             value="<%- data.number %>"
+                             readonly
+                            <% } %>
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>RC Number</label>
+                        <input type="text" id="rc_no" name="rc_no" class="form-control" placeholder="RC Number"
+                            <% if (data) { %>
+                             value="<%- data.rc_no %>"
+                            <% } %>
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>Chassis Number</label>
+                        <input type="text" id="ch_no" name="ch_no" class="form-control" placeholder="Chassis Number"
+                            <% if (data) { %>
+                             value="<%- data.chassis_no %>"
+                            <% } %>
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>Engine Number</label>
+                        <input type="text" id="en_no" name="en_no" class="form-control" placeholder="Engine Number"
+                            <% if (data) { %>
+                             value="<%- data.engine_no %>"
+                            <% } %>
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Type</label>
+                        <input type="text" id="type" name="type" class="form-control" placeholder="Vehicle Type"
+                            <% if (data) { %>
+                             value="<%- data.type %>"
+                            <% } %>
+                        >
+                    </div>
+                    <button type="submit" class="btn btn-default">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
