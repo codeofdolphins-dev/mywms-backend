@@ -36,31 +36,31 @@ const vehicleList = async (req, res) => {
                         {
                         extend: 'copy',
                         exportOptions: {
-                            columns: [0, 1, 2] // include only these
+                            columns: [0, 1, 2, 3, 4, 5] // include only these
                         }
                         },
                         {
                         extend: 'csv',
                         exportOptions: {
-                            columns: [0, 1, 2]
+                            columns: [0, 1, 2, 3, 4, 5]
                         }
                         },
                         {
                         extend: 'excel',
                         exportOptions: {
-                            columns: [0, 1, 2]
+                            columns: [0, 1, 2, 3, 4, 5]
                         }
                         },
                         {
                         extend: 'pdf',
                         exportOptions: {
-                            columns: [0, 1, 2]
+                            columns: [0, 1, 2, 3, 4, 5]
                         }
                         },
                         {
                         extend: 'print',
                         exportOptions: {
-                            columns: [0, 1, 2]
+                            columns: [0, 1, 2, 3, 4, 5]
                         }
                         }
                     ]
@@ -90,7 +90,7 @@ const addVehicleForm = async (req, res) => {
             <script type="module" src="/assets/js/customejs/addVehicle.js"></script>`,
         user,
         body: data,
-        title: "Add Velicle"
+        title: "Add Vehicle"
     });
 }
 

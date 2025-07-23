@@ -7,7 +7,7 @@ const registerForm = async(req, res) => {
     return res.render("adminRegister");
 }
 const loginForm = async(req, res) => {
-    return res.render("login");
+    return res.render("adminLogin");
 }
 
 

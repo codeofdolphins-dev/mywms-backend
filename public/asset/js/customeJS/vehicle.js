@@ -1,5 +1,5 @@
 // public/js/main.js (module)
-import { confirmation } from './alert.js';
+import { confirmation, successAlert } from './alert.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.querySelector('tbody');
@@ -10,14 +10,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = e.target.dataset.id;
             const confirmed = await confirmation("Delete");
             if (confirmed) {
-            }
-        }
+                fetch(`/vehicle/deleteVehicle?id=${id}`)
+                .then(res => res.json())
+                .then(data => {
 
-        if (e.target.classList.contains('edit-btn')) {
-            
-            const id = e.target.dataset.id;
-            
-            fetch(`/vehicle/editVehicle?id=${id}`)
+                    if(!data.success){
+                        successAlert(data.message, "error");
+                        return;
+                    };
+                    if(data.success){
+                        successAlert(data.message);
+                        window.location.reload();
+                    };
+                })
+            }
         }
     });
 });

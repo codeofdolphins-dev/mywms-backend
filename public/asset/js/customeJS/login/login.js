@@ -1,6 +1,12 @@
-import { successAlert } from "./alert.js";
+import { successAlert } from "../alert.js";
 
 const loginForm = document.getElementById("loginForm");
+const check_box = document.getElementById("check_box");
+
+
+check_box.addEventListener("click", () => {
+    check_box.classList.remove("is-invalid");
+});
 
 loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -14,6 +20,11 @@ loginForm.addEventListener("submit", (e) => {
     }
     if(password.value === ""){
         password.focus();
+        return;
+    }
+
+    if(!check_box.checked){
+        check_box.classList.add("is-invalid");
         return;
     }
     

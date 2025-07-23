@@ -24,7 +24,7 @@ app.use('/assets', express.static(path.join(__dirname, '../public/asset')));
 
 // setup session
 app.use(session({
-  secret: process.env.SECRETKEY,
+  secret: process.env.SECRETKEY || "dfsdfsdf515134rdsf",
   resave: false,
   saveUninitialized: false,
   cookie: {
