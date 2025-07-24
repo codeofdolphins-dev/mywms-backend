@@ -19,7 +19,7 @@ app.set("views", path.join(__dirname, "views/pages"));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use('/assets', express.static(path.join(__dirname, '../public/asset')));
+app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 
 
 // setup session
