@@ -3,7 +3,7 @@ import "./db/config.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
-
+import { session_store } from "./db/config.js";
 
 const app = express();
 
@@ -25,6 +25,7 @@ app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 // setup session
 app.use(session({
   secret: process.env.SECRETKEY || "dfsdfsdf515134rdsf",
+  store: session_store,
   resave: false,
   saveUninitialized: false,
   cookie: {

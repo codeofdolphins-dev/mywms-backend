@@ -2,6 +2,7 @@ import { successAlert } from "../alert.js";
 
 const loginForm = document.getElementById("loginForm");
 const check_box = document.getElementById("check_box");
+const role = document.getElementById("role");
 
 
 check_box.addEventListener("click", () => {
@@ -28,10 +29,16 @@ loginForm.addEventListener("submit", (e) => {
         return;
     }
     
+    const rl = role.value;    
+    submitForm(rl);   
+    
+});
+
+
+const submitForm = (rl) => {
 
     const formData = new FormData(loginForm);
-
-    fetch("/auth/login", {
+    fetch(`/auth${rl == '1' ? "/companyLogin" : "/login"}`, {
         method: "POST",
         body: formData        
     })
@@ -54,4 +61,4 @@ loginForm.addEventListener("submit", (e) => {
             window.location.href = "/";
         }
     });
-});
+}

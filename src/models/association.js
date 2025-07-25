@@ -1,15 +1,17 @@
 import User from "./user.model.js";
 import Role from "./role.model.js";
 import Permission from "./permission.model.js";
+import Company from "./company.model.js";
 
 import UserRoles from "./UserRoles.joinModel.js";
+import CompanyRoles from "./companyRoles.joinModel.js";
 import RolePermissions from "./rolePermissions.joinModel.js";
 
 
 
 
-// *****************************One-To-One*****************************
 
+// *****************************One-To-One*****************************
 
 
 
@@ -31,6 +33,25 @@ Role.belongsToMany(User, {
     },
     foreignKey: 'roleId',
     otherKey: 'userId'
+});
+
+// company - role
+Company.belongsToMany(Role, {
+    through: {
+        model: CompanyRoles,
+        unique: false
+    },
+    foreignKey: 'companyId',
+    otherKey: 'roleId'
+});
+
+Role.belongsToMany(Company, {
+    through: {
+        model: CompanyRoles,
+        unique: false
+    },
+    foreignKey: 'roleId',
+    otherKey: 'companyId'
 });
 
 // role - permission

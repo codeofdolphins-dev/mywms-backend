@@ -10,6 +10,8 @@ const router = Router();
 router.route("/").get(vehicleList);
 router.route("/addVehicle").get(addVehicleForm).post(upload.none(), addVehicleSubmit);
 router.route("/deleteVehicle").get(deleteVehicle);
+
+
 router.route("/editVehicle").get(editVehicleForm).post(upload.none(), editVehicle);
 
 export default router;

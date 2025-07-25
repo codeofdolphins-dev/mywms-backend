@@ -8,7 +8,8 @@
     <title>
         <% if (title) { %>
             <%= title %>
-                <% } %>
+        <% } %>
+
     </title>
     <!-- ================= Favicon ================== -->
     <!-- Standard -->
@@ -86,14 +87,14 @@
                     <li title="Role Permission"><a class="sidebar-sub-toggle"><i class="ti-lock"></i>Role Permission
                             <span class="sidebar-collapse-icon ti-angle-down"></span></a>
                         <ul>
-                            <li><a href="#">Role</a></li>
-                            <li><a href="#">Permission</a></li>
+                            <li><a href="/role">Role</a></li>
+                            <li><a href="/permission">Permission</a></li>
                         </ul>
                     </li>
 
                     <li title="Vehical"><a href="/vehicle"><i class="ti-truck"></i>Vehical</span></a></li>
 
-                    <li title="Logout"><a><i class="ti-close"></i> Logout</a></li>
+                    <li title="Logout"><a href="/auth/logout"><i class="ti-close"></i> Logout</a></li>
                 </ul>
             </div>
         </div>
@@ -113,28 +114,30 @@
         <div class="pull-right p-r-15">
             <ul>
                 <!-- <li class="header-icon dib"><a href="#search"><i class="ti-search"></i></a></li> -->
-                <li class="header-icon dib"><img class="avatar-img" src="/assets/images/avatar/1.jpg" alt="" /> <span
+                <li class="header-icon dib"><img class="avatar-img" 
+                        <% if (user.profile_image) { %>
+                            src="/assets/user/<%= user.profile_image %>"
+                        <% } else { %>
+                            src="/assets/images/avatar/dummyUser.webp" 
+                        <% } %> 
+                    alt="" /> <span
                         class="user-avatar">
                         <% if (user) { %>
                             <%= user.f_name %>
                                 <% } %> <i class="ti-angle-down f-s-10"></i>
                     </span>
                     <div class="drop-down dropdown-profile">
-                        <div class="dropdown-content-heading">
-                            <span class="text-left">Upgrade Now</span>
-                            <p class="trial-day">30 Days Trail</p>
-                        </div>
                         <div class="dropdown-content-body">
                             <ul>
-                                <li><a href="#"><i class="ti-user"></i> <span>Profile</span></a></li>
-                                <li><a href="#"><i class="ti-wallet"></i> <span>My Balance</span></a></li>
+                                <li><a href="/company/updateCompany"><i class="ti-user"></i> <span>Update Profile</span></a></li>
+                                <!-- <li><a href="#"><i class="ti-wallet"></i> <span>My Balance</span></a></li>
                                 <li><a href="#"><i class="ti-write"></i> <span>My Task</span></a></li>
                                 <li><a href="#"><i class="ti-calendar"></i> <span>My Calender</span></a></li>
                                 <li><a href="#"><i class="ti-email"></i> <span>Inbox</span></a></li>
                                 <li><a href="#"><i class="ti-settings"></i> <span>Setting</span></a></li>
                                 <li><a href="#"><i class="ti-help-alt"></i> <span>Help</span></a></li>
-                                <li><a href="#"><i class="ti-lock"></i> <span>Lock Screen</span></a></li>
-                                <li><a href="#"><i class="ti-power-off"></i> <span>Logout</span></a></li>
+                                <li><a href="#"><i class="ti-lock"></i> <span>Lock Screen</span></a></li> -->
+                                <li><a href="/auth/logout"><i class="ti-power-off"></i> <span>Logout</span></a></li>
                             </ul>
                         </div>
                     </div>
@@ -151,9 +154,11 @@
                     <div class="col-lg-8 p-r-0 title-margin-right">
                         <div class="page-header">
                             <div class="page-title">
-                                <h1>Hello, <span>Welcome Here <% if (user) { %>
-                                            <%= user.full_name %>
-                                                <% } %></span></h1>
+                                <h1>Hello, <span> 
+                                    <% if (user) { %>
+                                        <%= user.c_name || user.full_name %>
+                                    <% } %>
+                                </span></h1>
                             </div>
                         </div>
                     </div>
@@ -183,23 +188,25 @@
     </div>
 
     <script src="/assets/js/lib/jquery.min.js"></script>
+    <script src="/assets/js/sweetalert2@11.js"></script>
+
 
     <% if (typeof customeScript !=='undefined' ) { %>
         <%- customeScript %>
-            <% } %>
+    <% } %>
 
-                <!-- jquery vendor -->
-                <script src="/assets/js/lib/jquery.nanoscroller.min.js"></script>
-                <!-- nano scroller -->
-                <script src="/assets/js/lib/menubar/sidebar.js"></script>
-                <script src="/assets/js/lib/preloader/pace.min.js"></script>
-                <!-- sidebar -->
-                <script src="/assets/js/lib/bootstrap.min.js"></script>
+    <!-- jquery vendor -->
+    <script src="/assets/js/lib/jquery.nanoscroller.min.js"></script>
+    <!-- nano scroller -->
+    <script src="/assets/js/lib/menubar/sidebar.js"></script>
+    <script src="/assets/js/lib/preloader/pace.min.js"></script>
+    <!-- sidebar -->
+    <script src="/assets/js/lib/bootstrap.min.js"></script>
 
-                <!-- bootstrap -->
-                <script src="/assets/js/lib/circle-progress/circle-progress.min.js"></script>
-                <script src="/assets/js/lib/circle-progress/circle-progress-init.js"></script>
-                <script src="/assets/js/scripts.js"></script>
+    <!-- bootstrap -->
+    <script src="/assets/js/lib/circle-progress/circle-progress.min.js"></script>
+    <script src="/assets/js/lib/circle-progress/circle-progress-init.js"></script>
+    <script src="/assets/js/scripts.js"></script>
 
 </body>
 

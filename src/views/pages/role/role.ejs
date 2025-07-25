@@ -1,0 +1,59 @@
+<div class="card alert">
+
+  <!-- <div class="modal"> -->
+  <!-- Trigger Button -->
+  <button class="btn btn-primary open" id="openModalBtn">Add Role</button>
+
+  <!-- Modal Structure -->
+  <div class="modal-wrapper" id="myModal">
+    <div class="custom-modal">
+      <button class="close-btn" id="closeModalBtn">&times;</button>
+      <div class="modal-header">Add New Role</div>
+
+      <form class="modal-body" method="post" id="addRole">
+        <input type="hidden" id="id" name="id">
+        <label for="newRole">Enter Role:</label>
+        <input type="text" id="newRole" name="newRole" placeholder="admin">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="modalCloseFooter">Close</button>
+          <button type="submit" id="submitBtn" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+  <!-- </div> -->
+
+
+  <table id="example" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>Srl No.</th>
+        <th>Role</th>
+        <th>Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% data.roles.map((row, i)=> { %>
+        <tr>
+          <td>
+            <%= i+1 %>
+          </td>
+          <td>
+            <%= row.role %>
+          </td>
+          <td>
+            <%= row.createdAt.toLocaleString() %>
+          </td>
+          <td>
+            <div class="icon">
+              <span class="ti-trash icon-name delete-btn" data-id="<%= row.id %>"></span>
+              <span class="ti-pencil icon-name edit-btn" data-id="<%= row.id %>"></span>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+    </tbody>
+  </table>
+</div>

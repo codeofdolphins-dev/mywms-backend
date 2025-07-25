@@ -6,9 +6,32 @@ import bcrypt from "bcrypt"
 const registerForm = async(req, res) => {
     return res.render("adminRegister");
 }
+
 const loginForm = async(req, res) => {
     return res.render("login");
 }
+
+const logOut = asyncHandler(async (req, res) => {
+    try {
+       
+        req.session.destroy((err) => {
+		console.log(err);
+		if(err) return res.json({success: false, code: 500, message: "Error loging out!"});
+
+		res.clearCookie("connect.sid", {
+			path: "/",
+			httpOnly: true
+		});
+		// return res.json({success: true, code: 200, message: "logout seccessfully."})
+
+        return res.redirect("/auth/login");
+	})
+
+    } catch (error) {
+        console.log(error);        
+        return res.status(400).json({success: false, code: 400, message: error.message})
+    };
+});
 
 
 // POST request
@@ -74,4 +97,4 @@ const loginSubmit = asyncHandler(async (req, res) => {
     };
 });
 
-export {registerForm, loginForm, registerSubmit, loginSubmit}
+export {registerForm, loginForm, registerSubmit, loginSubmit, logOut }
