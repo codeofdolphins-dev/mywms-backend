@@ -5,6 +5,9 @@ import session from 'express-session';
 import expressMysqlSession from "express-mysql-session";
 
 
+const MySQLStore = expressMysqlSession(session);
+
+
 // cloud************************************
 const db_obj = new Sequelize(process.env.DATABASE_NAME, process.env.USER, process.env.PASSWORD, {
     host: process.env.HOST,
@@ -12,15 +15,6 @@ const db_obj = new Sequelize(process.env.DATABASE_NAME, process.env.USER, proces
     dialect: 'mysql'
 });
 
-
-// // local***********************************
-// const db_obj = new Sequelize("mywms", "root", "", {
-//   host: "localhost",
-//   port: 3306,
-//   dialect: 'mysql'
-// });
-
-const MySQLStore = expressMysqlSession(session);
 
 // cloud########################################
 const session_store = new MySQLStore({
@@ -32,7 +26,15 @@ const session_store = new MySQLStore({
 })
 
 
-// local#######################################
+// // local***********************************
+// const db_obj = new Sequelize("mywms", "root", "", {
+//   host: "localhost",
+//   port: 3306,
+//   dialect: 'mysql'
+// });
+
+
+// // local#######################################
 // const session_store =  new MySQLStore({
 //   host: "localhost",
 //   user: "root",
