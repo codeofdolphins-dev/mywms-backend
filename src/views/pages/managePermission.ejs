@@ -1,0 +1,33 @@
+<form id="allPermissionsForm" method="POST" class="container my-4" style="font-size: 1rem;">
+  <input type="hidden" name="roleId" value="<%= data.roleId %>">
+
+  <% for (let section in data.groupedPermissions) { %>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title fw-bold text-primary mb-3">
+          <%= section.charAt(0).toUpperCase() + section.slice(1).replace('_', ' ') %>
+        </h5>
+
+        <div class="row gy-3">
+          <% data.groupedPermissions[section].forEach(permission => { %>
+            <div class="col-12 col-md-2 d-flex align-items-center">
+              <span class="me-2" style="font-size: 1rem;">
+                <%= permission.action.charAt(0).toUpperCase() + permission.action.slice(1).replace('_', ' ') %>
+              </span>
+              <div class="form-check form-switch ms-auto d-flex justify-content-center align-items-center">
+                <input 
+                  class="form-check-input"
+                  type="checkbox"
+                  name="permissions[]"
+                  value="<%= permission.id %>"
+                  <%= data.rolePermissionIds.includes(permission.id) ? "checked" : "" %>>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <button type="submit" class="btn btn-primary f-s-18" style="float: right;">Save</button>
+</form>

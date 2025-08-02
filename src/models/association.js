@@ -6,13 +6,54 @@ import Company from "./company.model.js";
 import UserRoles from "./UserRoles.joinModel.js";
 import CompanyRoles from "./companyRoles.joinModel.js";
 import RolePermissions from "./rolePermissions.joinModel.js";
+import StockInward from "./stockInward.model.js";
+import StockInwardItem from "./stockInwardItem.model.js";
+import Vehicle from "./vehicle.model.js";
+import Driver from "./driver.model.js";
 
 
 
 
 
-// *****************************One-To-One*****************************
+// ********************************************One-To-Many*********************************
 
+// stockInward.model.js
+StockInward.belongsTo(Driver, {
+  foreignKey: 'driverId',
+  as: 'driver'
+});
+
+Driver.hasMany(StockInward, {
+  foreignKey: 'driverId',
+  as: 'stockInwards'
+});
+
+// stockInward.model.js
+StockInward.belongsTo(Vehicle, {
+  foreignKey: 'vehicleId',
+  as: 'vehicle'
+});
+
+Vehicle.hasMany(StockInward, {
+  foreignKey: 'vehicleId',
+  as: 'stockInwards'
+});
+
+
+
+
+// ********************************************Many-To-One*********************************
+
+// stockInward.model.js
+StockInward.hasMany(StockInwardItem, {
+  foreignKey: 'stockInwardId',
+  as: 'items'
+});
+
+StockInwardItem.belongsTo(StockInward, {
+  foreignKey: 'stockInwardId',
+  as: 'stockInward'
+});
 
 
 // ********************************************Many-To-Many*********************************

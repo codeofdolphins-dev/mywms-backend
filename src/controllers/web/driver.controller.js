@@ -1,16 +1,16 @@
-import Vehicle from "../../models/vehicle.model.js";
+import Driver from "../../models/driver.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import renderPage from "../../utils/renderPage.js";
 
 // GET request
-const vehicleList = async (req, res) => {
+const driverList = async (req, res) => {
     const user = req.session.user;
 
-    const vehicleList = await Vehicle.findAll({});
+    const driverList = await Driver.findAll({});
 
-    const plainVehicleList = vehicleList.map(vehicle => vehicle.get({ plain: true }));
+    const plainDriverList = driverList.map(vehicle => vehicle.get({ plain: true }));
 
-    const data = await renderPage("./vehicle/vehicle", plainVehicleList) || "";
+    const data = await renderPage("./driver/driver", plainDriverList) || "";
 
     return res.render("../layout", {
         head: `
@@ -34,31 +34,31 @@ const vehicleList = async (req, res) => {
                         {
                         extend: 'copy',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5] // include only these
+                            columns: [0, 1, 2, 3, 4]
                         }
                         },
                         {
                         extend: 'csv',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4]
                         }
                         },
                         {
                         extend: 'excel',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4]
                         }
                         },
                         {
                         extend: 'pdf',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4]
                         }
                         },
                         {
                         extend: 'print',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5]
+                            columns: [0, 1, 2, 3, 4]
                         }
                         }
                     ]
@@ -66,18 +66,18 @@ const vehicleList = async (req, res) => {
                 });
             </script>
             <script src="/assets/js/sweetalert2@11.js"></script>
-            <script type="module" src="/assets/js/customejs/vehicle.js"></script>
+            <script type="module" src="/assets/js/customejs/driver/driver.js"></script>
         `,
         user,
         body: data,
-        title: "Velicle List"
+        title: "Driver List"
     });
 }
 
-const addVehicleForm = async (req, res) => {
+const addDriverForm = async (req, res) => {
     const user = req.session.user;
 
-    const data = await renderPage("./vehicle/addVehicle") || "";
+    const data = await renderPage("./driver/addDriver") || "";
 
     return res.render("../layout", {
         head: `
@@ -87,14 +87,14 @@ const addVehicleForm = async (req, res) => {
         `,
         customeScript: `
             <script src="/assets/js/sweetalert2@11.js"></script>
-            <script type="module" src="/assets/js/customejs/addVehicle.js"></script>`,
+            <script type="module" src="/assets/js/customeJS/driver/addDriver.js"></script>`,
         user,
         body: data,
-        title: "Add Vehicle"
+        title: "Add Driver"
     });
 }
 
-const editVehicleForm = asyncHandler(async (req, res) => {
+const editDriverForm = asyncHandler(async (req, res) => {
     try {
         const user = req.session.user;
 
@@ -124,25 +124,24 @@ const editVehicleForm = asyncHandler(async (req, res) => {
 
 
 // POST request
-const addVehicleSubmit = asyncHandler(async (req, res) => {
+const addDriverSubmit = asyncHandler(async (req, res) => {
     try {
-        const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
+        const { name = "", license_no = "", contact_no = "", address = "" } = req.body;
 
         if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
 
-        const isVehicleExists = await Vehicle.findOne({ where: { number: v_number } });
+        const isVehicleExists = await Driver.findOne({ where: { license_no } });
 
         if (isVehicleExists) return res.status(409).json({ success: false, code: 409, message: `Vehicle no: ${v_number} already exists!!!` });
 
-        await Vehicle.create({
-            number: v_number,
-            rc_no,
-            chassis_no: ch_no,
-            engine_no: en_no,
-            type
+        await Driver.create({
+            name,
+            license_no,
+            contact_no,
+            address
         });
 
-        return res.status(200).json({ success: true, code: 200, message: "Vehicle Added" });
+        return res.status(200).json({ success: true, code: 200, message: "Driver Added." });
 
     } catch (error) {
         console.log(error);
@@ -150,7 +149,7 @@ const addVehicleSubmit = asyncHandler(async (req, res) => {
     }
 });
 
-const deleteVehicle = asyncHandler(async (req, res) => {
+const deleteDriver = asyncHandler(async (req, res) => {
     try {
         const { id } = req.query;
 
@@ -164,7 +163,7 @@ const deleteVehicle = asyncHandler(async (req, res) => {
     }
 });
 
-const editVehicle = asyncHandler(async (req, res) => {
+const editDriver = asyncHandler(async (req, res) => {
     try {
         const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
 
@@ -193,4 +192,4 @@ const editVehicle = asyncHandler(async (req, res) => {
     }
 });
 
-export { vehicleList, addVehicleForm, addVehicleSubmit, deleteVehicle, editVehicle, editVehicleForm }
+export { driverList, addDriverForm, editDriverForm, addDriverSubmit, deleteDriver, editDriver }

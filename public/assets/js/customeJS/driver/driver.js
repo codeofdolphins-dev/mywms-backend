@@ -1,4 +1,4 @@
-import { confirmation, successAlert } from './alert.js';
+import { confirmation, successAlert } from '../alert.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.querySelector('tbody');

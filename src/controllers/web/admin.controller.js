@@ -22,7 +22,7 @@ const adminDashboard = async (req, res) => {
 
 const role = asyncHandler(async (req, res) => {
     const userdata = req.session.user;
-    if (!userdata) res.redirect("/auth/login");
+    // if (!userdata) res.redirect("/auth/login");
 
     const allRole = await Role.findAll();
 
@@ -95,7 +95,7 @@ const role = asyncHandler(async (req, res) => {
 
 const permission = async (req, res) => {
     const user = req.session.user;
-    if (!user) res.redirect("/auth/login");
+    // if (!user) res.redirect("/auth/login");
 
     const data = await renderPage("adminRegister", user) || "";
 

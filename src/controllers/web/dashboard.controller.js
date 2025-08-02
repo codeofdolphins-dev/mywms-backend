@@ -8,8 +8,6 @@ import renderPage from "../../utils/renderPage.js"
 const dashboard = async (req, res) => {
     const user = req.session.user;
 
-    // if (!user) res.redirect("/auth/login");
-
     const data = await renderPage("dashboard") || "";
 
     return res.render("../layout", {

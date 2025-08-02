@@ -1,8 +1,10 @@
-<div class="card alert">
+<div class="card alert" style="font-size: small;">
 
   <!-- <div class="modal"> -->
   <!-- Trigger Button -->
-  <button class="btn btn-primary open" id="openModalBtn">Add Role</button>
+   <div class="">
+     <button class="btn btn-primary open fs-6" id="openModalBtn">Add Role</button>
+   </div>
 
   <!-- Modal Structure -->
   <div class="modal-wrapper" id="myModal">
@@ -25,12 +27,12 @@
   <!-- </div> -->
 
 
-  <table id="example" class="display" style="width:100%">
+  <table id="example" class="display" style="width:100%;">
     <thead>
       <tr>
         <th>Srl No.</th>
         <th>Role</th>
-        <th>Created</th>
+        <th>Assign Permission to Role</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -44,7 +46,7 @@
             <%= row.role %>
           </td>
           <td>
-            <%= row.createdAt.toLocaleString() %>
+            <button type="button" class="btn btn-success assignPermission" style="font-size: small;" data-id="<%= row.id %>">Assign Permission</button>
           </td>
           <td>
             <div class="icon">

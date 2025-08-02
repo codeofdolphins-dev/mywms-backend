@@ -94,12 +94,15 @@ const companyLoginSubmit = asyncHandler(async (req, res) => {
 
         if (is_password_matched) {
 
+            const role = await company.getRoles();            
+
             const cleanedData = company.dataValues;
 
             delete cleanedData.password;
             delete cleanedData.accessToken;
 
             req.session.user = cleanedData;
+            req.session.user.role = { id: role[0].id, role: role[0].role };
 
             return res.status(200).json({ success: true, code: 200, message: "Login Successfully" });
         }

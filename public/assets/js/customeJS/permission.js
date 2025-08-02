@@ -1,9 +1,10 @@
 import { confirmation, successAlert } from "./alert.js";
 
-const addRole = document.getElementById("addRole");
+const addPermission = document.getElementById("addPermission");
 const openModalBtn = document.getElementById("openModalBtn");
-const newRole = document.getElementById("newRole");
-const roleId = document.getElementById("id");
+const moduleInput = document.getElementById("module");
+const permissionType = document.getElementById("permissionType");
+const permissionId = document.getElementById("id");
 
 
 
@@ -16,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmed = await confirmation("Delete");
 
             if (confirmed) {
-                fetch(`/role/deleteRole?id=${id}`)
+                fetch(`/permission/deletePermission?id=${id}`)
                     .then(res => res.json())
                     .then(data => {
 
@@ -31,12 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
             }
         }
+
         if (e.target.classList.contains('edit-btn')) {
             const submitBtn = document.getElementById("submitBtn");
 
             const id = e.target.dataset.id;
 
-            fetch(`/role/editRole?id=${id}`)
+            fetch(`/permission/editPermission?id=${id}`)
                 .then(res => res.json())
                 .then(data => {
 
@@ -47,8 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     };
                     if (data.success) {
-                        newRole.value = data.data.role;
-                        roleId.value = parseInt(data.data.id, 10);
+                        moduleInput.value = data.data.permission.split(":")[0];
+                        permissionType.value = data.data.permission.split(":")[1];
+                        permissionId.value = parseInt(data.data.id, 10);
 
                         submitBtn.innerText = "Update";
 
@@ -61,60 +64,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-addRole.addEventListener("submit", (e) => {
+addPermission.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    if (roleId.value.trim() === "") {
+    if (permissionId.value.trim() === "") {
         // NEW
         console.log("new");
-        console.log(roleId.value);
 
-        const formData = new FormData(addRole);
+        const formData = new FormData(addPermission);
 
-        fetch("/role/addRole", {
+        fetch("/permission/addPermission", {
             method: "POST",
             body: formData
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.code / 100 >= 3 || !data.success) {
-                    successAlert(data.message, "error");
-                    return;
-                }
-
-                successAlert(data.message);
-                window.location.reload();
+        .then(res => res.json())
+        .then(data => {
+            if (data.code / 100 >= 3 || !data.success) {
+                successAlert(data.message, "error");
                 return;
-            });
+            }
+
+            successAlert(data.message);
+            window.location.reload();
+            return;
+        });
 
     } else {
         // EDIT
         console.log("edit");
-        console.log(roleId.value);
+        console.log(permissionId.value);
 
-        const formData = new FormData(addRole);
+        const formData = new FormData(addPermission);
 
-        fetch("/role/editRole", {
+        fetch("/permission/editPermission", {
             method: "POST",
             body: formData
         })
-            .then(res => res.json())
-            .then(data => {
-                if (data.code / 100 >= 3 || !data.success) {
-                    successAlert(data.message, "error");
-                    return;
-                }
+        .then(res => res.json())
+        .then(data => {
+            if (data.code / 100 >= 3 || !data.success) {
+                successAlert(data.message, "error");
+                return;
+            }
 
-                successAlert(data.message);
-                window.location.reload();
-                return
-            });
+            successAlert(data.message);
+            window.location.reload();
+            return
+        });
     }
-});
-
-document.querySelectorAll('.assignPermission').forEach(button => {
-  button.addEventListener('click', function () {
-    const id = this.getAttribute('data-id')
-    window.location.href = `/manage-permission/${id}`
-  });
 });

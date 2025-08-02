@@ -1,0 +1,139 @@
+<div class="parent">
+    <!-- Inward Card -->
+    <div class="card mb-4 shadow rounded-2">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 fs-6">Inward</h5>
+        </div>
+
+        <div class="card-body">
+            <form>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Barcode</label>
+                        <input type="text" class="form-control" placeholder="Enter Barcode">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Brand</label>
+                        <input type="text" class="form-control" placeholder="Enter Brand">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Batch No</label>
+                        <input type="text" class="form-control" placeholder="Enter Batch No">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="text" class="form-control" placeholder="Enter Quantity">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Damage Qty</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Shortage Qty</label>
+                        <input type="text" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" class="form-control">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" class="btn btn-success w-100">Add Item</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock In Item List -->
+    <div class="card mb-4 shadow rounded-2">
+        <div class="card-header">
+            <h5 class="mb-0">Stock In Item List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Bar Code</th>
+                            <th>Status</th>
+                            <th>Category</th>
+                            <th>Sub-Category</th>
+                            <th>Brand Owner</th>
+                            <th>Brand</th>
+                            <th>Measure</th>
+                            <th>Batch No.</th>
+                            <th>Unit</th>
+                            <th>Case</th>
+                            <th>Expiry</th>
+                            <th>Transit Damage</th>
+                            <th>Transit Shortage</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- </div> -->
+
+        <!-- Footer Form -->
+        <!-- <div class="card shadow"> -->
+        <div class="card-body card-lower">
+            <form>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Order No.*</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="Order / Requisition">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Invoice No*</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="Invoice No">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Transport Pass N</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="Transport Pass No">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">LR No*</label>
+                        <input type="text" class="form-control form-control-sm" value="0">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Vehicle No*</label>
+                        <select class="form-select form-select-sm">
+                            <option>Select Vehicle</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Driver*</label>
+                        <select class="form-select form-select-sm">
+                            <option>Select Driver</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Status Type</label>
+                        <select class="form-select form-select-sm">
+                            <option>Local</option>
+                            <option>Import</option>
+                            <option>Custome</option>
+                            <option>Inter Stock Transfer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label mb-1 fw-bold">Indent No*</label>
+                        <input type="text" class="form-control form-control-sm" value="0">
+                    </div>
+
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-warning btn-sm">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
