@@ -1,11 +1,11 @@
 import renderPage from "../../utils/renderPage.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import Permission from "../../models/permission.model.js";
-import RolePermission from "../../models/rolePermissions.joinModel.js";
+import Permission from "../../models/global/Permission.model.js";
+import RolePermission from "../../models/RolePermissions.joinModel.js";
 
 // GET request
 const assignPermissionView = asyncHandler(async (req, res) => {
-    const user = req.session.user;
+    const user = req.session.user || {};
     const { roleId } = req.params;
 
     // Get all permissions
@@ -14,7 +14,7 @@ const assignPermissionView = asyncHandler(async (req, res) => {
     // Group by section
     const grouped = {};
 
-    allPermissions.forEach(p => {
+    allPermissions.forEach(p => {        
         const [section, action] = p.permission.split(':');
         if (!grouped[section]) grouped[section] = [];
         grouped[section].push({
@@ -30,6 +30,7 @@ const assignPermissionView = asyncHandler(async (req, res) => {
     });
     const rolePermissionIds = rolePermissions.map(rp => rp.permissionId);
 
+    console.log("grouped", grouped);
     console.log("rolePermission", rolePermissionIds);
 
     const data = await renderPage("managePermission", { groupedPermissions: grouped, rolePermissionIds, roleId });
@@ -75,7 +76,7 @@ const assignPermissions = asyncHandler(async (req, res) => {
         // Insert new mappings
         await RolePermission.bulkCreate(newMappings);
 
-       return res.status(200).json({ success: true, code: 200, message: "Permissions assigned." });
+    //    return res.status(200).json({ success: true, code: 200, message: "Permissions assigned." });
 
     } catch (error) {
         console.log(error);

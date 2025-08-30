@@ -34,12 +34,21 @@
                 <!-- License No -->
                 <div class="col-md-6">
                   <label for="license_no" class="form-label">License No</label>
-                  <input type="text" id="license_no" name="license_no" class="form-control" placeholder="License No" <%
-                    if (data) { %> value="<%- data.license_no %>" <% } %>
-                      >
-                      <div class="invalid-feedback">
-                        License number required.
-                      </div>
+                  <input type="text" id="license_no" name="license_no" placeholder="License No" class="form-control"
+
+                    <%- Object.keys(data).length !== 0 ? `value="${data.license_no}" readonly style="background-color: #e9ecef; cursor: default;"` : `style="background-color: white;" class="form-control"` %>                    
+                    >
+                    
+                    <!-- <% if (data) { %> 
+                      value="<%- data.license_no %>" readonly
+                      class="form-control read-only"
+                      <% } else { %>
+                        class="form-control"
+                    <% } %> -->
+                  
+                    <div class="invalid-feedback">
+                      License number required.
+                    </div>
                 </div>
 
                 <!-- Contact Number -->

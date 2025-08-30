@@ -6,9 +6,9 @@ import { verifyPermission } from "../../middlewares/permission.middleware.js";
 
 const router = Router();
 
-router.use(auth_session);
+// router.use(auth_session);
 
-router.route("/").get(verifyPermission("permission:read"), permissionView);
+router.route("/").get( permissionView);
 router.route("/addPermission").post(verifyPermission("permission:create"), upload.none(), addPermission);
 router.route("/editPermission").get(editPermissionView).post(verifyPermission("permission:update"), upload.none(), editPermission);
 router.route("/deletePermission").get(verifyPermission("permission:delete"), deletePermission);

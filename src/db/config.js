@@ -1,46 +1,23 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import { Sequelize } from "sequelize";
-import session from 'express-session';
-import expressMysqlSession from "express-mysql-session";
 
 
-const MySQLStore = expressMysqlSession(session);
 
-
-// cloud************************************
-// const db_obj = new Sequelize(process.env.DATABASE_NAME, process.env.USER, process.env.PASSWORD, {
-//     host: process.env.HOST,
-//     port: process.env.MYSQL_DB_PORT,
-//     dialect: 'mysql'
+// local MYSQL *********************************************
+// const db_obj = new Sequelize('mywms', 'root', '', {
+//   host: 'localhost',
+//   dialect: 'mysql',
+//   logging: true
 // });
 
-
-// cloud########################################
-// const session_store = new MySQLStore({
-//     host: process.env.HOST,
-//     user: process.env.USER,
-//     password: process.env.PASSWORD,
-//     database: process.env.DATABASE_NAME,
-//     port: process.env.MYSQL_DB_PORT
-// })
-
-
-// // local***********************************
-const db_obj = new Sequelize("mywms", "root", "", {
-  host: "localhost",
-  port: 3306,
-  dialect: 'mysql'
+// local POSTGRESQL*********************************************
+const db_obj = new Sequelize(process.env.PG_DB_NAME, process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
+  host: process.env.PG_DB_HOST,
+  port: process.env.PG_DB_PORT,
+  dialect: "postgres",
+  logging: true
 });
 
 
-// // local#######################################
-const session_store =  new MySQLStore({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "mywms",
-  port: 3306
-})
-
-export { db_obj, session_store };
+export { db_obj };

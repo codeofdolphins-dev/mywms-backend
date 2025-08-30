@@ -1,0 +1,16 @@
+Role
+role:assign     # assign role to user
+role:remove     # remove role from user
+role:create     # create role
+role:read       # read role
+role:update     # edit role
+role:delete     # delete role
+
+permissions
+CRUD
+
+Vehicle
+CRUD
+
+Manage Permission
+:assign

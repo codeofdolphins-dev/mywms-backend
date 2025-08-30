@@ -5,7 +5,7 @@ import renderPage from "../../utils/renderPage.js";
 // GET request
 
 const roleView = async (req, res) => {
-    const user = req.session.user;
+    const user = req.session.user || {};
 
     const allRole = await Role.findAll();
     const plainRole = allRole.map(role => role.get({ plain: true }));

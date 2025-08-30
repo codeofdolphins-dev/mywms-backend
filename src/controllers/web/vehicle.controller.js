@@ -1,6 +1,42 @@
-import Vehicle from "../../models/vehicle.model.js";
+import Vehicle from "../../models/global/Vehicle.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import renderPage from "../../utils/renderPage.js";
+
+
+// API
+const vehicleListAPI = asyncHandler(async (req, res) => {
+    try {
+
+        const { id = "", v_number = "" } = req.query;
+
+        let whereClause = {};
+
+        if (id) {
+            whereClause.id = {
+                [Op.eq]: id
+            };
+        }
+
+        if (v_number) {
+            whereClause.v_number = {
+                [Op.like]: `%${v_number}%`
+            };
+        }
+
+        const vehicleList = await Vehicle.findAll({
+            where: Object.keys(whereClause).length ? whereClause : undefined
+        });
+
+        if(!vehicleList) return res.status(500).json({ success: false, code: 500, message: "Fatching errro!!!" });
+
+        return res.status(200).json({ success: true, code: 200, data: vehicleList });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // GET request
 const vehicleList = async (req, res) => {
@@ -193,4 +229,4 @@ const editVehicle = asyncHandler(async (req, res) => {
     }
 });
 
-export { vehicleList, addVehicleForm, addVehicleSubmit, deleteVehicle, editVehicle, editVehicleForm }
+export { vehicleList, addVehicleForm, addVehicleSubmit, deleteVehicle, editVehicle, editVehicleForm, vehicleListAPI }

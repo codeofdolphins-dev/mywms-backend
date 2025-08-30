@@ -1,6 +1,42 @@
-import Driver from "../../models/driver.model.js";
+import { Op } from "sequelize";
+import Driver from "../../models/global/Driver.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import renderPage from "../../utils/renderPage.js";
+
+
+// API
+const driverListAPI = asyncHandler(async (req, res) => {
+    try {
+        const { id = "", license_no = "" } = req.query;
+
+        let whereClause = {};
+
+        if (id) {
+            whereClause.id = {
+                [Op.eq]: id
+            };
+        }
+
+        if (license_no) {
+            whereClause.license_no = {
+                [Op.like]: `%${license_no}%`
+            };
+        }
+
+        const driverList = await Driver.findAll({
+            where: Object.keys(whereClause).length ? whereClause : undefined
+        });
+
+        if(!driverList) return res.status(500).json({ success: false, code: 500, message: "Fatching errro!!!" });
+
+        return res.status(200).json({ success: true, code: 200, data: driverList });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // GET request
 const driverList = async (req, res) => {
@@ -100,21 +136,21 @@ const editDriverForm = asyncHandler(async (req, res) => {
 
         const { id } = req.query;
 
-        const vehicleDetails = await Vehicle.findByPk(id);
-        const plainVehicleDetails = vehicleDetails.get({ plain: true });
+        const driverDetails = await Driver.findByPk(id);
+        const plainDriverDetails = driverDetails.get({ plain: true });
 
-        const data = await renderPage("./vehicle/addVehicle", plainVehicleDetails) || "";
+        const data = await renderPage("./driver/addDriver", plainDriverDetails) || "";
 
         return res.render("../layout", {
             head: `
-            <link rel="stylesheet" href="/assets/css/customeCss/addVehicle.css">            
+            <link rel="stylesheet" href="/assets/css/customeCss/addDriver.css">
             `,
             customeScript: `
             <script src="/assets/js/sweetalert2@11.js"></script>
-            <script type="module" src="/assets/js/customejs/editVehicle.js"></script>`,
+            `,
             user,
             body: data,
-            title: "Edit Vehicle"
+            title: "Edit Driver Details"
         });
 
     } catch (error) {
@@ -128,11 +164,11 @@ const addDriverSubmit = asyncHandler(async (req, res) => {
     try {
         const { name = "", license_no = "", contact_no = "", address = "" } = req.body;
 
-        if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
+        if (!license_no) return res.status(400).json({ succss: false, code: 400, message: "License number is required!!!" });
 
-        const isVehicleExists = await Driver.findOne({ where: { license_no } });
+        const isDriverExists = await Driver.findOne({ where: { license_no } });
 
-        if (isVehicleExists) return res.status(409).json({ success: false, code: 409, message: `Vehicle no: ${v_number} already exists!!!` });
+        if (isDriverExists) return res.status(409).json({ success: false, code: 409, message: `License no: ${license_no} already exists!!!` });
 
         await Driver.create({
             name,
@@ -153,7 +189,7 @@ const deleteDriver = asyncHandler(async (req, res) => {
     try {
         const { id } = req.query;
 
-        await Vehicle.destroy({ where: { id } });
+        await Driver.destroy({ where: { id } });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Deleted." });
 
@@ -165,26 +201,27 @@ const deleteDriver = asyncHandler(async (req, res) => {
 
 const editDriver = asyncHandler(async (req, res) => {
     try {
-        const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
 
-        if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
+        const { name = "", license_no = "", contact_no = "", address = "" } = req.body;
 
-        const isVehicleExists = await Vehicle.findOne({ where: { number: v_number } });
+        if (!license_no) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
 
-        if (!isVehicleExists) return res.status(409).json({ success: false, code: 409, message: `Vehicle not found!!!` });
+        const isDriverExists = await Driver.findOne({ where: { license_no } });
+
+        // if (!isDriverExists) return res.status(409).json({ success: false, code: 409, message: `Driver with that license number is not exists!!!` });
+        if (!isDriverExists) return res.redirect(`/driver?message="Not Found!!!"`);
 
         let replace_object = {}
-        if(rc_no) replace_object.rc_no = rc_no.trim();
-        if(ch_no) replace_object.chassis_no = ch_no.trim();
-        if(en_no) replace_object.engine_no = en_no.trim();
-        if(type) replace_object.type = type.trim();
+        if (name) replace_object.name = name.trim();
+        if (contact_no) replace_object.contact_no = contact_no.trim();
+        if (address) replace_object.address = address.trim();
 
-        await Vehicle.update(
+        await Driver.update(
             replace_object,
-            { where: { number: v_number } }
+            { where: { license_no } }
         );
 
-        return res.redirect("/vehicle");
+        return res.redirect("/driver");
 
     } catch (error) {
         console.log(error);
@@ -192,4 +229,4 @@ const editDriver = asyncHandler(async (req, res) => {
     }
 });
 
-export { driverList, addDriverForm, editDriverForm, addDriverSubmit, deleteDriver, editDriver }
+export { driverList, addDriverForm, editDriverForm, addDriverSubmit, deleteDriver, editDriver, driverListAPI }

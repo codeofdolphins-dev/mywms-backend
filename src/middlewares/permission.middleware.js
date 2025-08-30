@@ -1,34 +1,50 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import RolePermissions from "../models/rolePermissions.joinModel.js";
-import Permission from "../models/permission.model.js";
+import Permission from "../models/global/Permission.model.js";
+import User from "../models/user.model.js";
+import Role from "../models/role.model.js";
 
 const verifyPermission = (purpose) => {
     return asyncHandler(async (req, res, next) => {
+        const userId = req.user.id;
 
-        if(req.session.user.role.role === "superAdmin") return next();
+        const user = await User.findByPk(userId, {
+            include: [
+                {
+                    model: Role,
+                    as: "roles",
+                    through: { attributes: [] }, // remove UserRoles join output
+                    include: [
+                        {
+                            model: Permission,
+                            as: "permissions",
+                            through: { attributes: [] } // remove RolePermissions join output
+                        }
+                    ]
+                }
+            ]
+        });
 
-        const mappings = await RolePermissions.findAll({ where: { roleId: req.session.user.role.id } });
-
-        const permissionIds = mappings.map(m => m.permissionId);
-
-        const permissions = await Permission.findAll({ where: { id: permissionIds } });
-
-        const permissionString = permissions.map(p => p.permission);
-
-        if (!permissionString.includes(purpose)) {
-
-            if (req.xhr || req.headers.accept.indexOf('json') > -1) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Access denied!"
-                });
-            }
-
-            // return res.status(403).json({ success: false, message: "Access denied!" });
-            return res.status(403).render("403");
+        if (!user) {
+            return res.status(401).json({ success: false, message: "User not found" });
         }
+
+        const userRoles = user.roles.map(r => r.role)        
+
+        const userPermissions = user.roles.flatMap(role =>
+            role.permissions.map(p => p.permission)
+        );
+
+        // console.log(userPermissions);
+
+        // admin bypass
+        if (userRoles.includes("admin")) return next();
+        
+        // Check if requested permission exists
+        if (!userPermissions.includes(purpose)) return res.status(403).json({ success: false, code: 403, message: "Access denied!!!" });
+
         next();
     });
 };
+
 
 export { verifyPermission }

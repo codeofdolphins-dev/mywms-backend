@@ -1,5 +1,5 @@
 import { db_obj } from "./config.js";
-import "../models/association.js"
+import "../models/Association.js"
 
 
 const connectDB = async () => {

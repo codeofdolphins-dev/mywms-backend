@@ -8,7 +8,7 @@
   <title>
     <% if (title) { %>
       <%= title %>
-    <% } %>
+        <% } %>
   </title>
 
   <!-- Favicon & Touch Icons -->
@@ -51,7 +51,7 @@
 
   <% if (head) { %>
     <%- head %>
-  <% } %>
+      <% } %>
 </head>
 
 <body class="sidebar-hide">
@@ -77,11 +77,12 @@
               <span class="sidebar-collapse-icon ti-angle-down"></span>
             </a>
             <ul>
-              <li><a href="#">Product List</a></li>
-              <li><a href="#">Add Product</a></li>
+              <li><a href="/product">Product List</a></li>
+              <li><a href="/product/add-product">Add Product</a></li>
             </ul>
           </li>
-          <li title="Inward"><a href="#" class="sidebar-sub-toggle"><i class="ti-import"></i>Inward</a></li>
+          <li title="Inward"><a href="/inward"><i class="ti-import"></i>Inward</a></li>
+
           <li title="Outward"><a href="#" class="sidebar-sub-toggle"><i class="ti-export"></i>Outward</a></li>
           <li title="Role Permission">
             <a class="sidebar-sub-toggle">
@@ -93,7 +94,26 @@
               <li><a href="/permission">Permission</a></li>
             </ul>
           </li>
-          <li title="Vehicle"><a href="/vehicle"><i class="ti-truck"></i>Vehicle</a></li>
+          <li title="Vehicle">
+            <a class="sidebar-sub-toggle">
+              <i class="ti-truck"></i>Vehicle
+              <span class="sidebar-collapse-icon ti-angle-down"></span>
+            </a>
+            <ul>
+              <li><a href="/vehicle">Vehicle List</a></li>
+              <li><a href="/vehicle/addVehicle">Add Vehicle</a></li>
+            </ul>
+          </li>
+          <li title="Driver">
+            <a class="sidebar-sub-toggle">
+              <i class="ti-id-badge"></i>Driver
+              <span class="sidebar-collapse-icon ti-angle-down"></span>
+            </a>
+            <ul>
+              <li><a href="/driver">Driver List</a></li>
+              <li><a href="/driver/addDriver">Add Driver</a></li>
+            </ul>
+          </li>
           <li title="Logout"><a href="/auth/logout"><i class="ti-close"></i> Logout</a></li>
         </ul>
       </div>
@@ -113,26 +133,25 @@
       </div>
     </div>
     <div class="d-flex align-items-center">
-      <img class="avatar-img rounded-circle"
-        <% if (user && user.profile_image) { %>
-        src="/assets/user/<%= user.profile_image %>"
+      <img class="avatar-img rounded-circle" <% if (user && user.profile_image) { %>
+      src="/assets/user/<%= user.profile_image %>"
         <% } else { %>
-        src="/assets/images/avatar/dummyUser.webp"
-        <% } %>
-      alt="User" style="width: 40px; height: 40px;" />
-      <span class="user-avatar ms-2">
-        <% if (user) { %>
-          <%= user.f_name %>
-        <% } %> <i class="ti-angle-down f-s-10"></i>
-      </span>
-      <div class="drop-down dropdown-profile">
-        <div class="dropdown-content-body">
-          <ul>
-            <li><a href="/company/updateCompany"><i class="ti-user"></i> <span>Update Profile</span></a></li>
-            <li><a href="/auth/logout"><i class="ti-power-off"></i> <span>Logout</span></a></li>
-          </ul>
-        </div>
-      </div>
+          src="/assets/images/avatar/dummyUser.webp"
+          <% } %>
+            alt="User" style="width: 40px; height: 40px;" />
+            <span class="user-avatar ms-2">
+              <% if (user) { %>
+                <%= user.f_name %>
+                  <% } %> <i class="ti-angle-down f-s-10"></i>
+            </span>
+            <div class="drop-down dropdown-profile">
+              <div class="dropdown-content-body">
+                <ul>
+                  <li><a href="/company/updateCompany"><i class="ti-user"></i> <span>Update Profile</span></a></li>
+                  <li><a href="/auth/logout"><i class="ti-power-off"></i> <span>Logout</span></a></li>
+                </ul>
+              </div>
+            </div>
     </div>
   </div>
 
@@ -144,7 +163,9 @@
           <div class="col-lg-8 p-0">
             <div class="page-header">
               <div class="page-title">
-                <h1>Hello, <span><%= user ? (user.c_name || user.full_name) : '' %></span></h1>
+                <h1>Hello, <span>
+                    <%= user ? (user.c_name || user.full_name) : '' %>
+                  </span></h1>
               </div>
             </div>
           </div>
@@ -154,8 +175,10 @@
                 <ol class="breadcrumb text-end">
                   <li><a href="/">Dashboard</a></li>
                   <% if (title) { %>
-                    <li class="active"><%= title %></li>
-                  <% } %>
+                    <li class="active">
+                      <%= title %>
+                    </li>
+                    <% } %>
                 </ol>
               </div>
             </div>
@@ -174,14 +197,14 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script src="/assets/js/sweetalert2@11.js"></script>
-  <% if (typeof customeScript !== 'undefined') { %>
+  <% if (typeof customeScript !=='undefined' ) { %>
     <%- customeScript %>
-  <% } %>
+      <% } %>
 
-  <script src="/assets/js/lib/jquery.nanoscroller.min.js"></script>
-  <script src="/assets/js/lib/menubar/sidebar.js"></script>
-  <script src="/assets/js/lib/preloader/pace.min.js"></script>
-  <script src="/assets/js/scripts.js"></script>
+        <script src="/assets/js/lib/jquery.nanoscroller.min.js"></script>
+        <script src="/assets/js/lib/menubar/sidebar.js"></script>
+        <script src="/assets/js/lib/preloader/pace.min.js"></script>
+        <script src="/assets/js/scripts.js"></script>
 
 </body>
 

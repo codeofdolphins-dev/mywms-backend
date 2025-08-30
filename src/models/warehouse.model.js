@@ -2,6 +2,10 @@ import { db_obj } from "../db/config.js";
 import { DataTypes } from "sequelize";
 
 const Warehouse = db_obj.define("Warehouse", {
+    user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     full_name: {
         type: DataTypes.STRING,
         allowNull: true
@@ -13,11 +17,6 @@ const Warehouse = db_obj.define("Warehouse", {
     l_name: {
         type: DataTypes.STRING,
         allowNull: true
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
     },
     ph_number: {
         type: DataTypes.STRING,
@@ -51,10 +50,6 @@ const Warehouse = db_obj.define("Warehouse", {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     lat: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
@@ -67,13 +62,9 @@ const Warehouse = db_obj.define("Warehouse", {
         type: DataTypes.BOOLEAN,
         defaultValue: true
     },
-    status: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    accessToken: {
-        type: DataTypes.STRING,
-        allowNull: true
+    company_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
     }
 })
 

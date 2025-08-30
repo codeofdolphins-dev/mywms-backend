@@ -1,4 +1,4 @@
-import Company from "../../models/company.model.js";
+import Company from "../../models/CompanyDetails.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import bcrypt from "bcrypt";
 import renderPage from "../../utils/renderPage.js";
