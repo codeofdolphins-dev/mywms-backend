@@ -21,3 +21,6 @@ Thumbs.db
 
 # Test coverage reports
 coverage/
+
+# database
+*.mwb
