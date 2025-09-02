@@ -1,4 +1,4 @@
-import Vehicle from "../../models/global/Vehicle.model.js";
+import Vehicle from "../../models/Vehicle.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import renderPage from "../../utils/renderPage.js";
 

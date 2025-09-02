@@ -1,5 +1,4 @@
 import CompanyDetails from "../models/CompanyDetails.model.js";
-import Tenant from "../models/global/Tenant.model.js";
 import User from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 

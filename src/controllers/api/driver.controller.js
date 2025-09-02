@@ -1,10 +1,12 @@
 import { Op } from "sequelize";
-import Driver from "../../models/global/Driver.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 
 // GET request
 const driverList = asyncHandler(async (req, res) => {
+
+    const { Driver } = req.dbModels;
+
     try {
         const { id = "", license_no = "" } = req.query;
 
@@ -37,6 +39,9 @@ const driverList = asyncHandler(async (req, res) => {
 });
 
 const deleteDriver = asyncHandler(async (req, res) => {
+
+    const { Driver } = req.dbModels;
+
     try {
         const { id } = req.params;
 
@@ -54,6 +59,9 @@ const deleteDriver = asyncHandler(async (req, res) => {
 
 // POST request
 const addDriver = asyncHandler(async (req, res) => {
+
+    const { Driver } = req.dbModels;
+
     try {
         const { name = "", license_no = "", contact_no = "", address = "" } = req.body;
 
@@ -79,6 +87,9 @@ const addDriver = asyncHandler(async (req, res) => {
 });
 
 const editDriver = asyncHandler(async (req, res) => {
+
+    const { Driver } = req.dbModels;
+
     try {
         const { name = "", license_no = "", contact_no = "", address = "" } = req.body;
 

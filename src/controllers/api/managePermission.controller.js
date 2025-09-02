@@ -1,9 +1,10 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import Permission from "../../models/global/Permission.model.js";
-import RolePermission from "../../models/RolePermissions.joinModel.js";
 
 // GET request
 const allAssignPermissions = asyncHandler(async (req, res) => {
+
+    const { Permission, RolePermission } = req.dbModels;
+
     try {
         const { roleId } = req.params;
 
@@ -38,7 +39,10 @@ const allAssignPermissions = asyncHandler(async (req, res) => {
 });
 
 // POST request
-const assignPermissions = asyncHandler(async (req, res) => {
+const modifyPermissions = asyncHandler(async (req, res) => {
+
+    const { RolePermission } = req.dbModels;
+
     try {
         const { roleId, assignedPermissionIds } = req.body;
 
@@ -65,4 +69,4 @@ const assignPermissions = asyncHandler(async (req, res) => {
     }
 });
 
-export { allAssignPermissions, assignPermissions };
+export { allAssignPermissions, modifyPermissions };

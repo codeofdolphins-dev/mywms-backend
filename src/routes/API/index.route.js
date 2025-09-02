@@ -8,19 +8,25 @@ import managePermissionApi from "./managePermission.route.js";
 import vehicleApi from "./vehicle.route.js";
 import userApi from "./user.route.js";
 import driverApi from "./driver.route.js";
-import superAdminApi from "./global/superAdmin.route.js";
+import superAdminApi from "./superAdmin.route.js";
+import { defineDbObject } from "../../middlewares/defineDBObject.middleware.js";
+import { defineUserScope } from "../../middlewares/defineUserScope.middleware.js";
 
 const router = Router();
 
-router.use("/user", userApi);
 router.use("/auth", authApi);
+
+router.use(defineUserScope, defineDbObject);
+
+router.use("/super-admin", superAdminApi);
+
+router.use("/user", userApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
 router.use("/location", locationApi);
 router.use("/vehicle", vehicleApi);
 router.use("/driver", driverApi);
-router.use("/superAdmin", superAdminApi);
 
 
 export default router;

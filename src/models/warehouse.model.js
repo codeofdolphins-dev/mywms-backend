@@ -1,71 +1,72 @@
-import { db_obj } from "../db/config.js";
+// import { db_obj } from "../db/config.js";
 import { DataTypes } from "sequelize";
 
-const Warehouse = db_obj.define("Warehouse", {
-    user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    full_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    f_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    l_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    ph_number: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    profile_image: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    address: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    state_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    district_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    pincode: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    gst_no: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    license_no: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    lat: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    long: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    cat_id: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    company_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    }
-})
-
+function Warehouse(sequelize) {
+    return sequelize.define("Warehouse", {
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        full_name: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        f_name: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        l_name: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        ph_number: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        profile_image: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        address: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        state_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        district_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        pincode: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        gst_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        license_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        lat: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+        },
+        long: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+        },
+        cat_id: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+        },
+        company_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        }
+    })
+}
 export default Warehouse;

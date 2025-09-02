@@ -1,11 +1,7 @@
-import CompanyDetails from "../../models/CompanyDetails.model.js";
-import User from "../../models/user.model.js";
-import IndividualDetails from "../../models/IndividualDetails.model.js"
-import Permission from "../../models/global/Permission.model.js";
-import Role from "../../models/role.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 const currentUser = asyncHandler(async (req, res) => {
+    const { User, CompanyDetails, IndividualDetails, Role, Permission } = req.dbModels;
     try {
         const { id } = req.user;
 

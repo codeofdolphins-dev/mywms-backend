@@ -1,8 +1,9 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import Permission from "../../models/global/Permission.model.js"
 
 // GET request
 const allPermissions = asyncHandler(async (req, res) => {
+
+    const { Permission } = req.dbModels;
 
     try {
         const permissions = await Permission.findAll();
@@ -17,14 +18,17 @@ const allPermissions = asyncHandler(async (req, res) => {
 
 // POST request
 const addPermission = asyncHandler(async (req, res) => {
+
+    const { Permission } = req.dbModels;
+
     try {
         const { module, permissionType } = req.body;
 
-        if(!module && !permissionType) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-        
+        if (!module && !permissionType) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+
         const isExists = await Permission.findOne({ where: { permission: `${module.toLowerCase().trim()}:${permissionType.toLowerCase().trim()}` } })
-        
-        if(isExists) return res.status(400).json({ success: false, code: 400, message: "Permission already exists!!!" });
+
+        if (isExists) return res.status(400).json({ success: false, code: 400, message: "Permission already exists!!!" });
 
         const permission = await Permission.create({
             permission: `${module.toLowerCase().trim()}:${permissionType.toLowerCase().trim()}`
@@ -41,6 +45,9 @@ const addPermission = asyncHandler(async (req, res) => {
 });
 
 const deletePermission = asyncHandler(async (req, res) => {
+
+    const { Permission } = req.dbModels;
+
     try {
 
         const id = req.params.id;
@@ -58,6 +65,9 @@ const deletePermission = asyncHandler(async (req, res) => {
 });
 
 const editPermission = asyncHandler(async (req, res) => {
+
+    const { Permission } = req.dbModels;
+
     try {
         const { id, module, permissionType } = req.body;
 

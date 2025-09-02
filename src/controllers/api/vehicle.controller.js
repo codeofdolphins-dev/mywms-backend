@@ -1,9 +1,11 @@
-import Vehicle from "../../models/global/Vehicle.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 
 
 // GET request
 const allVehicleList = asyncHandler(async (req, res) => {
+
+    const { Vehicle } = req.dbModels;
+
     try {
 
         const { id = "", v_number = "" } = req.query;
@@ -38,6 +40,9 @@ const allVehicleList = asyncHandler(async (req, res) => {
 
 // POST request
 const addVehicle = asyncHandler(async (req, res) => {
+
+    const { Vehicle } = req.dbModels;
+
     try {
         const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
 
@@ -66,6 +71,9 @@ const addVehicle = asyncHandler(async (req, res) => {
 });
 
 const deleteVehicle = asyncHandler(async (req, res) => {
+
+    const { Vehicle } = req.dbModels;
+
     try {
         const { id } = req.params;
 
@@ -82,6 +90,9 @@ const deleteVehicle = asyncHandler(async (req, res) => {
 });
 
 const editVehicle = asyncHandler(async (req, res) => {
+
+    const { Vehicle } = req.dbModels;
+
     try {
         const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
 

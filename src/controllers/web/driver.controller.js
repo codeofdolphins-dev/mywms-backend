@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import Driver from "../../models/global/Driver.model.js";
+import Driver from "../../models/Driver.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import renderPage from "../../utils/renderPage.js";
 

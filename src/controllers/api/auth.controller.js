@@ -1,15 +1,9 @@
 import jwt from "jsonwebtoken";
 import { db_obj } from "../../db/config.js";
-import CompanyDetails from "../../models/CompanyDetails.model.js";
-import Role from "../../models/role.model.js";
-import User from "../../models/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
-import Tenant from "../../models/global/Tenant.model.js";
-import { seeder } from "../../helper/seeder.helper.js";
 
 // GET request
-
 const logout = asyncHandler(async (req, res) => {
     try {
 
@@ -31,9 +25,12 @@ const logout = asyncHandler(async (req, res) => {
 
 // POST request
 const register_company = asyncHandler(async (req, res) => {
+    const dbObject = req.dbObject;
+    const dbModels = req.dbModels;
 
-    const transaction = await db_obj.transaction();
+    const transaction = await dbObject.transaction();
 
+    const { CompanyDetails, Role, User } = dbModels;
     try {
         const { email = "", password = "", c_name = "", ph_no = "" } = req.body;
         const profile_image = req?.file?.filename || null;
@@ -42,14 +39,10 @@ const register_company = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         };
 
-        const tenant = await createTenent(c_name, transaction);
-
-        await seeder(tenant.schemaName, transaction);
-
-        const companyRole = await Role.findOne({ where: { role: "company" }, transaction });
+        const companyRole = await Role.findOne({ where: { role: "company/owner" } }, { transaction });
         if (!companyRole) return res.status(400).json({ success: false, code: 400, message: "Role 'company' not found. Make sure roles are seeded." });
 
-        const isRegister = await User.findOne({ where: { email } });
+        const isRegister = await User.findOne({ where: { email } }, { transaction });
         if (isRegister) return res.status(400).json({ success: false, code: 400, message: `Company with email: ${email} already exists!!!` });
 
         const encryptPassword = await hashPassword(password);
@@ -61,7 +54,6 @@ const register_company = asyncHandler(async (req, res) => {
 
         await CompanyDetails.create({
             user_id: user.id,
-            tenant_id: tenant.id,
             c_name,
             ph_no,
             profile_image
@@ -81,6 +73,7 @@ const register_company = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
         const { email = "", password = "" } = req.body;
 
@@ -125,13 +118,13 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const request_otp = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
         const { email = "" } = req.body;
 
         if (!email) return res.status(400).json({ success: false, code: 400, message: "Email must required!" });
 
         const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
-
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User Not Found!" });
 
         const otp = generateOTP();
@@ -153,6 +146,7 @@ const request_otp = asyncHandler(async (req, res) => {
 });
 
 const verify_otp = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
         const { email = "", userOTP = "" } = req.body;
 
@@ -182,6 +176,7 @@ const verify_otp = asyncHandler(async (req, res) => {
 });
 
 const forgetPassword = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
         const { email = "", password = "" } = req.body;
 
@@ -196,8 +191,19 @@ const forgetPassword = asyncHandler(async (req, res) => {
                 { password: encryptPassword },
                 { where: { id: user.id } }
             );
-            return res.status(200).json({ success: true, code: 200, message: "Password changed Successfully." });
+
+            const options = {
+                httpOnly: true,
+                secure: true
+            };
+
+            return res
+            .status(200)
+            .clearCookie("is_otp", options)
+            .json({ success: true, code: 200, message: "Password changed Successfully." });
         }
+
+        return res.status(400).json({ success: false, code: 400, message: "Link Expired!!! Verify email again." });
 
     } catch (error) {
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -205,6 +211,7 @@ const forgetPassword = asyncHandler(async (req, res) => {
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
 
         const { oldPassword = "", newPassword = "" } = req.body;
@@ -242,11 +249,5 @@ async function hashPassword(pass) {
     return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10));
 }
 
-async function createTenent(c_name, transaction) {
-    return await Tenant.create({
-        companyName: c_name,
-        schemaName: `tenant_${c_name.split(" ")[0]}`
-    }, { transaction });
-}
 
 export { register_company, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };

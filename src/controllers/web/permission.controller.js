@@ -1,6 +1,6 @@
 import renderPage from "../../utils/renderPage.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import Permission from "../../models/global/Permission.model.js"
+import Permission from "../../models/Permission.model.js"
 
 // GET request
 const permissionView = asyncHandler(async (req, res) => {

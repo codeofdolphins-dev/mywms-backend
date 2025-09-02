@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express from "express";
-import "./db/config.js";
+// import "./db/config.js";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
 import cors from "cors";

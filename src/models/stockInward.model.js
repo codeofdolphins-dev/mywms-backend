@@ -1,7 +1,8 @@
 import { DataTypes } from "sequelize";
-import { db_obj } from "../db/config.js";
+// import { db_obj } from "../db/config.js";
 
-const StockInward = db_obj.define("StockInward", {
+function StockInward(sequelize){ 
+return sequelize.define("StockInward", {
     company_id: DataTypes.INTEGER,
     user_id: DataTypes.INTEGER,
     order_no: DataTypes.STRING,
@@ -13,5 +14,5 @@ const StockInward = db_obj.define("StockInward", {
     status_type: DataTypes.STRING,
     indent_no: DataTypes.STRING,
 });
-
+}
 export default StockInward;
