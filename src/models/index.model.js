@@ -1,4 +1,4 @@
-import Category from "./Category.model.js";
+import Category from "./category.model.js";
 import CompanyDetails from "./CompanyDetails.model.js";
 import Tenant from "./main/Tenant.model.js"
 import District from "./District.model.js";
