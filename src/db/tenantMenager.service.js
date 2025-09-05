@@ -6,7 +6,8 @@ import pg from "pg";
 import { LRUCache } from "lru-cache";
 import { defineRootModels, defineTenantModels } from "../models/index.model.js";
 import dataSeeder from "../helper/seeder.js";
-import defineAssociations from "../models/association.js"
+
+import defineAssociations from "../models/association.js";
 
 
 // ----------------------
