@@ -9,8 +9,8 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
             return next();
         };
 
-        const { email } = req.body;
-        if(!email) return res.status(400).json({ success: false, code: 400, message: "User EMAIL must required!!!" });
+        const email = req.body?.email || "";
+        if(!email) return res.status(400).json({ success: false, code: 400, message: "User EMAIL must required!!! or Header is not set properly!!!" });
 
         const { models } = await rootDB();
         const user = await models.User.findOne({ where: { email } });
@@ -18,7 +18,9 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
         if(user){
             req.scope = "root";
         }else{
-            req.scope = "tenant";
+            const tenant = await models.Tenant.findOne({ where: { email }, attributes: ["tenant"] });
+            req.headers["x-tenant-id"] = tenant.tenant;
+            req.scope = "tenant";          
         }
 
         return next();

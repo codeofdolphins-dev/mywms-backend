@@ -16,7 +16,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         if (!user || !user.accessToken ||  user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });
 
         req.user = user;
-        req.isSuperAdmin = decodedToken.isSuperAdmin ? decodedToken.isSuperAdmin : false ;
+        req.isSuperAdmin = decodedToken?.isSuperAdmin ? decodedToken.isSuperAdmin : false ;
         // req.role = decodedToken.role;       
         
         next();

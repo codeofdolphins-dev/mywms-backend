@@ -920,8 +920,7 @@ const permissions = [
   { permission: "drive:delete" },
 
   // permission
-  { permission: "permission:read" },
-  { permission: "permission:modify" },
+  { permission: "permission:read" }
 ]
 
 
