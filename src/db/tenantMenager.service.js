@@ -4,9 +4,9 @@ dotenv.config();
 import { Sequelize } from "sequelize";
 import pg from "pg";
 import { LRUCache } from "lru-cache";
-import defineAssociations from "../models/Association.js";
 import { defineRootModels, defineTenantModels } from "../models/index.model.js";
 import dataSeeder from "../helper/seeder.js";
+import defineAssociations from "../models/association.js"
 
 
 // ----------------------
