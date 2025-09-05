@@ -45,11 +45,8 @@ app.use(session({
   }
 }));
 
-
-import webRoutes from "./routes/index.route.js"
 import apiRoutes from "./routes/API/index.route.js"
 
-app.use("/", webRoutes);
 app.use("/api", apiRoutes);
 
 export { app }
