@@ -1,5 +1,4 @@
 // import { db_obj } from "./config.js";
-import "../models/Association.js"
 import { rootDB } from "./tenantMenager.service.js";
 
 

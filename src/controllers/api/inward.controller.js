@@ -1,13 +1,10 @@
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import bcrypt from "bcrypt"
-import renderPage from "../../utils/renderPage.js";
 
 
 // GET request
 
 // POST request
 const addItem = asyncHandler(async (req, res) => {
-    const { StockInward } = req.dbModels;
     try {
         const { barcode = "", brand = "", brandName = "", batch_no = "", qty = "", d_qty = "", s_qty = "", e_date = "" } = req.body;
 
@@ -45,20 +42,21 @@ const removeItem = asyncHandler(async (req, res) => {
 });
 
 const inwardSubmit = asyncHandler(async (req, res) => {
+    const { StockInward, StockInwardItem } = req.dbModels;
     try {
         const { order_no = "", invoice_no = "", t_pass_no = "", lr_no = "", vehicle = "", driver = "", status = "", indent_no = "" } = req.body;
 
-        if([order_no, invoice_no, lr_no, vehicle, driver, indent_no].some(item => item === "")) return res.status(500).json({ success: false, code: 500, message: "All fields are required" });
+        if ([order_no, invoice_no, lr_no, vehicle, driver, indent_no].some(item => item === "")) return res.status(500).json({ success: false, code: 500, message: "All fields are required" });
 
         const role = req.session.user.role.role;
 
         let company_id = "";
         let user_id = "";
 
-        if(role === "super-admin" || role === "company-admin"){
+        if (role === "super-admin" || role === "company-admin") {
             company_id = req.session.user.id;
             user_id = req.session.user.id;
-        }else{
+        } else {
             company_id = req.session.user.company_id;
             user_id = req.session.user.id;
         }
@@ -89,7 +87,6 @@ const inwardSubmit = asyncHandler(async (req, res) => {
         }
 
         delete req.session.inwardItems;
-        res.redirect('/inward');
 
     } catch (error) {
         console.log(error);
@@ -97,4 +94,14 @@ const inwardSubmit = asyncHandler(async (req, res) => {
     }
 });
 
-export { inwardFormView, addItem, removeItem, inwardSubmit }
+const createInward = asyncHandler(async (req, res) => {
+    const { StockInward, StockInwardItem } = req.dbModels;
+    try {
+        const { items = [] } = req.body;
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export { addItem, removeItem, inwardSubmit, createInward };
