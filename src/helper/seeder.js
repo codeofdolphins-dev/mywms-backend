@@ -1,4 +1,4 @@
-import { districts, permissions, roles, states } from "../../public/Dataset.js";
+import { districts, permissions, roles, states } from "../../public/dataset.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const dataSeeder = asyncHandler(async (models) => {
