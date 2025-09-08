@@ -1,5 +1,5 @@
 import Category from "./category.model.js";
-import CompanyDetails from "./companydetails.model.js";
+import CompanyDetails from "./companyDetails.model.js";
 import Tenant from "./main/Tenant.model.js"
 import District from "./district.model.js";
 import Driver from "./driver.model.js";
