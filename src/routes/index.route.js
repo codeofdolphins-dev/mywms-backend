@@ -11,8 +11,8 @@ import driverApi from "./driver.route.js";
 import superAdminApi from "./superAdmin.route.js";
 import inwardApi from "./inward.route.js";
 
-import { defineDbObject } from "../../middlewares/defineDBObject.middleware.js";
-import { defineUserScope } from "../../middlewares/defineUserScope.middleware.js";
+import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
+import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 
 const router = Router();
 

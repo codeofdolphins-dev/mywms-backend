@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { verifyPermission } from "../../middlewares/permission.middleware.js";
-import { verifyJWT } from "../../middlewares/auth.middleware.js"
-import { addVehicle, allVehicleList, deleteVehicle, editVehicle } from "../../controllers/api/vehicle.controller.js";
+import { verifyPermission } from "../middlewares/permission.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js"
+import { addVehicle, allVehicleList, deleteVehicle, editVehicle } from "../controllers/vehicle.controller.js";
 
 const router = Router();
 

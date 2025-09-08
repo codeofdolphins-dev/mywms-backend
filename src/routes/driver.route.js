@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { verifyPermission } from "../../middlewares/permission.middleware.js";
-import { verifyJWT } from "../../middlewares/auth.middleware.js";
-import { addDriver, deleteDriver, driverList, editDriver } from "../../controllers/api/driver.controller.js";
+import { verifyPermission } from "../middlewares/permission.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { addDriver, deleteDriver, driverList, editDriver } from "../controllers/driver.controller.js";
 
 const router = Router();
 

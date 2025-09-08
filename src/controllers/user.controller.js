@@ -1,4 +1,4 @@
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const currentUser = asyncHandler(async (req, res) => {
     const { User, CompanyDetails, IndividualDetails, Role, Permission } = req.dbModels;

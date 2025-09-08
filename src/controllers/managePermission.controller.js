@@ -1,4 +1,4 @@
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allAssignPermissions = asyncHandler(async (req, res) => {

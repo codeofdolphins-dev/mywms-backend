@@ -45,7 +45,7 @@ app.use(session({
   }
 }));
 
-import apiRoutes from "./routes/API/index.route.js"
+import apiRoutes from "./routes/index.route.js";
 
 app.use("/api", apiRoutes);
 

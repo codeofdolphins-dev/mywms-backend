@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import { db_obj } from "../../db/config.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { db_obj } from "../db/config.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 
 // GET request

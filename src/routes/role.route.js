@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { addRole, allRoles, assignRole, deleteRole, editRole, removeRole } from "../../controllers/api/role.controller.js";
-import { verifyJWT } from "../../middlewares/auth.middleware.js";
-import { verifyPermission } from "../../middlewares/permission.middleware.js";
+import { addRole, allRoles, assignRole, deleteRole, editRole, removeRole } from "../controllers/role.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyPermission } from "../middlewares/permission.middleware.js";
 
 const router = Router();
 

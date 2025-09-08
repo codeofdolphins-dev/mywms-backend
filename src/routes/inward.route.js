@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createInward } from "../../controllers/api/inward.controller.js";
+import { createInward } from "../controllers/inward.controller.js";
 
 const router = Router();
 

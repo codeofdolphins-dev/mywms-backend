@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 // GET request

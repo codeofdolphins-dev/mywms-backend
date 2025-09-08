@@ -1,6 +1,6 @@
-import District from "../../models/district.model.js";
-import State from "../../models/state.model.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import District from "../models/district.model.js";
+import State from "../models/state.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const getAllStates = asyncHandler(async (_, res) => {
     try {

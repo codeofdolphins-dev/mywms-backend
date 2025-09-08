@@ -1,10 +1,8 @@
-import { generateDatabase, rootDB } from "../../db/tenantMenager.service.js";
-import { asyncHandler } from "../../utils/asyncHandler.js"
+import { generateDatabase } from "../db/tenantMenager.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js"
 
 const register = asyncHandler(async (req, res) => {
-
-    const { Tenant } = req.dbModels
-
+    const { Tenant } = req.dbModels;
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ success: false, code: 400, message: "email must required!!!" });

@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const defineUserScope = asyncHandler( async (req, res, next) => {
     try {
-
         const tenantDB = req.headers["x-tenant-id"];
         if(tenantDB){
             return next();
@@ -20,7 +19,7 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
         }else{
             const tenant = await models.Tenant.findOne({ where: { email }, attributes: ["tenant"] });
             req.headers["x-tenant-id"] = tenant.tenant;
-            req.scope = "tenant";          
+            req.scope = "tenant";
         }
 
         return next();

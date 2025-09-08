@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { upload } from "../../middlewares/multer.middleware.js";
-import { forgetPassword, login, logout, register_company, request_otp, resetPassword, verify_otp } from "../../controllers/api/auth.controller.js";
-import { verifyJWT } from "../../middlewares/auth.middleware.js";
-import { defineUserScope } from "../../middlewares/defineUserScope.middleware.js";
-import { defineDbObject } from "../../middlewares/defineDBObject.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { forgetPassword, login, logout, register_company, request_otp, resetPassword, verify_otp } from "../controllers/auth.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
+import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 

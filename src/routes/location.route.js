@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createDistrictsBulk, createStatesBulk, getAllDistricts, getAllStates } from "../../controllers/api/location.controller.js";
+import { createDistrictsBulk, createStatesBulk, getAllDistricts, getAllStates } from "../controllers/location.controller.js";
 
 const router = Router();
 
