@@ -1,5 +1,5 @@
 import Category from "./category.model.js";
-import CompanyDetails from "./companyDetails.model.js";
+import CompanyDetails from "./companydetails.model.js";
 import Tenant from "./main/Tenant.model.js"
 import District from "./district.model.js";
 import Driver from "./driver.model.js";
@@ -14,7 +14,7 @@ import UserRoles from "./userRoles.joinModel.js";
 import Vehicle from "./vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
 import StockInwardItem from "./stockInwardItem.model.js";
-import IndividualDetails from "./IndividualDetails.model.js";
+import IndividualDetails from "./individualDetails.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
