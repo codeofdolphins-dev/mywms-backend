@@ -37,14 +37,7 @@ export async function rootDB() {
         dialect: "postgres",
         logging: console.log,
     });
-
-    console.log("🔑 DB CONFIG:", {
-        host: process.env.PG_DB_HOST,
-        user: process.env.PG_DB_USER,
-        pass: process.env.PG_DB_PASSWORD,
-        db: "mywms",
-        port: process.env.PG_DB_PORT,
-    });
+    
 
     const models = defineRootModels(rootSequelize);
     defineAssociations(models);
@@ -78,7 +71,7 @@ export async function generateDatabase(dbName) {
             host: process.env.PG_DB_HOST,
             port: process.env.PG_DB_PORT,
             database: "mywms",
-
+            
         });
         await client.connect();
 

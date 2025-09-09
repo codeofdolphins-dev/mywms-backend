@@ -6,10 +6,10 @@ import connectRootDB from './db/connection.js';
 
 connectRootDB()
 .then(() => {
-    const port = process.env.PORT || 4001;
+    const port = process.env.PORT || 4000;
     
     app.listen(port, () => {
-        console.log(`app is running on http://localhost:${port}`);
+        console.log(`app is running on port: ${port}`);
         
     })
 })
