@@ -7,10 +7,11 @@ import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 
-router.route("/login").post(defineUserScope, defineDbObject, login);
+router.route("/register-company").post(upload.single("image"), defineUserScope, defineDbObject, register_company);
 
-router.use(defineDbObject);
-router.route("/register-company").post(upload.single("image"), register_company);
+router.use(defineUserScope, defineDbObject);
+
+router.route("/login").post(login);
 router.route("/request-otp").post(request_otp);
 router.route("/verify-otp").post(verify_otp);
 router.route("/forget-password").post(forgetPassword);

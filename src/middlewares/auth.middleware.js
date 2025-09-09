@@ -17,9 +17,13 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
         req.user = user;
         req.isSuperAdmin = decodedToken?.isSuperAdmin ? decodedToken.isSuperAdmin : false ;
-        // req.role = decodedToken.role;       
+        // req.role = decodedToken.role;
+
+        console.log(req.user);
+        console.log(req.isSuperAdmin);
         
-        next();
+        
+        // next();
 
     } catch (error) {
         return res.status(500).json({ success: false, code: 500, message: error.message });

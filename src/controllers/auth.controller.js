@@ -90,11 +90,14 @@ const login = asyncHandler(async (req, res) => {
             const roles = await user.getRoles();
 
             const roleName = roles.map(role => role.role);
+            const access = ["company/owner", "admin"];
+            const isSuperAdmin = access.some(role => roleName.includes(role));
 
             const token = jwt.sign(
                 {
                     id: user.id,
-                    role: roleName
+                    role: roleName,
+                    isSuperAdmin
                 },
                 process.env.TOKEN_SECRET,
                 {
@@ -198,9 +201,9 @@ const forgetPassword = asyncHandler(async (req, res) => {
             };
 
             return res
-            .status(200)
-            .clearCookie("is_otp", options)
-            .json({ success: true, code: 200, message: "Password changed Successfully." });
+                .status(200)
+                .clearCookie("is_otp", options)
+                .json({ success: true, code: 200, message: "Password changed Successfully." });
         }
 
         return res.status(400).json({ success: false, code: 400, message: "Link Expired!!! Verify email again." });

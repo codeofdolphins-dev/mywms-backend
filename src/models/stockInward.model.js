@@ -3,7 +3,6 @@ import { DataTypes } from "sequelize";
 
 function StockInward(sequelize){ 
 return sequelize.define("StockInward", {
-    company_id: DataTypes.INTEGER,
     user_id: DataTypes.INTEGER,
     order_no: DataTypes.STRING,
     invoice_no: DataTypes.STRING,
@@ -11,7 +10,10 @@ return sequelize.define("StockInward", {
     lr_no: DataTypes.STRING,
     vehicle_id: DataTypes.INTEGER,
     driver_id: DataTypes.INTEGER,
-    status_type: DataTypes.STRING,
+    status_type: {
+        type: DataTypes.STRING,
+        defaultValue: "local"
+    },
     indent_no: DataTypes.STRING,
 });
 }
