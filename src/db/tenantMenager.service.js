@@ -38,14 +38,6 @@ export async function rootDB() {
         logging: console.log,
     });
 
-    console.log("🔑 DB CONFIG:", {
-        host: process.env.PG_DB_HOST,
-        user: process.env.PG_DB_USER,
-        pass: process.env.PG_DB_PASSWORD,
-        db: "mywms",
-        port: process.env.PG_DB_PORT,
-    });
-
     const models = defineRootModels(rootSequelize);
     defineAssociations(models);
     // await rootSequelize.sync({ force: true });
