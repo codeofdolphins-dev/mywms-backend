@@ -26,16 +26,12 @@ const verifyPermission = (purpose) => {
             return res.status(401).json({ success: false, message: "User not found" });
         }
 
-        const userRoles = user.roles.map(r => r.role)
-
         const userPermissions = user.roles.flatMap(role =>
             role.permissions.map(p => p.permission)
         );
 
         // admin bypass
-        const isAdmin = ["admin", "company/owner"].some(role => userRoles.includes(role));
-
-        if (isAdmin) {
+        if (req.isAdmin) {
             return next();
         }
 

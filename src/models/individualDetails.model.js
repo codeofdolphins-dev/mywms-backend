@@ -15,6 +15,10 @@ function IndividualDetails(sequelize) {
       type: DataTypes.STRING,
       allowNull: true
     },
+    full_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     phone: {
       type: DataTypes.STRING,
       allowNull: true
@@ -38,10 +42,6 @@ function IndividualDetails(sequelize) {
     profile_image: {
       type: DataTypes.STRING,
       allowNull: true
-    },
-    company_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
     }
   });
 }

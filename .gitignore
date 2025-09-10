@@ -24,3 +24,7 @@ coverage/
 
 # database
 *.mwb.bak
+
+# static data
+public/user/*
+!public/user/.gitkeep

@@ -17,7 +17,8 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
         const tenant = await models.Tenant.findOne({ where: { email }, attributes: ["tenant"] });        
 
         if(user){
-            req.scope = "root";          
+            req.headers["x-tenant-id"] = 'mywms';
+            req.scope = "root";
         }else if (tenant){
             req.headers["x-tenant-id"] = tenant.tenant;
             req.scope = "tenant";

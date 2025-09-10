@@ -8,7 +8,9 @@ import { defineRootModels, defineTenantModels } from "../models/index.model.js";
 import dataSeeder from "../helper/seeder.js";
 
 import defineAssociations from "../models/association.js";
+import { permissions, roles } from '../../public/dataset.js';
 
+let rootCache = null;
 
 // ----------------------
 // 🔹 LRU Cache Setup
@@ -31,32 +33,40 @@ const tenantCache = new LRUCache({
 // 🔹 Root Database
 // ----------------------
 export async function rootDB() {
+
+    if (rootCache) {
+        console.log("👑 💾 connection catched...");
+        return rootCache;
+    }
+
+    // const rootSequelize = new Sequelize("mywms", "root", "", {
+    //     host: "localhost",
+    //     dialect: "mysql",
+    //     logging: console.log,
+    // });
+
+    // const rootSequelize = new Sequelize("mywms", "postgres", "1", {
+    //     host: "localhost",
+    //     port: 5432,
+    //     dialect: "postgres",
+    //     logging: console.log,
+    // });
+
     const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
         host: process.env.PG_DB_HOST,
         port: process.env.PG_DB_PORT,
         dialect: "postgres",
         logging: console.log,
     });
-    
+
 
     const models = defineRootModels(rootSequelize);
     defineAssociations(models);
-    // await rootSequelize.sync({ force: true });
+    
 
+    rootCache = { rootSequelize, models };
 
-    const recordCount = await models.Role.count();
-
-    if (recordCount === 0) {
-        console.log("👑 💾 Start data seeding...");
-        await dataSeeder(models);
-        console.log("👑 ✅ Data seeded Successfully.");
-    } else {
-        console.log("👑 🛠️  Data already seeded. Skipping...");
-    }
-
-    const root = { rootSequelize, models };
-
-    return root;
+    return rootCache;
 }
 
 
@@ -71,7 +81,7 @@ export async function generateDatabase(dbName) {
             host: process.env.PG_DB_HOST,
             port: process.env.PG_DB_PORT,
             database: "mywms",
-            
+
         });
         await client.connect();
 
@@ -89,7 +99,8 @@ export async function generateDatabase(dbName) {
 
         await sequelize.sync();
         console.log("👷 💾 Start data seeding...");
-        await dataSeeder(models);
+        await models.Permission.bulkCreate(permissions);
+        await models.Role.bulkCreate(roles);
         console.log("👷 ✅ Data seeded Successfully.");
 
     } catch (error) {

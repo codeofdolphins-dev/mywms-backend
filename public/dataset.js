@@ -895,7 +895,8 @@ const districts = [
 
 const roles = [
   { role: "company/owner" },
-  { role: "user" }
+  { role: "user" },
+  { role: "admin" },
 ]
 
 const permissions = [

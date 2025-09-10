@@ -1,10 +1,11 @@
-import District from "../models/district.model.js";
-import State from "../models/state.model.js";
+import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+
+const { models } = await rootDB();
+const { State, District } = models
 
 const getAllStates = asyncHandler(async (_, res) => {
     try {
-
         const state = await State.findAll({});
 
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully", data: state });

@@ -17,18 +17,18 @@ import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 const router = Router();
 
 router.use("/auth", authApi);
+router.use("/location", locationApi);
+
 
 router.use(defineUserScope, defineDbObject);
 
+router.use("/vehicle", vehicleApi);
+router.use("/driver", driverApi);
 router.use("/super-admin", superAdminApi);
-
 router.use("/user", userApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
-router.use("/location", locationApi);
-router.use("/vehicle", vehicleApi);
-router.use("/driver", driverApi);
 router.use("/inward", inwardApi);
 
 

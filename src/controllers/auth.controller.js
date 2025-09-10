@@ -1,12 +1,12 @@
 import jwt from "jsonwebtoken";
-import { db_obj } from "../db/config.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
+import { rootDB } from "../db/tenantMenager.service.js";
 
 // GET request
 const logout = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
     try {
-
         const { id } = req.user;
 
         await User.update(
@@ -26,11 +26,9 @@ const logout = asyncHandler(async (req, res) => {
 // POST request
 const register_company = asyncHandler(async (req, res) => {
     const dbObject = req.dbObject;
-    const dbModels = req.dbModels;
-
     const transaction = await dbObject.transaction();
 
-    const { CompanyDetails, Role, User } = dbModels;
+    const { CompanyDetails, Role, User } = req.dbModels;
     try {
         const { email = "", password = "", c_name = "", ph_no = "" } = req.body;
         const profile_image = req?.file?.filename || null;
@@ -72,6 +70,67 @@ const register_company = asyncHandler(async (req, res) => {
     }
 });
 
+const register_employee = asyncHandler(async (req, res) => {
+    const dbObject = req.dbObject;
+    const transaction = await dbObject.transaction();
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const { IndividualDetails, Role, User } = req.dbModels;
+    try {
+        const { email = "", password = "", full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "" } = req.body;
+        const profile_image = req?.file?.filename || null;
+        const dbName = req.headers["x-tenant-id"];
+
+        if ([email, password, full_name].some(field => field === "")) {
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        };
+
+        const userRole = await Role.findOne({ where: { role: "user" } }, { transaction });
+        if (!userRole) return res.status(400).json({ success: false, code: 400, message: "Role 'user' not found. Make sure roles are seeded." });
+
+        const isRegister = await User.findOne({ where: { email } }, { transaction });
+        if (isRegister) return res.status(400).json({ success: false, code: 400, message: `Employee with email: ${email} already exists!!!` });
+
+        const encryptPassword = await hashPassword(password);
+
+        const user = await User.create({
+            email,
+            password: encryptPassword,
+        }, { transaction });
+
+        await IndividualDetails.create({
+            user_id: user.id,
+            first_name: full_name.split(" ")[0],
+            last_name: full_name.split(" ")[1],
+            full_name,
+            phone,
+            address,
+            state_id,
+            district_id,
+            pincode,
+            profile_image
+        }, { transaction });
+
+        await user.addRole(userRole, { transaction });
+
+        await Tenant.create({ tenant: dbName, email }, { transaction: rootTransaction });
+
+        await transaction.commit();
+        await rootTransaction.commit();
+
+        if (user) return res.status(200).json({ success: true, code: 200, message: "Employee Register Successfully." });
+
+    } catch (error) {
+        if (transaction) await transaction.rollback();
+        if (rootTransaction) await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 const login = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
@@ -90,14 +149,14 @@ const login = asyncHandler(async (req, res) => {
             const roles = await user.getRoles();
 
             const roleName = roles.map(role => role.role);
-            const access = ["company/owner", "admin"];
-            const isSuperAdmin = access.some(role => roleName.includes(role));
+            const isAdmin = ["admin", "company/owner"].some(role => roleName.includes(role));
+
 
             const token = jwt.sign(
                 {
                     id: user.id,
                     role: roleName,
-                    isSuperAdmin
+                    isAdmin
                 },
                 process.env.TOKEN_SECRET,
                 {
@@ -108,9 +167,9 @@ const login = asyncHandler(async (req, res) => {
             await User.update(
                 { accessToken: token },
                 { where: { email } }
-            );
+            );           
 
-            return res.status(200).json({ success: true, code: 200, message: "Login Successfully", token: token });
+            return res.status(200).json({ success: true, code: 200, message: "Login Successfully", token: token, tenant: req.headers['x-tenant-id'] });
         }
         return res.status(401).json({ success: false, code: 401, message: "Wrong Password!" });
 
@@ -253,4 +312,4 @@ async function hashPassword(pass) {
 }
 
 
-export { register_company, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };
+export { register_company, register_employee, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };

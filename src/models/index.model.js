@@ -18,19 +18,19 @@ import IndividualDetails from "./individualDetails.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
+    User(rootSequelize);
+    StockInward(rootSequelize);
     Category(rootSequelize);
-    CompanyDetails(rootSequelize);
     District(rootSequelize);
+    State(rootSequelize);
     Driver(rootSequelize);
-    IndividualDetails(rootSequelize);
     Permission(rootSequelize);
-    Product(rootSequelize);
     Role(rootSequelize);
     RolePermissions(rootSequelize);
-    State(rootSequelize);
-    StockInward(rootSequelize);
+    Product(rootSequelize);
+    CompanyDetails(rootSequelize);
+    IndividualDetails(rootSequelize);
     StockInwardItem(rootSequelize);
-    User(rootSequelize);
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
     Warehouse(rootSequelize);
@@ -41,14 +41,14 @@ const defineRootModels = (rootSequelize) => {
 const defineTenantModels = (sequelize) => {
     Category(sequelize);
     CompanyDetails(sequelize);
-    District(sequelize);
+    // District(sequelize);
     Driver(sequelize);
     IndividualDetails(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);
     RolePermissions(sequelize);
-    State(sequelize);
+    // State(sequelize);
     StockInward(sequelize);
     StockInwardItem(sequelize);
     User(sequelize);

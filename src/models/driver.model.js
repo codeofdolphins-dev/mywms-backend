@@ -18,6 +18,10 @@ function Driver(sequelize) {
         address: {
             type: DataTypes.STRING,
             allowNull: false
+        },
+        owned_by: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         }
     });
 }

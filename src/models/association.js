@@ -53,76 +53,6 @@ const defineAssociations = (models) => {
 
     // ********************************************One-To-Many*********************************
 
-    IndividualDetails.belongsTo(CompanyDetails, {
-        foreignKey: "company_id",
-        as: "company",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    CompanyDetails.hasMany(IndividualDetails, {
-        foreignKey: "company_id",
-        as: "employees",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-
-    // district ↔ IndividualDetails (district has many users)
-    IndividualDetails.belongsTo(District, {
-        foreignKey: "district_id",
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-    District.hasMany(IndividualDetails, {
-        foreignKey: "district_id",
-        as: "district",
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-
-
-    // state ↔ IndividualDetails (state has many users)
-    IndividualDetails.belongsTo(State, {
-        foreignKey: "state_id",
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-    State.hasMany(IndividualDetails, {
-        foreignKey: "state_id",
-        as: "district",
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-
-    // stockInward.model.js
-    StockInward.belongsTo(Driver, {
-        foreignKey: 'driverId',
-        as: 'driver',
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-
-    Driver.hasMany(StockInward, {
-        foreignKey: 'driverId',
-        as: 'stockInwards',
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-
-    // stockInward.model.js
-    StockInward.belongsTo(Vehicle, {
-        foreignKey: 'vehicleId',
-        as: 'vehicle',
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
-
-    Vehicle.hasMany(StockInward, {
-        foreignKey: 'vehicleId',
-        as: 'stockInwards',
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE"
-    });
 
 
 
@@ -234,7 +164,6 @@ const defineAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-
 }
 
 export default defineAssociations;
