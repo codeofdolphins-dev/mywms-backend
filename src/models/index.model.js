@@ -1,20 +1,21 @@
 import Category from "./category.model.js";
 import CompanyDetails from "./companyDetails.model.js";
 import Tenant from "./main/tenant.model.js"
-import District from "./district.model.js";
-import Driver from "./driver.model.js";
+import District from "./main/district.model.js";
+import Driver from "./main/driver.model.js";
 import Permission from "./permission.model.js";
 import Product from "./product.model.js";
 import Role from "./role.model.js";
 import RolePermissions from "./rolePermissions.joinModel.js";
-import State from "./state.model.js";
+import State from "./main/state.model.js";
 import StockInward from "./stockInward.model.js";
 import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
-import Vehicle from "./vehicle.model.js";
+import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
 import StockInwardItem from "./stockInwardItem.model.js";
 import IndividualDetails from "./individualDetails.model.js";
+import Qty from "./qty.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -34,7 +35,8 @@ const defineRootModels = (rootSequelize) => {
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
     Warehouse(rootSequelize);
-
+    Qty(rootSequelize);
+    
     return rootSequelize.models;
 }
 
@@ -55,7 +57,8 @@ const defineTenantModels = (sequelize) => {
     UserRoles(sequelize);
     Vehicle(sequelize);
     Warehouse(sequelize);
-
+    Qty(sequelize);
+    
     return sequelize.models;
 }
 

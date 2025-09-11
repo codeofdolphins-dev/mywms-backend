@@ -19,6 +19,11 @@ function User(sequelize) {
     accessToken: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "user"
     }
   });
 }

@@ -62,10 +62,6 @@ function Warehouse(sequelize) {
         cat_id: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
-        },
-        company_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
         }
     })
 }

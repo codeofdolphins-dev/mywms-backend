@@ -10,6 +10,7 @@ import userApi from "./user.route.js";
 import driverApi from "./driver.route.js";
 import superAdminApi from "./superAdmin.route.js";
 import inwardApi from "./inward.route.js";
+import warehouseApi from "./warehouse.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -30,6 +31,7 @@ router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
 router.use("/inward", inwardApi);
+router.use("/warehouse", warehouseApi);
 
 
 export default router;

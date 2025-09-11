@@ -39,12 +39,14 @@ export async function rootDB() {
         return rootCache;
     }
 
+    // ############### local mysql ###############
     // const rootSequelize = new Sequelize("mywms", "root", "", {
     //     host: "localhost",
     //     dialect: "mysql",
     //     logging: console.log,
     // });
 
+    // ############### local postgresql ###############
     // const rootSequelize = new Sequelize("mywms", "postgres", "1", {
     //     host: "localhost",
     //     port: 5432,
@@ -52,6 +54,7 @@ export async function rootDB() {
     //     logging: console.log,
     // });
 
+    // ############### cloud postgresql ###############
     const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
         host: process.env.PG_DB_HOST,
         port: process.env.PG_DB_PORT,

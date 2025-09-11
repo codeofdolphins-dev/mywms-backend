@@ -16,7 +16,8 @@ const defineAssociations = (models) => {
         User,
         UserRoles,
         Vehicle,
-        Warehouse
+        Warehouse,
+        Qty
 
     } = models;
 
@@ -49,6 +50,34 @@ const defineAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
+
+    // User ↔ Warehouse
+    User.hasOne(Warehouse, {
+        foreignKey: "user_id",
+        as: "warehouse",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    
+    // product ↔ qty
+    Product.hasOne(Qty, {
+        foreignKey: "product_id",
+        as: "product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Qty.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "quantity",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"    
+    })
 
 
     // ********************************************One-To-Many*********************************

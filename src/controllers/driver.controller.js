@@ -120,11 +120,11 @@ const editDriver = asyncHandler(async (req, res) => {
         if (contact_no) replace_object.contact_no = contact_no.trim();
         if (address) replace_object.address = address.trim();
 
-        const isDeleted = await Driver.update(
+        const isUpdate = await Driver.update(
             replace_object,
             { where: { license_no, owned_by: dbName } }
         );
-        if(!isDeleted) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
+        if(!isUpdate) return res.status(403).json({ success: false, code: 403, message: "Updation not possible!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Details updated." });
 

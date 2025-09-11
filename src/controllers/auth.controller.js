@@ -48,6 +48,7 @@ const register_company = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
+            type: "company"
         }, { transaction });
 
         await CompanyDetails.create({
@@ -99,6 +100,7 @@ const register_employee = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
+            type: "employee"
         }, { transaction });
 
         await IndividualDetails.create({
