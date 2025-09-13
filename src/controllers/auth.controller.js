@@ -134,30 +134,46 @@ const register_employee = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-    const { User } = req.dbModels;
+    const { User, CompanyDetails, IndividualDetails, Role } = req.dbModels;
     try {
         const { email = "", password = "" } = req.body;
 
         if (!email || !password) return res.status(400).json({ success: false, code: 400, message: "Email and Password are required!" });
 
-        const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
-
-        if (!user) return res.status(400).json({ success: false, code: 400, message: "User Not Found!" });
+        const user = await User.findOne({
+            where: { email: email.toLowerCase().trim() },
+            attributes: ["id", "email", "password"],
+            include: [
+                {
+                    model: CompanyDetails,
+                    as: "companyDetails",
+                    attributes: ["c_name"]
+                },
+                {
+                    model: IndividualDetails,
+                    as: "individualDetails",
+                    attributes: ["full_name"]
+                },
+                {
+                    model: Role,
+                    as: "roles",
+                    attributes: ["role"],
+                    through: { attributes: [] }
+                }
+            ]
+        });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
         const is_password_matched = await bcrypt.compare(password, user.password);
 
         if (is_password_matched) {
-
-            const roles = await user.getRoles();
-
-            const roleName = roles.map(role => role.role);
-            const isAdmin = ["admin", "company/owner"].some(role => roleName.includes(role));
-
+            const roles = user.roles.map(role => role.role);
+            const isAdmin = ["admin", "company/owner"].some(role => user.roles.includes(role));
 
             const token = jwt.sign(
                 {
                     id: user.id,
-                    role: roleName,
+                    role: user.roles,
                     isAdmin
                 },
                 process.env.TOKEN_SECRET,
@@ -169,9 +185,25 @@ const login = asyncHandler(async (req, res) => {
             await User.update(
                 { accessToken: token },
                 { where: { email } }
-            );           
+            );
 
-            return res.status(200).json({ success: true, code: 200, message: "Login Successfully", token: token, tenant: req.headers['x-tenant-id'] });
+            const plainUser = user.get({ plain: true });
+
+            delete plainUser.password;
+            plainUser.roles = roles;
+
+            if (plainUser.companyDetails !== null) {
+                delete plainUser.individualDetails;
+                plainUser.c_name = plainUser.companyDetails.c_name;
+                delete plainUser.companyDetails;
+                
+            } else if (plainUser.individualDetails === null) {
+                delete plainUser.companyDetails;
+                plainUser.full_name = plainUser.individualDetails.full_name;
+                delete plainUser.individualDetails;
+            };
+
+            return res.status(200).json({ success: true, code: 200, message: "Login Successfully", token: token, tenant: req.headers['x-tenant-id'], data: plainUser });
         }
         return res.status(401).json({ success: false, code: 401, message: "Wrong Password!" });
 
