@@ -8,7 +8,7 @@ const router = Router();
 router.use(verifyJWT);
 
 
-router.route("/register").post(verifyPermission("tenant:create"), register);
+router.route("/register").post(verifyPermission("company:create"), register);
 
 
 export default router;

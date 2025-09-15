@@ -3,14 +3,28 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {    
-    const { User } = req.dbModels; 
+    const { User, CompanyDetails, IndividualDetails } = req.dbModels; 
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
         if (!token) return res.status(401).json({ success: false, code: 401, message: "Unauthorized request" });
 
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
         
-        const user = await User.findByPk(decodedToken?.id);
+        const user = await User.findByPk(
+            decodedToken?.id,
+            {
+                include: [
+                    {
+                        model: CompanyDetails,
+                        as: "companyDetails"
+                    },
+                    {
+                        model: IndividualDetails,
+                        as: "individualDetails"
+                    },
+                ]
+            }
+        );
 
         if (!user || !user.accessToken ||  user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });
 

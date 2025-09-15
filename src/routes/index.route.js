@@ -20,13 +20,13 @@ const router = Router();
 router.use("/auth", authApi);
 router.use("/location", locationApi);
 
+router.use("/user", userApi);
 
 router.use(defineUserScope, defineDbObject);
 
 router.use("/vehicle", vehicleApi);
 router.use("/driver", driverApi);
 router.use("/super-admin", superAdminApi);
-router.use("/user", userApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);

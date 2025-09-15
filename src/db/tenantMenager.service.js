@@ -5,9 +5,8 @@ import { Sequelize } from "sequelize";
 import pg from "pg";
 import { LRUCache } from "lru-cache";
 import { defineRootModels, defineTenantModels } from "../models/index.model.js";
-import dataSeeder from "../helper/seeder.js";
 
-import defineAssociations from "../models/association.js";
+import { defineRootAssociations, defineTenantAssociations } from "../models/association.js";
 import { permissions, roles } from '../../public/dataset.js';
 
 let rootCache = null;
@@ -64,7 +63,7 @@ export async function rootDB() {
 
 
     const models = defineRootModels(rootSequelize);
-    defineAssociations(models);
+    defineRootAssociations(models);
     
 
     rootCache = { rootSequelize, models };
@@ -144,7 +143,7 @@ export async function getTenantConnection(dbName) {
 
     // 4. Define models + associations
     const models = defineTenantModels(sequelize);
-    defineAssociations(models);
+    defineTenantAssociations(models);
 
     // 5. Save in cache
     const tenant = { sequelize, models };

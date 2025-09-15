@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { rootDB } from "../db/tenantMenager.service.js";
+import path from "path";
+import fs from "fs";
 
 // GET request
 const logout = asyncHandler(async (req, res) => {
@@ -29,9 +31,15 @@ const register_company = asyncHandler(async (req, res) => {
     const transaction = await dbObject.transaction();
 
     const { CompanyDetails, Role, User } = req.dbModels;
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
     try {
         const { email = "", password = "", c_name = "", ph_no = "" } = req.body;
         const profile_image = req?.file?.filename || null;
+        const dbName = req.headers["x-tenant-id"];
 
         if ([email, password, c_name].some(field => field === "")) {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
@@ -60,12 +68,30 @@ const register_company = asyncHandler(async (req, res) => {
 
         await user.addRole(companyRole, { transaction });
 
+        if (dbName === "mywms") {
+            const tenantsName = await TenantsName.create({ tenant: dbName }, { transaction: rootTransaction });
+            await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
+        } else {
+            await Tenant.update({
+                password,
+                companyName: c_name,
+                isOwner: true,
+            }, {
+                where: { email },
+                transaction: rootSequelize
+            });
+        }
+
+        await rootTransaction.commit();
         await transaction.commit();
 
-        if (user) return res.status(200).json({ success: true, code: 200, message: "Company Register Successfully." });
+        if (!user) return res.status(500).json({ success: false, code: 500, message: "Company Register Failed!!!" });
+
+        return res.status(200).json({ success: true, code: 200, message: "Company Register Successfully." });
 
     } catch (error) {
         if (transaction) await transaction.rollback();
+        if (rootTransaction) await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -76,7 +102,7 @@ const register_employee = asyncHandler(async (req, res) => {
     const transaction = await dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
-    const { Tenant } = models;
+    const { Tenant, TenantsName } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const { IndividualDetails, Role, User } = req.dbModels;
@@ -84,6 +110,9 @@ const register_employee = asyncHandler(async (req, res) => {
         const { email = "", password = "", full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "" } = req.body;
         const profile_image = req?.file?.filename || null;
         const dbName = req.headers["x-tenant-id"];
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } }, { transaction: rootTransaction });
+        if (!tenantsName) return res.status(501).json({ success: false, code: 501, message: "Not Implemented, database not found!!!" });
 
         if ([email, password, full_name].some(field => field === "")) {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
@@ -118,7 +147,7 @@ const register_employee = asyncHandler(async (req, res) => {
 
         await user.addRole(userRole, { transaction });
 
-        await Tenant.create({ tenant: dbName, email }, { transaction: rootTransaction });
+        await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
 
         await transaction.commit();
         await rootTransaction.commit();
@@ -168,7 +197,7 @@ const login = asyncHandler(async (req, res) => {
 
         if (is_password_matched) {
             const roles = user.roles.map(role => role.role);
-            const isAdmin = ["admin", "company/owner"].some(role => user.roles.includes(role));
+            const isAdmin = ["admin", "company/owner"].some(role => roles.includes(role));
 
             const token = jwt.sign(
                 {
@@ -196,8 +225,8 @@ const login = asyncHandler(async (req, res) => {
                 delete plainUser.individualDetails;
                 plainUser.c_name = plainUser.companyDetails.c_name;
                 delete plainUser.companyDetails;
-                
-            } else if (plainUser.individualDetails === null) {
+
+            } else if (plainUser.individualDetails !== null) {
                 delete plainUser.companyDetails;
                 plainUser.full_name = plainUser.individualDetails.full_name;
                 delete plainUser.individualDetails;
@@ -335,6 +364,43 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 });
 
+const delete_employee = asyncHandler(async (req, res) => {
+    const { User, IndividualDetails } = req.dbModels;
+    try {
+        const { targetEmail, adminPassword } = req.body;
+        if (!email || !adminPassword) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+
+        const user = await User.findOne({
+            where: { email: targetEmail },
+            include: [
+                {
+                    model: IndividualDetails,
+                    as: "individualDetails"
+                }
+            ]
+        });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+
+        const oldImagePath = path.join(
+            process.cwd(),
+            "public",
+            "user",
+            user.profile_image
+        );
+        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+
+        const isDeleted = await user.destory({ where: { email: targetEmail } });
+
+        if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion filled!!!" });
+
+        return res.status(200).json({ success: true, code: 200, message: "Employee successfully deleted." });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // helper methods
 function generateOTP() {
@@ -346,4 +412,4 @@ async function hashPassword(pass) {
 }
 
 
-export { register_company, register_employee, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };
+export { register_company, register_employee, delete_employee, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };

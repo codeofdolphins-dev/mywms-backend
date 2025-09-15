@@ -7,8 +7,21 @@ function Tenant(sequelize) {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    email: DataTypes.STRING,
-    tenant: DataTypes.STRING,
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    password: {
+      type: DataTypes.STRING
+    },
+    companyName: {
+      type: DataTypes.STRING
+    },
+    isOwner: {
+      type: DataTypes.BOOLEAN,
+      default: false
+    },
+    tenant_id: DataTypes.UUID,
   });
 };
 export default Tenant;

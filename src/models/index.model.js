@@ -16,6 +16,7 @@ import Warehouse from "./warehouse.model.js";
 import StockInwardItem from "./stockInwardItem.model.js";
 import IndividualDetails from "./individualDetails.model.js";
 import Qty from "./qty.model.js";
+import TenantsName from "./main/tenantsName.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -36,6 +37,7 @@ const defineRootModels = (rootSequelize) => {
     Vehicle(rootSequelize);
     Warehouse(rootSequelize);
     Qty(rootSequelize);
+    TenantsName(rootSequelize);
     
     return rootSequelize.models;
 }

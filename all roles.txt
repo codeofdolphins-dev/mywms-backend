@@ -7,10 +7,16 @@ role:update     # edit role
 role:delete     # delete role
 
 permissions
-CRUD
+:CRUD
 
 Vehicle
-CRUD
+:CRUD
 
 Manage Permission
 :assign
+
+company
+:update :create
+
+employee
+:CRUD
