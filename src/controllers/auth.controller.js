@@ -45,10 +45,10 @@ const register_company = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         };
 
-        const companyRole = await Role.findOne({ where: { role: "company/owner" } }, { transaction });
+        const companyRole = await Role.findOne({ where: { role: "company/owner" }, transaction });
         if (!companyRole) return res.status(400).json({ success: false, code: 400, message: "Role 'company' not found. Make sure roles are seeded." });
 
-        const isRegister = await User.findOne({ where: { email } }, { transaction });
+        const isRegister = await User.findOne({ where: { email }, transaction });
         if (isRegister) return res.status(400).json({ success: false, code: 400, message: `Company with email: ${email} already exists!!!` });
 
         const encryptPassword = await hashPassword(password);
@@ -70,15 +70,19 @@ const register_company = asyncHandler(async (req, res) => {
 
         if (dbName === "mywms") {
             const tenantsName = await TenantsName.create({ tenant: dbName }, { transaction: rootTransaction });
-            await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
+            await Tenant.create({
+                tenant_id: tenantsName.id,
+                email,
+                isOwner: true,
+                companyName: c_name
+            }, { transaction: rootTransaction });
         } else {
             await Tenant.update({
                 password,
                 companyName: c_name,
-                isOwner: true,
             }, {
                 where: { email },
-                transaction: rootSequelize
+                transaction: rootTransaction
             });
         }
 
@@ -368,7 +372,8 @@ const delete_employee = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
     try {
         const { targetEmail, adminPassword } = req.body;
-        if (!email || !adminPassword) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        if (!targetEmail || !adminPassword) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        const userDetails = req.user;
 
         const user = await User.findOne({
             where: { email: targetEmail },
@@ -381,15 +386,23 @@ const delete_employee = asyncHandler(async (req, res) => {
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
-        const oldImagePath = path.join(
-            process.cwd(),
-            "public",
-            "user",
-            user.profile_image
-        );
-        if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+        const admin = await User.findByPk(userDetails.id);
 
-        const isDeleted = await user.destory({ where: { email: targetEmail } });
+        const is_password_matched = await bcrypt.compare(adminPassword, admin.password);
+
+        if (!is_password_matched) return res.status(401).json({ success: false, code: 401, message: "Wrong password!!!" });
+
+        if (user.individualDetails.profile_image !== null) {
+            const oldImagePath = path.join(
+                process.cwd(),
+                "public",
+                "user",
+                user.individualDetails.profile_image
+            );
+            if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+        }
+
+        const isDeleted = await user.destroy({ where: { email: targetEmail } });
 
         if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion filled!!!" });
 

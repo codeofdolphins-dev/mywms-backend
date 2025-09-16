@@ -15,11 +15,16 @@ function Tenant(sequelize) {
       type: DataTypes.STRING
     },
     companyName: {
-      type: DataTypes.STRING
+      type: DataTypes.STRING,
+      allowNull: true
     },
     isOwner: {
       type: DataTypes.BOOLEAN,
-      default: false
+      defaultValue: false
+    },
+    status: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     },
     tenant_id: DataTypes.UUID,
   });

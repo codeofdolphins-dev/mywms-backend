@@ -921,7 +921,31 @@ const permissions = [
   { permission: "drive:delete" },
 
   // permission
-  { permission: "permission:read" }
+  { permission: "permission:read" },
+  { permission: "permission:modify" },
+
+  // company
+  { permission: "company:create" },
+  { permission: "company:read" },
+  { permission: "company:update" },
+  { permission: "company:delete" },
+
+  // employee
+  { permission: "employee:create" },
+  { permission: "employee:read" },
+  { permission: "employee:update" },
+  { permission: "employee:delete" },
+
+  // inward
+  { permission: "inward:create" },
+  { permission: "inward:read" },
+  { permission: "inward:delete" },
+  
+  //warehouse
+  { permission: "warehouse:create" },
+  { permission: "warehouse:read" },
+  { permission: "warehouse:update" },
+  { permission: "warehouse:delete" },
 ]
 
 

@@ -6,17 +6,26 @@ role:read       # read role
 role:update     # edit role
 role:delete     # delete role
 
-permissions
-:CRUD
-
 Vehicle
-:CRUD
+:C-R-U-D
+
+driver
+:C-R-U-D
+
+permissions
+:C-R-U-D
 
 Manage Permission
-:assign
+:R  :modify
 
 company
-:update :create
+:C-R-U-D
 
 employee
-:CRUD
+:C-R-U-D
+
+inward
+:C-R-D
+
+warehouse
+:C-R-U-D

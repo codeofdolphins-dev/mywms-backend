@@ -152,6 +152,61 @@ export async function getTenantConnection(dbName) {
     return tenant;
 }
 
+// ----------------------
+// 🔻 Delete Tenant Database
+// ----------------------
+export async function deleteTenantDatabase(dbName) {
+    if (!dbName) throw new Error("Tenant database name is required!!!");
+
+    try {
+        const client = new pg.Client({
+            user: process.env.PG_DB_USER,
+            password: process.env.PG_DB_PASSWORD,
+            host: process.env.PG_DB_HOST,
+            port: process.env.PG_DB_PORT,
+            database: "mywms", // connect to root DB
+        });
+
+        await client.connect();
+
+        // Check if DB exists
+        const result = await client.query(
+            `SELECT 1 FROM pg_database WHERE datname='${dbName}'`
+        );
+
+        if (result.rowCount === 0) {
+            await client.end();
+            throw new Error(`⚠️ Database "${dbName}" does not exist.`);
+        }
+
+        console.log(`🛑 Terminating active connections to "${dbName}"...`);
+        await client.query(`
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = '${dbName}' AND pid <> pg_backend_pid();
+        `);
+
+        console.log(`🗑️  Dropping database: ${dbName}`);
+        await client.query(`DROP DATABASE "${dbName}"`);
+
+        await client.end();
+
+        // Clean up the cache if the DB was cached
+        if (tenantCache.has(dbName)) {
+            const tenant = tenantCache.get(dbName);
+            await tenant?.sequelize?.close();
+            tenantCache.delete(dbName);
+            console.log(`🧹 Removed "${dbName}" from cache`);
+        }
+
+        console.log(`✅ Successfully deleted database: ${dbName}`);
+    } catch (error) {
+        console.error(`❌ Error deleting database "${dbName}"`, error);
+        throw error;
+    }
+}
+
+
 
 // ----------------------
 // 🔹 Helper: check if DB exists
