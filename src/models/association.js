@@ -1,27 +1,42 @@
 const defineRootAssociations = (models) => {
-
     const {
         Category,
         CompanyDetails,
-        District,
-        Driver,
         IndividualDetails,
         Permission,
         Product,
         Role,
         RolePermissions,
-        State,
         StockInward,
         StockInwardItem,
         User,
         UserRoles,
-        Vehicle,
         Warehouse,
         Qty,
         Tenant,
-        TenantsName
-
+        TenantsName,
+        Requisition,
+        RequisitionItem,
+        HSN
     } = models;
+
+
+    // ******************************************** Self-Association *********************************
+
+    // category → category
+    Category.hasMany(Category, {
+        as: "subcategories",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Category.belongsTo(Category, {
+        as: "parent",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************One-To-One*********************************
 
@@ -95,10 +110,48 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // product ↔ requisitionItem
+    Product.hasOne(RequisitionItem, {
+        foreignKey: "barcode_id",
+        as: "requisitionItem", // Product → RequisitionItem
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    RequisitionItem.belongsTo(Product, {
+        foreignKey: "barcode_id",
+        as: "product", // RequisitionItem → Product
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // hsn ↔ product
+    HSN.hasOne(Product, {
+        foreignKey: "hsn_id",
+        as: "product", // singular, since it's a hasOne relationship
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(HSN, {
+        foreignKey: "hsn_id",
+        as: "hsn", // or just "hsn" if not already used
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
 
 
     // ********************************************One-To-Many*********************************
 
+    // requisition <-> requisitionItem
+    RequisitionItem.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "requisition"
+    });
+    Requisition.hasMany(RequisitionItem, {
+        foreignKey: "requisition_id",
+        as: "items",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
 
 
 
@@ -119,34 +172,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Company - Products
-    CompanyDetails.hasMany(Product, {
-        foreignKey: 'company_id',
-        as: 'products',
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Product.belongsTo(CompanyDetails, {
-        foreignKey: 'company_id',
-        as: 'company',
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    // company - stosk Inward
-    CompanyDetails.hasMany(StockInward, {
-        foreignKey: "company_id",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    StockInward.belongsTo(CompanyDetails, {
-        foreignKey: "company_id",
-        as: "company",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
     // User - stock inward
     User.hasMany(StockInward, {
         foreignKey: "user_id",
@@ -159,6 +184,39 @@ const defineRootAssociations = (models) => {
         as: "user",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
+    });
+
+    // Category ↔ Product
+    Category.hasMany(Product, {
+        foreignKey: "category_id",
+        as: "products",
+    });
+    Product.belongsTo(Category, {
+        foreignKey: "category_id",
+        as: "category",
+    });
+
+    Warehouse.hasMany(User, {
+        foreignKey: "warehouse_id",
+        as: "employees", // plural because it's a hasMany relationship
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    User.belongsTo(Warehouse, {
+        foreignKey: "warehouse_id",
+        as: "workplace", // singular because each user belongs to one warehouse
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // user <-> requisition
+    User.hasMany(Requisition, {
+        foreignKey: "created_by",
+        as: "requisitionDetails"
+    });
+    Requisition.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "createdBy",
     });
 
 
@@ -217,23 +275,36 @@ const defineTenantAssociations = (models) => {
     const {
         Category,
         CompanyDetails,
-        District,
-        Driver,
         IndividualDetails,
         Permission,
         Product,
         Role,
         RolePermissions,
-        State,
         StockInward,
         StockInwardItem,
         User,
         UserRoles,
-        Vehicle,
         Warehouse,
-        Qty
+        Qty,
+        RequisitionItem,
+        Requisition,
+        HSN
 
     } = models;
+
+
+    // ******************************************** Self-Association *********************************
+
+    // category → category
+    Category.hasMany(Category, {
+        as: "subcategories",
+        foreignKey: "parent_id",
+    });
+    Category.belongsTo(Category, {
+        as: "parent",
+        foreignKey: "parent_id",
+    });
+
 
     // ********************************************One-To-One*********************************
 
@@ -293,9 +364,48 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     })
 
+    // product ↔ requisitionItem
+    Product.hasOne(RequisitionItem, {
+        foreignKey: "barcode_id",
+        as: "requisitionItem", // Product → RequisitionItem
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    RequisitionItem.belongsTo(Product, {
+        foreignKey: "barcode_id",
+        as: "product", // RequisitionItem → Product
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // hsn ↔ product
+    HSN.hasOne(Product, {
+        foreignKey: "hsn_id",
+        as: "product", // singular, since it's a hasOne relationship
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(HSN, {
+        foreignKey: "hsn_id",
+        as: "hsn", // or just "hsn" if not already used
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************One-To-Many*********************************
 
+    // requisition <-> requisitionItem
+    RequisitionItem.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "requisition",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Requisition.hasMany(RequisitionItem, {
+        foreignKey: "requisition_id",
+        as: "items"
+    });
 
 
 
@@ -316,34 +426,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Company - Products
-    CompanyDetails.hasMany(Product, {
-        foreignKey: 'company_id',
-        as: 'products',
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Product.belongsTo(CompanyDetails, {
-        foreignKey: 'company_id',
-        as: 'company',
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    // company - stosk Inward
-    CompanyDetails.hasMany(StockInward, {
-        foreignKey: "company_id",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    StockInward.belongsTo(CompanyDetails, {
-        foreignKey: "company_id",
-        as: "company",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
     // User - stock inward
     User.hasMany(StockInward, {
         foreignKey: "user_id",
@@ -356,6 +438,39 @@ const defineTenantAssociations = (models) => {
         as: "user",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
+    });
+
+    // Category ↔ Product
+    Category.hasMany(Product, {
+        foreignKey: "category_id",
+        as: "products",
+    });
+    Product.belongsTo(Category, {
+        foreignKey: "category_id",
+        as: "category",
+    });
+
+    Warehouse.hasMany(User, {
+        foreignKey: "warehouse_id",
+        as: "employees", // plural because it's a hasMany relationship
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    User.belongsTo(Warehouse, {
+        foreignKey: "warehouse_id",
+        as: "workplace", // singular because each user belongs to one warehouse
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // user <-> requisition
+    User.hasMany(Requisition, {
+        foreignKey: "created_by",
+        as: "requisitionDetails"
+    });
+    Requisition.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "createdBy",
     });
 
 

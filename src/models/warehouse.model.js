@@ -58,10 +58,6 @@ function Warehouse(sequelize) {
         long: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
-        },
-        cat_id: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
         }
     })
 }

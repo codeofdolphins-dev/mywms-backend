@@ -1,4 +1,3 @@
-// import { db_obj } from "./config.js";
 import dataSeeder from "../helper/seeder.js";
 import { rootDB } from "./tenantMenager.service.js";
 

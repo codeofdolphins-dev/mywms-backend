@@ -3,99 +3,63 @@ import { DataTypes } from "sequelize";
 
 function Product(sequelize) {
     return sequelize.define('Product', {
-        item_name: {
+        name: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-
-        hsn_code: {
-            type: DataTypes.STRING,
+        category_id: {
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
-
+        sku: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true,
+        },
+        gst_type: {
+            type: DataTypes.ENUM("include", "exclude"),
+            defaultValue: "exclude",
+        },
+        hsn_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         barcode: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            unique: true,
+        },
+        batch_no: {
             type: DataTypes.STRING,
             allowNull: true,
         },
-
-        sub_category: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        manufacture: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        item_mrp: {
-            type: DataTypes.FLOAT,
-            allowNull: true,
-        },
-
-        aed: {
-            type: DataTypes.FLOAT,
-            allowNull: true,
-        },
-
-        pack_size: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        liquor_kind: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        measure: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        category: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        brand: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
         description: {
             type: DataTypes.STRING,
+            allowNull: true
+        },
+        unit_of_measure: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        cost_price: {
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
-
-        landing_cost: {
-            type: DataTypes.FLOAT,
+        selling_price: {
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
-
+        reorder_level: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
         status: {
-            type: DataTypes.STRING,
-            allowNull: true,
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
         },
-
-        brand_owner: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
-        distributor: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-
         photo: {
             type: DataTypes.STRING,
             allowNull: true,
-        },
-
-        company_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
         },
     });
 }

@@ -24,6 +24,10 @@ function User(sequelize) {
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: "user"
+    },
+    warehouse_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   });
 }

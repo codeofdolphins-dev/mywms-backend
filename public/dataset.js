@@ -946,6 +946,32 @@ const permissions = [
   { permission: "warehouse:read" },
   { permission: "warehouse:update" },
   { permission: "warehouse:delete" },
+  
+  // requisition
+  { permission: "requisition:create" },
+  { permission: "requisition:read" },
+  { permission: "requisition:update" },
+  { permission: "requisition:delete" },
+  { permission: "requisition-item:update" },
+  
+  // hsn
+  { permission: "hsn:create" },
+  { permission: "hsn:read" },
+  { permission: "hsn:update" },
+  { permission: "hsn:delete" },
+  
+  // product
+  { permission: "product:create" },
+  { permission: "product:read" },
+  { permission: "product:update" },
+  { permission: "product:update-batch" },
+  { permission: "product:delete" },
+ 
+  // category
+  { permission: "category:create" },
+  { permission: "category:read" },
+  { permission: "category:update" },
+  { permission: "category:delete" },
 ]
 
 

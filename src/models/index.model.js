@@ -17,6 +17,9 @@ import StockInwardItem from "./stockInwardItem.model.js";
 import IndividualDetails from "./individualDetails.model.js";
 import Qty from "./qty.model.js";
 import TenantsName from "./main/tenantsName.model.js";
+import Requisition from "./requisition.model.js";
+import RequisitionItem from "./requisitionItem.model.js";
+import HSN from "./hsn_master.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -38,6 +41,9 @@ const defineRootModels = (rootSequelize) => {
     Warehouse(rootSequelize);
     Qty(rootSequelize);
     TenantsName(rootSequelize);
+    Requisition(rootSequelize)
+    RequisitionItem(rootSequelize)
+    HSN(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -45,14 +51,12 @@ const defineRootModels = (rootSequelize) => {
 const defineTenantModels = (sequelize) => {
     Category(sequelize);
     CompanyDetails(sequelize);
-    // District(sequelize);
     Driver(sequelize);
     IndividualDetails(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);
     RolePermissions(sequelize);
-    // State(sequelize);
     StockInward(sequelize);
     StockInwardItem(sequelize);
     User(sequelize);
@@ -60,6 +64,9 @@ const defineTenantModels = (sequelize) => {
     Vehicle(sequelize);
     Warehouse(sequelize);
     Qty(sequelize);
+    Requisition(sequelize),
+    RequisitionItem(sequelize)
+    HSN(sequelize);
     
     return sequelize.models;
 }

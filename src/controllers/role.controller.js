@@ -55,12 +55,17 @@ const deleteRole = asyncHandler(async (req, res) => {
 const editRole = asyncHandler(async (req, res) => {
     const { Role } = req.dbModels;
     try {
-        const { id, newRole } = req.body;
+        const { id, newRole = "", status = ""  } = req.body;
+        if(!id) return res.status(400).json({ success: false, code: 400, message: "ID must required!!!" });
 
-        await Role.update(
-            { role: newRole.toLowerCase().trim() },
+        const role = await Role.update(
+            { 
+                role: newRole.toLowerCase().trim(),
+                status
+            },
             { where: { id } }
         );
+        if(!role) return res.status(500).json({ success: false, code: 400, message: "Updation failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Updation successfull." });
 

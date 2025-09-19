@@ -33,7 +33,7 @@ const addWarehouse = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "", cat_id = "" } = req.body;
+        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "" } = req.body;
         const profile_image = req?.file?.filename || null;
 
 
@@ -66,7 +66,6 @@ const addWarehouse = asyncHandler(async (req, res) => {
             license_no,
             lat,
             long,
-            cat_id,
         }, { transaction });
 
         await transaction.commit();
@@ -84,9 +83,8 @@ const addWarehouse = asyncHandler(async (req, res) => {
 
 const editWarehouse = asyncHandler(async (req, res) => {
     const { Warehouse } = req.dbModels;
-
     try {
-        const { full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", license_no = "", lat = "", long = "", cat_id = "" } = req.body;
+        const { full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", license_no = "", lat = "", long = "", status = "" } = req.body;
         const profile_image = req?.file?.filename || null;
         if (!license_no) return res.status(400).json({ success: false, code: 400, message: "License no must required!!!" });
 
@@ -108,7 +106,7 @@ const editWarehouse = asyncHandler(async (req, res) => {
         if (pincode) replace_object.pincode = pincode.trim();
         if (lat) replace_object.lat = lat.trim();
         if (long) replace_object.long = long.trim();
-        if (cat_id) replace_object.cat_id = cat_id.trim();
+        if (status) replace_object.status = status;
 
         if (profile_image) {
             const imagePath = path.join(__dirname, '..', '..', 'public', 'user', oldImag);
@@ -131,14 +129,28 @@ const editWarehouse = asyncHandler(async (req, res) => {
 });
 
 const deleteWarehouse = asyncHandler(async (req, res) => {
-    const { Warehouse } = req.dbModels;
+    const { User, Warehouse } = req.dbModels;
+    const transaction = req.dbObject.transaction;
     try {
-
         const { id } = req.params;
 
-        const isDelete = await Warehouse.destory({ where: id });
-        if(!isDelete) return res.status(500).json({ success: false, code: 500, message: "Deletion failed!!!" });
+        const warehouse = await Warehouse.findByPk(id);
 
+        if (warehouse.profile_image) {
+            const imagePath = path.join(__dirname, '..', '..', 'public', 'user', warehouse.profile_image);
+            fs.unlinkSync(imagePath);
+        }
+
+        if (warehouse) {
+            await User.destroy({
+                where: { id: warehouse.user_id },
+                transaction
+            });
+            await Warehouse.destroy({
+                where: { id },
+                transaction
+            });
+        };
         return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
 
     } catch (error) {

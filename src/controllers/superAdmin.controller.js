@@ -3,6 +3,55 @@ import { deleteTenantDatabase, generateDatabase } from "../db/tenantMenager.serv
 import { asyncHandler } from "../utils/asyncHandler.js"
 import bcrypt from "bcrypt";
 
+const all_company = asyncHandler(async (req, res) => {
+    const { Tenant, TenantsName } = req.dbModels;
+    try {
+        let { page = 1, limit = 10, email = "", id = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+
+        const offset = (page - 1) * limit;
+
+        let condition = {};
+        if (email) condition.email = email;
+        if (id) condition.id = id;
+
+        const tenant = await Tenant.findAndCountAll({
+            where: { isOwner: true, password: { [Op.ne]: null }, ...condition },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "tenantsName"
+                }
+            ],
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+        if (!tenant) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        const totalItems = tenant.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: tenant,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit,
+            }
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 const register = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
     try {
@@ -56,55 +105,6 @@ const delete_company = asyncHandler(async (req, res) => {
         await deleteTenantDatabase(tenantDb);
 
         return res.status(200).json({ success: true, code: 200, message: "Company deleted successfully" });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-const all_company = asyncHandler(async (req, res) => {
-    const { Tenant, TenantsName } = req.dbModels;
-    try {
-        let { page = 1, limit = 10, email = "", id = "" } = req.query;
-        page = parseInt(page);
-        limit = parseInt(limit);
-
-        const offset = (page - 1) * limit;
-
-        let condition = {};
-        if (email) condition.email = email;
-        if (id) condition.id = id;
-
-        const tenant = await Tenant.findAndCountAll({
-            where: { isOwner: true, password: { [Op.ne]: null }, ...condition },
-            include: [
-                {
-                    model: TenantsName,
-                    as: "tenantsName"
-                }
-            ],
-            limit,
-            offset,
-            order: [['createdAt', 'DESC']]
-        });
-        if (!tenant) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
-
-        const totalItems = tenant.count;
-        const totalPages = Math.ceil(totalItems / limit);
-
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Fetched Successfully.",
-            data: tenant,
-            meta: {
-                totalItems,
-                totalPages,
-                currentPage: page,
-                limit,
-            }
-        });
 
     } catch (error) {
         console.log(error);

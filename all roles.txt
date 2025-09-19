@@ -1,4 +1,4 @@
-Role
+Role ✅
 role:assign     # assign role to user
 role:remove     # remove role from user
 role:create     # create role
@@ -6,26 +6,41 @@ role:read       # read role
 role:update     # edit role
 role:delete     # delete role
 
-Vehicle
+Vehicle ✅
 :C-R-U-D
 
-driver
+driver ✅
 :C-R-U-D
 
-permissions
+permission 🔐
 :C-R-U-D
 
-Manage Permission
+Manage Permission ✅
 :R  :modify
 
-company
+company ✅
 :C-R-U-D
 
-employee
+employee ✅
 :C-R-U-D
 
-inward
+inward ✅
 :C-R-D
 
-warehouse
+warehouse ✅
+:C-R-U-D
+
+requisition ✅
+:C-R-U-D
+
+requisition-item ✅
+:U
+
+hsn ✅
+:C-R-U-D
+
+product ✅
+:C-R-U-D :update-batch
+
+category ✅
 :C-R-U-D

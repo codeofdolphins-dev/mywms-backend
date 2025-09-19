@@ -99,7 +99,7 @@ const updateCompanyDetails = asyncHandler(async (req, res) => {
     try {
         const { companyDetails } = req.user || null;
 
-        const { email = "", c_name = "", ph_no = "" } = req.body;
+        const { email = "", c_name = "", ph_no = "", status = "" } = req.body;
         const profile_image = req?.file?.filename || null;
         if(!email) return res.status(400).json({ success: false, code: 400, message: "Email must required!!!" });
         
@@ -111,6 +111,7 @@ const updateCompanyDetails = asyncHandler(async (req, res) => {
         let updateDetails = {};
         if(c_name) updateDetails.c_name = c_name;
         if(ph_no) updateDetails.ph_no = ph_no;
+        if(status) updateDetails.status = status;
 
         if(profile_image){
             const oldImagePath = path.join(

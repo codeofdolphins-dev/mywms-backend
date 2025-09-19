@@ -2,11 +2,6 @@ import { DataTypes } from "sequelize";
 
 function Tenant(sequelize) {
   return sequelize.define("Tenant", {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-    },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -26,7 +21,7 @@ function Tenant(sequelize) {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
-    tenant_id: DataTypes.UUID,
+    tenant_id: DataTypes.INTEGER,
   });
 };
 export default Tenant;
