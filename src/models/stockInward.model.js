@@ -1,20 +1,48 @@
 import { DataTypes } from "sequelize";
-// import { db_obj } from "../db/config.js";
 
-function StockInward(sequelize){ 
-return sequelize.define("StockInward", {
-    user_id: DataTypes.INTEGER,
-    order_no: DataTypes.STRING,
-    invoice_no: DataTypes.STRING,
-    transport_pass_no: DataTypes.STRING,
-    lr_no: DataTypes.STRING,
-    vehicle_id: DataTypes.INTEGER,
-    driver_id: DataTypes.INTEGER,
-    status_type: {
-        type: DataTypes.STRING,
-        defaultValue: "local"
+function StockInward(sequelize) {
+  return sequelize.define("StockInward", {
+    po_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     },
-    indent_no: DataTypes.STRING,
-});
+    vendor_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    invoice_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    inward_by: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    challan_no: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    transport_pass_no: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    vehicle_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    driver_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    status: {
+      type: DataTypes.ENUM("Pending", "Verified", "Partially Received", "Completed"),
+      defaultValue: "Pending"
+    },
+    note: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    }
+  });
 }
+
 export default StockInward;

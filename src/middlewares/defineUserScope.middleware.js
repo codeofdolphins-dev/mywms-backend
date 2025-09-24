@@ -10,21 +10,22 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
 
         const email = req.body?.email || "";
         if(!email) return res.status(400).json({ success: false, code: 400, message: "User EMAIL must required!!! or Header is not set properly!!!" });
-
+        
         const { models } = await rootDB();
-        // const user = await models.User.findOne({ where: { email } }); // NOTE: this will be removed and only check in tenants table
         
         const tenant = await models.Tenant.findOne({ 
             where: { email }, 
             attributes: [],
             include: [
-                 {
+                {
                     model: models.TenantsName,
                     as: "tenantsName",
                     attributes: ["tenant"]
                 },
             ]
         });
+        
+        if(!tenant) return res.status(404).json({ success: false, code: 404, message: `User with email: ${email} is not registered!!!` });
 
         const dbName = tenant.tenantsName.tenant;
         

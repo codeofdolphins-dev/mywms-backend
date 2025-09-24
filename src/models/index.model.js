@@ -20,6 +20,15 @@ import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
 import RequisitionItem from "./requisitionItem.model.js";
 import HSN from "./hsn_master.model.js";
+import VendorQuotation from "./vendorQuotation.model.js";
+import VendorQuotationItems from "./vendorQuotationItems.model.js";
+import PurchasOrder from "./purchasOrder.model.js";
+import PurchaseOrderItems from "./purchaseOrderItems.model.js";
+import PurchaseInvoice from "./purchaseInvoice.model.js";
+import PurchaseInvoiceItems from "./purchaseInvoiceItems.model.js";
+import Vendor from "./vendor.model.js";
+import VendorBankDetails from "./vendorBankDetails.model.js";
+import RequestOrder from "./requestOrder.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -44,6 +53,16 @@ const defineRootModels = (rootSequelize) => {
     Requisition(rootSequelize)
     RequisitionItem(rootSequelize)
     HSN(rootSequelize);
+
+    VendorQuotation(rootSequelize);
+    VendorQuotationItems(rootSequelize);
+    PurchasOrder(rootSequelize);
+    PurchaseOrderItems(rootSequelize);
+    PurchaseInvoice(rootSequelize);
+    PurchaseInvoiceItems(rootSequelize);
+    Vendor(rootSequelize);
+    VendorBankDetails(rootSequelize);
+    RequestOrder(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -67,7 +86,18 @@ const defineTenantModels = (sequelize) => {
     Requisition(sequelize),
     RequisitionItem(sequelize)
     HSN(sequelize);
-    
+
+    VendorQuotation(sequelize);
+    VendorQuotationItems(sequelize);
+    Vendor(sequelize);
+    PurchasOrder(sequelize);
+    RequestOrder(sequelize);
+
+    PurchaseOrderItems(sequelize);
+    PurchaseInvoice(sequelize);
+    PurchaseInvoiceItems(sequelize);
+    VendorBankDetails(sequelize);
+
     return sequelize.models;
 }
 

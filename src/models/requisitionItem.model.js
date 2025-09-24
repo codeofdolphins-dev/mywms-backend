@@ -6,7 +6,7 @@ function RequisitionItem(sequelize) {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    barcode_id: {
+    product_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
