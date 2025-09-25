@@ -6,7 +6,7 @@ const connectRootDB = async () => {
     try {
         const { rootSequelize, models } = await rootDB();
 
-        await rootSequelize.sync({ force: true });
+        // await rootSequelize.sync({ force: true });
 
         const recordCount = await models.Role.count();
         if (recordCount === 0) {

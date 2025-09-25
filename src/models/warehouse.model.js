@@ -52,12 +52,12 @@ function Warehouse(sequelize) {
             allowNull: true,
         },
         lat: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
+            type: DataTypes.DECIMAL,
+            defaultValue: 0.00
         },
         long: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
+            type: DataTypes.DECIMAL,
+            defaultValue: 0.00
         }
     })
 }

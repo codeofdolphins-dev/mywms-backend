@@ -23,6 +23,7 @@ const router = Router();
 
 router.use("/auth", authApi);
 router.use("/location", locationApi);
+router.use("/warehouse", warehouseApi);
 
 router.use("/user", userApi);
 
@@ -36,7 +37,6 @@ router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
 router.use("/inward", inwardApi);
-router.use("/warehouse", warehouseApi);
 
 router.use("/requisition", requisitionApi);
 router.use("/hsn", hsnApi);

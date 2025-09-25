@@ -1,28 +1,67 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
-import fs from "fs";
+import fs, { stat } from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
+import { rootDB } from "../db/tenantMenager.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
 const allWarehouse = asyncHandler(async (req, res) => {
-    const { Warehouse } = req.dbModels;
+    const { User, Warehouse } = req.dbModels;
+
+    const { models } = await rootDB();
+    const { State, District } = models;
+
     try {
+        let { page = 1, limit = 10, id = "", email = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
 
-        const { id } = req.query;
+        let warehouse = await User.findAndCountAll({
+            where: (id || email) ? { [Op.or]: [{ id: parseInt(id) || null }, { email }] } : { type: "warehouse" },
+            attributes: ["id", "email"],
+            include: [
+                {
+                    model: Warehouse,
+                    as: "warehouse",
+                    attributes: {
+                        exclude: ["user_id"]
+                    }
+                }
+            ],
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
+        });
+        if (!warehouse) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const warehouse = await Warehouse.findAll({
-            where: id ? { id } : undefined
+        const totalItems = warehouse.count;
+        const totalPages = Math.ceil(totalItems / limit);
+        
+        let userData = warehouse.rows[0].toJSON();
+        userData.warehouse.state = await State.findByPk(warehouse.rows[0].warehouse.state_id, { attributes: [ "name" ] });
+        userData.warehouse.district = await District.findByPk(warehouse.rows[0].warehouse.district_id, { attributes: [ "name" ] });
+        warehouse.rows[0] = userData;
+        
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: warehouse,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
         });
 
-        if (!warehouse) return res.status(500).json({ success: false, code: 500, message: "Data fetched failed!!!" });
-
-        return res.status(200).json({ success: true, code: 200, message: "Warehouse Register Successfully." });
-
-    } catch (error) {
+    }
+    catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -130,30 +169,43 @@ const editWarehouse = asyncHandler(async (req, res) => {
 
 const deleteWarehouse = asyncHandler(async (req, res) => {
     const { User, Warehouse } = req.dbModels;
-    const transaction = req.dbObject.transaction;
+    const transaction = await req.dbObject.transaction();
     try {
         const { id } = req.params;
+        if(!id) return res.status(400).json({ success: false, code: 400, message: "Warehouse id required" });
 
-        const warehouse = await Warehouse.findByPk(id);
+        const warehouse = await User.findByPk(id, {
+            include: [
+                {
+                    model: Warehouse,
+                    as: "warehouse"
+                }
+            ],
+            transaction
+        });
+        
 
-        if (warehouse.profile_image) {
+        if (warehouse.warehouse.profile_image != null) {
             const imagePath = path.join(__dirname, '..', '..', 'public', 'user', warehouse.profile_image);
             fs.unlinkSync(imagePath);
+            console.log("✅ Image Deleted.");
+        }else{
+            console.log("No image available. Skiped...");            
         }
 
         if (warehouse) {
             await User.destroy({
-                where: { id: warehouse.user_id },
-                transaction
-            });
-            await Warehouse.destroy({
-                where: { id },
+                where: { id: warehouse.id },
                 transaction
             });
         };
+
+        await transaction.commit()
+
         return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
 
     } catch (error) {
+        if(transaction) await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
