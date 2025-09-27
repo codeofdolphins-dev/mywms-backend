@@ -10,10 +10,6 @@ function VendorQuotation(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        quotation_date: {
-            type: DataTypes.DATEONLY,
-            allowNull: false
-        },
         status: {
             type: DataTypes.ENUM("Submitted", "Selected", "Rejected"),
             defaultValue: "Submitted"
@@ -21,6 +17,10 @@ function VendorQuotation(sequelize) {
         note: {
             type: DataTypes.TEXT,
             allowNull: true
+        },
+        total: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0.00
         }
     });
 }

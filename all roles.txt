@@ -44,3 +44,21 @@ product ✅
 
 category ✅
 :C-R-U-D
+
+vendor ✅
+:C-R-U-D
+
+vendor-bank ✅
+:U
+
+purchaseOrder ✅
+:C-R-U-D
+
+purchaseOrder-item ✅
+:U
+
+quotation ✅
+:C-R-U-D
+
+quotation-item ✅
+:U

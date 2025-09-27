@@ -2,19 +2,23 @@ import { DataTypes } from "sequelize";
 
 function PurchasOrder(sequelize) {
     return sequelize.define("PurchasOrder", {
+        pr_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
         status: {
-            type: DataTypes.ENUM("Draft", "Sent", "Confirmed", "Partially Received", "Completed", "Cancelled"),
-            defaultValue: "Draft"
+            type: DataTypes.ENUM("draft", "sent", "confirmed", "partially received", "completed", "cancelled"),
+            defaultValue: "draft"
         },
         priority: {
-            type: DataTypes.ENUM("Low", "Normal", "High"),
-            defaultValue: "Normal"
+            type: DataTypes.ENUM("low", "normal", "high"),
+            defaultValue: "normal"
         },
         expected_delivery_date: {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
-        notes: {
+        note: {
             type: DataTypes.TEXT,
             allowNull: true
         },
@@ -24,7 +28,7 @@ function PurchasOrder(sequelize) {
         },
         approved_by: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         total_amount: {
             type: DataTypes.DECIMAL(10, 2),

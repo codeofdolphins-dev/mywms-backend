@@ -20,6 +20,9 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                 {
                     model: RequisitionItem,
                     as: "items",
+                    attributes: {
+                        exclude: ["requisition_id"]
+                    },
                     include: [
                         {
                             model: Product,
@@ -30,7 +33,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
             ],
             limit,
             offset,
-            order: [["createdAt", "DESC"]],
+            order: [["createdAt", "ASC"]],
         });
         if (!requisition) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -68,30 +71,29 @@ const createRequisition = asyncHandler(async (req, res) => {
 
         const requisition = await Requisition.create({
             title,
-            status,
-            priority,
+            status: status.toLowerCase(),
+            priority: priority.toLowerCase(),
             required_by,
             notes,
             created_by: userDetails.id,
-            transaction,
-        });
+        },
+        { transaction });
 
         const total = items.reduce((accumulator, item) => accumulator + parseInt(item.unit_price_estimate), 0);
 
         for (const item of items) {
-
-            console.log(item);
-
-
             const product = await Product.findOne({ where: { barcode: parseInt(item.barcode) } });
-            if (!product) return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
+            if (!product) {
+                if (transaction) await transaction.rollback();
+                return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
+            }
 
             await RequisitionItem.create({
                 requisition_id: requisition.id,
-                barcode_id: product.id,
+                product_id: product.id,
                 ...item,
-                transaction,
-            });
+            },
+            { transaction });
         }
 
         await Requisition.update(
@@ -101,7 +103,7 @@ const createRequisition = asyncHandler(async (req, res) => {
 
         await transaction.commit();
 
-        return res.status(200).json({ success: true, code: 200, message: "Requisition added" });
+        return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
     } catch (error) {
         if (transaction) await transaction.rollback();
         console.log(error);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { allEmployeeList, currentUser, updateCompanyDetails, updateEmployeeDetails } from "../controllers/user.controller.js";
+import { allEmployeeList, currentUser, updateCompanyDetails, updateEmployeeDetails, warehouseEmployeeList } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
@@ -16,5 +16,6 @@ router.route("/update-employee-details").get(upload.single("image"), defineUserS
 router.use(defineUserScope, defineDbObject, verifyJWT);
 router.route("/current-user").get(currentUser);
 router.route("/employee-list").get(verifyPermission("employee:read"), allEmployeeList);        // optional ?id= &email=
+router.route("/warehouse-employee-list").get(verifyPermission("employee:read"), warehouseEmployeeList);        // optional ?warehouse_id=
 
 export default router;

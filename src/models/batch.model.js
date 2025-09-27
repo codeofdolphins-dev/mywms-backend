@@ -1,14 +1,18 @@
 import { DataTypes } from "sequelize";
 
-function Qty(sequelize) {
-    return sequelize.define("Qty", {
+function Batch(sequelize) {
+    return sequelize.define("Batch", {
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        barcode: {
-            type: DataTypes.INTEGER,
+        batch_number: {
+            type: DataTypes.STRING,
             allowNull: false
+        },
+        expiry_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
         },
         qty: {
             type: DataTypes.INTEGER,
@@ -17,4 +21,4 @@ function Qty(sequelize) {
         }
     })
 }
-export default Qty;
+export default Batch;

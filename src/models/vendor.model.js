@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 function Vendor(sequelize) {
     return sequelize.define("Vendor", {
         name: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false
         },
         primary_phone: {
@@ -15,26 +15,21 @@ function Vendor(sequelize) {
             allowNull: true
         },
         email: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.STRING,
             allowNull: false
         },
         address: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.TEXT,
             allowNull: false
         },
         gst_number: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.STRING,
             allowNull: false
-        },
-        line_total: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 0.00
         },
         status: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
-        },
+        }
     });
 }
 export default Vendor;

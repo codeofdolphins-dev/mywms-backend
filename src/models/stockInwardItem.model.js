@@ -6,12 +6,13 @@ function StockInwardItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        po_item_id: {
+        product_id: { 
             type: DataTypes.INTEGER,
             allowNull: false
         },
         batch_no: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            allowNull: true
         },
         quantity: {
             type: DataTypes.INTEGER,
@@ -27,14 +28,6 @@ function StockInwardItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
-        },
-        uom: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        expiry_date: {
-            type: DataTypes.DATE,
-            allowNull: true
         },
         unit_cost: {
             type: DataTypes.DECIMAL(10, 2),

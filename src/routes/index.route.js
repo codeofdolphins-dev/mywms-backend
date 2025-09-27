@@ -15,6 +15,9 @@ import requisitionApi from "./requisition.route.js";
 import hsnApi from "./hsn.route.js";
 import productApi from "./product.route.js";
 import categoryApi from "./category.route.js";
+import vendorApi from "./vendor.route.js";
+import quotationApi from "./quotation.route.js";
+import purchaseOrderApi from "./purchasOrder.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -24,10 +27,9 @@ const router = Router();
 router.use("/auth", authApi);
 router.use("/location", locationApi);
 router.use("/warehouse", warehouseApi);
-
 router.use("/user", userApi);
-
 router.use("/product", productApi);
+
 router.use(defineUserScope, defineDbObject);
 
 router.use("/vehicle", vehicleApi);
@@ -37,10 +39,12 @@ router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
 router.use("/inward", inwardApi);
-
 router.use("/requisition", requisitionApi);
 router.use("/hsn", hsnApi);
 router.use("/category", categoryApi);
+router.use("/vendor", vendorApi);
+router.use("/quotation", quotationApi);
+router.use("/purchaseOrder", purchaseOrderApi);
 
 
 export default router;

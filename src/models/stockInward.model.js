@@ -35,8 +35,8 @@ function StockInward(sequelize) {
       allowNull: true
     },
     status: {
-      type: DataTypes.ENUM("Pending", "Verified", "Partially Received", "Completed"),
-      defaultValue: "Pending"
+      type: DataTypes.ENUM("pending", "verified", "partially received", "completed"),
+      defaultValue: "pending"
     },
     note: {
       type: DataTypes.TEXT,

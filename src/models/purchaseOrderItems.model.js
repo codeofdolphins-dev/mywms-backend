@@ -10,19 +10,16 @@ function PurchaseOrderItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        notes: {
+        note: {
             type: DataTypes.TEXT,
             allowNull: true
         },
         quantity_ordered: {
-            type: DataTypes.DECIMAL,
-            allowNull: false
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
         },
         unit_price: {
-            type: DataTypes.DECIMAL,
-            allowNull: false
-        },
-        tax_percent: {
             type: DataTypes.DECIMAL,
             allowNull: false
         },

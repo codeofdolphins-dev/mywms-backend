@@ -7,12 +7,12 @@ function Requisition(sequelize) {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM("Draft", "Submitted", "Pending", "Approved", "Rejected", "Cancelled"),
-      defaultValue: "Draft"
+      type: DataTypes.ENUM("draft", "submitted", "pending", "approved", "rejected", "cancelled"),
+      defaultValue: "draft"
     },
     priority: {
-        type: DataTypes.ENUM("Low", "Normal", "High"),
-        defaultValue: "Normal"
+        type: DataTypes.ENUM("low", "normal", "high"),
+        defaultValue: "normal"
     },
     required_by: {
       type: DataTypes.DATEONLY,

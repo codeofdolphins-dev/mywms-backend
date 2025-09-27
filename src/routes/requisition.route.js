@@ -10,8 +10,8 @@ router.use(verifyJWT);
 router.route("/all-list").get(verifyPermission("requisition:read"), allRequisitionList); // optional ?id= &page= &limit=
 
 router.route("/create").post(verifyPermission("requisition:create"), createRequisition);
-router.route("/delete/:id").get(verifyPermission("requisition:delete"), deleteRequisition);
-router.route("/update-requisition").post(verifyPermission("requisition:update"), updateRequisition);
-router.route("/update-requisition-item").post(verifyPermission("requisition-item:update"), updateRequisitionItems);
+router.route("/delete/:id").delete(verifyPermission("requisition:delete"), deleteRequisition);
+router.route("/update").put(verifyPermission("requisition:update"), updateRequisition);
+router.route("/update-item").put(verifyPermission("requisition-item:update"), updateRequisitionItems);
 
 export default router;

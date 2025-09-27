@@ -951,8 +951,8 @@ const permissions = [
   { permission: "requisition:create" },
   { permission: "requisition:read" },
   { permission: "requisition:update" },
-  { permission: "requisition:delete" },
   { permission: "requisition-item:update" },
+  { permission: "requisition:delete" },
   
   // hsn
   { permission: "hsn:create" },
@@ -972,6 +972,27 @@ const permissions = [
   { permission: "category:read" },
   { permission: "category:update" },
   { permission: "category:delete" },
+  
+  // vendor
+  { permission: "vendor:create" },
+  { permission: "vendor:read" },
+  { permission: "vendor:update" },
+  { permission: "vendor-bank:update" },
+  { permission: "vendor:delete" },
+  
+  // purchaseOrder
+  { permission: "purchaseOrder:create" },
+  { permission: "purchaseOrder:read" },
+  { permission: "purchaseOrder:update" },
+  { permission: "purchaseOrder-item:update" },
+  { permission: "purchaseOrder:delete" },
+  
+  // quotation
+  { permission: "quotation:create" },
+  { permission: "quotation:read" },
+  { permission: "quotation:update" },
+  { permission: "quotation-item:update" },
+  { permission: "quotation:delete" },
 ]
 
 

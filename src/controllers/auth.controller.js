@@ -111,7 +111,7 @@ const register_employee = asyncHandler(async (req, res) => {
 
     const { IndividualDetails, Role, User } = req.dbModels;
     try {
-        const { email = "", password = "", full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "" } = req.body;
+        const { email = "", password = "", full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "", warehouse_id = "" } = req.body;
         const profile_image = req?.file?.filename || null;
         const dbName = req.headers["x-tenant-id"];
 
@@ -133,7 +133,8 @@ const register_employee = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
-            type: "employee"
+            type: "employee",
+            warehouse_id
         }, { transaction });
 
         await IndividualDetails.create({

@@ -19,7 +19,7 @@ function VendorBankDetails(sequelize) {
             allowNull: false
         },
         account_number: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             unique: true,
             allowNull: false,
         },
@@ -30,11 +30,7 @@ function VendorBankDetails(sequelize) {
         ifsc_code: {
             type: DataTypes.STRING,
             allowNull: false
-        },
-        status: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
-        },
+        }
     });
 }
 export default VendorBankDetails;

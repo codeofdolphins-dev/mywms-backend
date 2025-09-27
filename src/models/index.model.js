@@ -15,7 +15,7 @@ import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
 import StockInwardItem from "./stockInwardItem.model.js";
 import IndividualDetails from "./individualDetails.model.js";
-import Qty from "./qty.model.js";
+import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
 import RequisitionItem from "./requisitionItem.model.js";
@@ -28,7 +28,7 @@ import PurchaseInvoice from "./purchaseInvoice.model.js";
 import PurchaseInvoiceItems from "./purchaseInvoiceItems.model.js";
 import Vendor from "./vendor.model.js";
 import VendorBankDetails from "./vendorBankDetails.model.js";
-import RequestOrder from "./requestOrder.joinModel.js";
+// import RequestOrder from "./requestOrder.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -48,7 +48,7 @@ const defineRootModels = (rootSequelize) => {
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
     Warehouse(rootSequelize);
-    Qty(rootSequelize);
+    Batch(rootSequelize);
     TenantsName(rootSequelize);
     Requisition(rootSequelize)
     RequisitionItem(rootSequelize)
@@ -62,7 +62,7 @@ const defineRootModels = (rootSequelize) => {
     PurchaseInvoiceItems(rootSequelize);
     Vendor(rootSequelize);
     VendorBankDetails(rootSequelize);
-    RequestOrder(rootSequelize);
+    // RequestOrder(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -82,7 +82,7 @@ const defineTenantModels = (sequelize) => {
     UserRoles(sequelize);
     Vehicle(sequelize);
     Warehouse(sequelize);
-    Qty(sequelize);
+    Batch(sequelize);
     Requisition(sequelize),
     RequisitionItem(sequelize)
     HSN(sequelize);
@@ -91,7 +91,7 @@ const defineTenantModels = (sequelize) => {
     VendorQuotationItems(sequelize);
     Vendor(sequelize);
     PurchasOrder(sequelize);
-    RequestOrder(sequelize);
+    // RequestOrder(sequelize);
 
     PurchaseOrderItems(sequelize);
     PurchaseInvoice(sequelize);
