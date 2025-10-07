@@ -940,6 +940,15 @@ const permissions = [
   { permission: "inward:create" },
   { permission: "inward:read" },
   { permission: "inward:delete" },
+  { permission: "inward:update" },
+  { permission: "inward-item:update" },
+  
+  // invoice
+  { permission: "invoice:create" },
+  { permission: "invoice:read" },
+  { permission: "invoice:delete" },
+  { permission: "invoice:update" },
+  { permission: "invoice-item:update" },
   
   //warehouse
   { permission: "warehouse:create" },

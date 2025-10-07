@@ -82,9 +82,15 @@ export async function generateDatabase(dbName) {
             password: process.env.PG_DB_PASSWORD,
             host: process.env.PG_DB_HOST,
             port: process.env.PG_DB_PORT,
-            database: "mywms",
-
+            database: "mywms"
         });
+        // const client = new pg.Client({
+        //     user: "postgres",
+        //     password: "1",
+        //     host: "localhost",
+        //     port: 5432,
+        //     database: "mywms"
+        // });
         await client.connect();
 
         const result = await client.query(

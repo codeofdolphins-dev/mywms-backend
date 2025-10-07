@@ -61,7 +61,6 @@ const deleteVehicle = asyncHandler(async (req, res) => {
         if(!id) return res.status(400).json({ success: false, code: 400, message: "Vehicle id Required!!!" });
 
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
 
         const isDelete = await Vehicle.destroy({ where: { id, owned_by: dbName } });
         if(!isDelete) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
@@ -81,10 +80,8 @@ const addVehicle = asyncHandler(async (req, res) => {
         if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
         
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
 
-        const isVehicleExists = await Vehicle.findOne({ where: { number: v_number } });
-
+        const isVehicleExists = await Vehicle.findOne({ where: { number: v_number, owned_by: dbName } });
         if (isVehicleExists) return res.status(409).json({ success: false, code: 409, message: `Vehicle no: ${v_number} already exists!!!` });
 
         const vehicle = await Vehicle.create({
@@ -95,7 +92,6 @@ const addVehicle = asyncHandler(async (req, res) => {
             type,
             owned_by: dbName
         });
-
         if(!vehicle) return res.status(500).json({ success: false, code: 500, message: "Failed to add vehicle!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Vehicle added successfully." });

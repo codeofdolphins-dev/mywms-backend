@@ -29,10 +29,6 @@ function Product(sequelize) {
             allowNull: false,
             unique: true,
         },
-        batch_no: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
         description: {
             type: DataTypes.STRING,
             allowNull: true
@@ -40,10 +36,6 @@ function Product(sequelize) {
         unit_of_measure: {
             type: DataTypes.STRING,
             allowNull: false,
-        },
-        cost_price: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
         },
         selling_price: {
             type: DataTypes.DECIMAL(10, 2),

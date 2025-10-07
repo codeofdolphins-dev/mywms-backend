@@ -134,7 +134,7 @@ const register_employee = asyncHandler(async (req, res) => {
             email,
             password: encryptPassword,
             type: "employee",
-            warehouse_id
+            warehouse_id: warehouse_id === "" ? undefined : parseInt(warehouse_id, 10),
         }, { transaction });
 
         await IndividualDetails.create({

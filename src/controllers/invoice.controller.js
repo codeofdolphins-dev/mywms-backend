@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 const { models } = await rootDB();
@@ -5,55 +6,53 @@ const { Vehicle, Driver } = models;
 
 
 // GET
-const getInward = asyncHandler(async (req, res) => {
-    const { StockInward, StockInwardItem, PurchasOrder, Vendor, Invoice, User } = req.dbModels;
+const getInvoice = asyncHandler(async (req, res) => {
+    const {  Invoice, InvoiceItems, PurchasOrder, Vendor, User } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "" } = req.query;
+        let { page = 1, limit = 10, id = "", invoice_no = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const stockInward = await StockInward.findAndCountAll({
-            where: id ? { id: parseInt(id) } : undefined,
+        const invoice = await Invoice.findAndCountAll({
+            where: (id || invoice_no) ? { [Op.or]: [ { id: parseInt(id, 10) || null }, { invoice_number: invoice_no } ] } : undefined,
             include: [
-                { model: PurchasOrder, as: "poReference" },
-                { model: Vendor, as: "stockVendor" },
-                { model: Invoice, as: "purchaseInvoice" },
-                { model: User, as: "inwardBy" },
-                { model: StockInwardItem, as: "items" }
+                { model: PurchasOrder, as: "invoicePurchasOrder" },
+                // { model: Vendor, as: "stockVendor" },
+                // { model: Invoice, as: "purchaseInvoice" },
+                // { model: User, as: "inwardBy" },
+                // { model: StockInwardItem, as: "items" }
             ],
             limit,
             offset,
             order: [["createdAt", "ASC"]]
         });
-        if (!stockInward) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+        if (!invoice) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const totalItems = stockInward.count;
+        const totalItems = invoice.count;
         const totalPages = Math.ceil(totalItems / limit);
 
-        const data = stockInward.rows;
+        // await Promise.all(data.map(async (item) => {
+        //     const vehicle = await Vehicle.findByPk(item.vehicle_id, {
+        //         attributes: {
+        //             exclude: ["owned_by", "createdAt", "updatedAt"]
+        //         }
+        //     });
+        //     const driver = await Driver.findByPk(item.driver_id, {
+        //         attributes: {
+        //             exclude: ["owned_by", "createdAt", "updatedAt"]
+        //         }
+        //     });
 
-        await Promise.all(data.map(async (item) => {
-            const vehicle = await Vehicle.findByPk(item.vehicle_id, {
-                attributes: {
-                    exclude: ["owned_by", "createdAt", "updatedAt"]
-                }
-            });
-            const driver = await Driver.findByPk(item.driver_id, {
-                attributes: {
-                    exclude: ["owned_by", "createdAt", "updatedAt"]
-                }
-            });
-
-            item.dataValues.vehicle = vehicle || null;
-            item.dataValues.driver = driver || null;
-        }));
+        //     item.dataValues.vehicle = vehicle || null;
+        //     item.dataValues.driver = driver || null;
+        // }));
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: data,
+            data: invoice.rows,
             meta: {
                 totalItems,
                 totalPages,
@@ -69,14 +68,13 @@ const getInward = asyncHandler(async (req, res) => {
 });
 
 // POST
-const createInward = asyncHandler(async (req, res) => {
-    const { StockInward, StockInwardItem, PurchasOrder, Product, Batch, Vendor, Warehouse } = req.dbModels;
+const createInvoice = asyncHandler(async (req, res) => {
+    const { Invoice, InvoiceItems, PurchasOrder, Product, StockInward, Warehouse } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { po_id = "", warehouse_id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "", items = [] } = req.body;
-        const userDetails = req.user;
+        const { po_id = "", warehouse_id = "", inward_id = "", invoice_number = "", invoice_date = "", due_date = "", status = "", note = "", items = [] } = req.body;
 
-        if ([po_id, vendor_id, vehicle_id, driver_id, warehouse_id].some(item => item === "")) {
+        if ([po_id, inward_id, warehouse_id, invoice_number].some(item => item === "")) {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required field missing!!!" });
         }
@@ -90,39 +88,28 @@ const createInward = asyncHandler(async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "No Purchase order record found!!!" });
         }
-        const isVendorExists = await Vendor.findByPk(vendor_id, { transaction });
-        if (!isVendorExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Vendor not found!!!" });
-        }
-        const vehicleExists = await Vehicle.findByPk(vehicle_id);
-        if (!vehicleExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Vehicle not found!!!" });
-        }
-        const driverExists = await Driver.findByPk(driver_id);
-        if (!driverExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Driver not found!!!" });
-        }
-        const warehouseExists = await Warehouse.findByPk(warehouse_id, { transaction });
-        if (!warehouseExists) {
+        const isWarehouseExists = await Warehouse.findByPk(warehouse_id, { transaction });
+        if (!isWarehouseExists) {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Warehouse not found!!!" });
         }
+        const isInwardExists = await StockInward.findByPk(inward_id);
+        if (!isInwardExists) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "No Inward record found!!!" });
+        }
 
-        const stockInward = await StockInward.create({
+        const invoice = await Invoice.create({
             po_id: parseInt(po_id, 10),
-            vendor_id: parseInt(vendor_id, 10),
-            inward_by: userDetails.id,
-            challan_no,
-            transport_pass_no: t_pass_no,
-            vehicle_id: parseInt(vehicle_id, 10),
-            driver_id: parseInt(driver_id, 10),
+            warehouse_id: parseInt(warehouse_id, 10),
+            invoice_number,
+            invoice_date: new Date(invoice_date),
+            due_date: new Date(due_date),
             status: status === "" ? undefined : status.toLowerCase(),
             note
         }, { transaction });
 
+        let total = 0;
         for (const item of items) {
             const product = await Product.findOne({
                 where: {
@@ -135,51 +122,47 @@ const createInward = asyncHandler(async (req, res) => {
                 return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
             };
 
-            const totalQty = parseInt(item.qty, 10) - (parseInt(item.d_qty, 10) + parseInt(item.s_qty, 10));
-            if (totalQty <= 0) {
-                await transaction.rollback();
-                return res.status(422).json({ success: false, code: 422, message: 'Invalid quentity entered!!!' });
-            };
-            const totalCost = totalQty * parseInt(item.unit_cost, 10);
+            const gross_amount = parseInt(item.qty, 10) * parseFloat(item.unit_price);
+            const taxable_amount = gross_amount - parseFloat(item.discount);
+            const total_amount = taxable_amount + parseFloat(item.CGST) + parseFloat(item.SGST);
 
-            await StockInwardItem.create({
-                stock_inward_id: stockInward.id,
+            total += total_amount;
+
+            await InvoiceItems.create({
+                invoice_id: invoice.id,
                 product_id: product.id,
-                quantity: totalQty,
-                damage_qty: item.d_qty,
-                shortage_qty: item.s_qty,
-                total_cost: totalCost,
-                ...item
+                qty: parseInt(item.qty, 10),
+                unit_price: parseFloat(item.unit_price),
+                gross_amount,
+                discount: parseFloat(item.discount),
+                taxable_amount,
+                CGST: parseFloat(item.CGST),
+                SGST: parseFloat(item.SGST),
+                total_amount
             }, { transaction });
 
-            const batch = await Batch.findOne({
-                where: {
-                    warehouse_id,
-                    product_id: product.id,
-                    batch_number: item.batch_no,
-                }, transaction
-            });
-            if (batch) {
-                const extendQty = batch.qty + totalQty;
-                await Batch.update(
-                    { qty: extendQty },
-                    { where: { id: batch.id }, transaction }
-                );
-            } else {
-                await Batch.create({
-                    product_id: product.id,
-                    batch_number: item.batch_no,
-                    expiry_date: item.e_date === "" ? undefined : new Date(item.e_date),
-                    qty: totalQty,
-                    cost_price: parseInt(item.unit_cost, 10),
-                    warehouse_id: parseInt(warehouse_id, 10)
-                },
-                { transaction })
-            }
         };
 
+        const [ isInvoice ] = await Invoice.update(
+            { total },
+            { where: { id: invoice.id }, transaction }
+        );
+        if(!isInvoice){
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Invoice creation failed!!!" });
+        }
+
+        const [ isStockInward ] = await StockInward.update(
+            { invoice_id: invoice.id },
+            { where: { id: inward_id }, transaction }
+        );
+        if(!isStockInward){
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Invoice creation failed!!!" });
+        }
+
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Inward Successfull." });
+        return res.status(200).json({ success: true, code: 200, message: "Invoice created Successfull." });
 
     } catch (error) {
         await transaction.rollback();
@@ -189,7 +172,7 @@ const createInward = asyncHandler(async (req, res) => {
 });
 
 // DELETE
-const deleteInward = asyncHandler(async (req, res) => {
+const deleteInvoice = asyncHandler(async (req, res) => {
     const { StockInward } = req.dbModels;
     try {
         const { id } = req.params;
@@ -207,7 +190,7 @@ const deleteInward = asyncHandler(async (req, res) => {
 });
 
 // PUT
-const updateInward = asyncHandler(async (req, res) => {
+const updateInvoice = asyncHandler(async (req, res) => {
     const { StockInward, Vendor, Invoice } = req.dbModels;
     try {
         const { id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "" } = req.body;
@@ -256,7 +239,7 @@ const updateInward = asyncHandler(async (req, res) => {
     }
 });
 
-const updateInwardItems = asyncHandler(async (req, res) => {
+const updateInvoiceItems = asyncHandler(async (req, res) => {
     const { StockInwardItem, Batch, Product } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
@@ -299,7 +282,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
             updateDetails.product_id = isExists.id;
         }
 
-        const [ isUpdated ] = await StockInwardItem.update(
+        const [isUpdated] = await StockInwardItem.update(
             updateDetails,
             { where: { id }, transaction }
         );
@@ -333,4 +316,4 @@ const updateInwardItems = asyncHandler(async (req, res) => {
     }
 });
 
-export { getInward, createInward, deleteInward, updateInward, updateInwardItems };
+export { getInvoice, createInvoice, deleteInvoice, updateInvoice, updateInvoiceItems };

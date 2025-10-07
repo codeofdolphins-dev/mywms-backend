@@ -9,9 +9,9 @@ router.use(verifyJWT);
 
 router.route("/all-vehicle").get(verifyPermission("vehicle:read"), allVehicleList);     // optional ?id= & v_number=
 router.route("/owned-vehicle").get(verifyPermission("vehicle:read"), myVehicleList);
-router.route("/delete/:id").get(verifyPermission("vehicle:delete"), deleteVehicle);
+router.route("/delete/:id").delete(verifyPermission("vehicle:delete"), deleteVehicle);
 
 router.route("/add").post(verifyPermission("vehicle:add"), addVehicle);
-router.route("/edit").post(verifyPermission("vehicle:update"), editVehicle);
+router.route("/edit").put(verifyPermission("vehicle:update"), editVehicle);
 
 export default router;

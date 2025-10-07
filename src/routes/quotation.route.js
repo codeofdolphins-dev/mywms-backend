@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/all-list").get(verifyPermission("quotation:read"), allQuotation); // optional ?id= &page= &limit=
+router.route("/all").get(verifyPermission("quotation:read"), allQuotation); // optional ?id= &page= &limit=
 
 router.route("/create").post(verifyPermission("quotation:create"), create);
 router.route("/delete/:id").delete(verifyPermission("quotation:delete"), deleteQuotation);

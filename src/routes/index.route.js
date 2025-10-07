@@ -18,6 +18,7 @@ import categoryApi from "./category.route.js";
 import vendorApi from "./vendor.route.js";
 import quotationApi from "./quotation.route.js";
 import purchaseOrderApi from "./purchasOrder.route.js";
+import invoiceApi from "./invoice.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -45,6 +46,7 @@ router.use("/category", categoryApi);
 router.use("/vendor", vendorApi);
 router.use("/quotation", quotationApi);
 router.use("/purchaseOrder", purchaseOrderApi);
+router.use("/invoice", invoiceApi);
 
 
 export default router;

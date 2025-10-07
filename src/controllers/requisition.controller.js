@@ -67,7 +67,10 @@ const createRequisition = asyncHandler(async (req, res) => {
         const { title = "", status = "", priority = "", required_by = "", notes = "", items = [] } = req.body;
         const userDetails = req.user;
 
-        if (!title || !required_by) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        if (!title || !required_by){
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        }
 
         const requisition = await Requisition.create({
             title,
@@ -84,7 +87,7 @@ const createRequisition = asyncHandler(async (req, res) => {
         for (const item of items) {
             const product = await Product.findOne({ where: { barcode: parseInt(item.barcode) } });
             if (!product) {
-                if (transaction) await transaction.rollback();
+                await transaction.rollback();
                 return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
             }
 
@@ -102,8 +105,8 @@ const createRequisition = asyncHandler(async (req, res) => {
         );
 
         await transaction.commit();
-
         return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
+
     } catch (error) {
         if (transaction) await transaction.rollback();
         console.log(error);
@@ -167,7 +170,10 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
     try {
         const { id = "", description = "", quantity = "", uom = "", unit_price_estimate = "" } = req.body;
-        if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
+        if (!id){
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
+        }
 
         let updateDetails = {};
         if (description) updateDetails.description = description;
@@ -176,7 +182,10 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
         if (unit_price_estimate) updateDetails.unit_price_estimate = unit_price_estimate;
 
         const requisitionItem = await RequisitionItem.findOne({ where: { id }, transaction });
-        if (!requisitionItem) return res.status(404).json({ success: false, code: 404, message: "Item not found!!!" });
+        if (!requisitionItem){
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Item not found!!!" });
+        }
 
         const isUpdate = await RequisitionItem.update(
             updateDetails,
@@ -185,7 +194,10 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
                 transaction
             }
         );
-        if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+        if (!isUpdate){
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+        }
 
         if (unit_price_estimate) {
             const requisition = await Requisition.findByPk(requisitionItem.requisition_id, { transaction });
@@ -198,7 +210,6 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
             );
         };
         await transaction.commit();
-
         return res.status(200).json({ success: true, code: 200, message: "Updated Successfully." });
 
     } catch (error) {

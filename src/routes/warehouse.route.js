@@ -10,11 +10,11 @@ const router = Router();
 
 router.use(defineUserScope, defineDbObject, verifyJWT);
 router.route("/all").get(verifyPermission("warehouse:read"), allWarehouse);     // optional ?id=
-router.route("/delete/:id").get(verifyPermission("warehouse:delete"), deleteWarehouse);
+router.route("/delete/:id").delete(verifyPermission("warehouse:delete"), deleteWarehouse);
 
 router.use(upload.single("profile_image"), defineUserScope, defineDbObject, verifyJWT);
 router.route("/add").post(verifyPermission("warehouse:create"), addWarehouse);
-router.route("/edit").post(verifyPermission("warehouse:update"), editWarehouse);
+router.route("/edit").put(verifyPermission("warehouse:update"), editWarehouse);
 
 
 export default router;

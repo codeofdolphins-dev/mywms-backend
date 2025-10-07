@@ -20,7 +20,7 @@ function Driver(sequelize) {
             allowNull: false
         },
         owned_by: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: true
         }
     });

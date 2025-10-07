@@ -20,12 +20,12 @@ import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
 import RequisitionItem from "./requisitionItem.model.js";
 import HSN from "./hsn_master.model.js";
-import VendorQuotation from "./vendorQuotation.model.js";
-import VendorQuotationItems from "./vendorQuotationItems.model.js";
+import Quotation from "./quotation.model.js";
+import QuotationItems from "./quotationItems.model.js";
 import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItems from "./purchaseOrderItems.model.js";
-import PurchaseInvoice from "./purchaseInvoice.model.js";
-import PurchaseInvoiceItems from "./purchaseInvoiceItems.model.js";
+import Invoice from "./invoice.model.js";
+import InvoiceItems from "./invoiceItems.model.js";
 import Vendor from "./vendor.model.js";
 import VendorBankDetails from "./vendorBankDetails.model.js";
 // import RequestOrder from "./requestOrder.joinModel.js";
@@ -54,12 +54,12 @@ const defineRootModels = (rootSequelize) => {
     RequisitionItem(rootSequelize)
     HSN(rootSequelize);
 
-    VendorQuotation(rootSequelize);
-    VendorQuotationItems(rootSequelize);
+    Quotation(rootSequelize);
+    QuotationItems(rootSequelize);
     PurchasOrder(rootSequelize);
     PurchaseOrderItems(rootSequelize);
-    PurchaseInvoice(rootSequelize);
-    PurchaseInvoiceItems(rootSequelize);
+    Invoice(rootSequelize);
+    InvoiceItems(rootSequelize);
     Vendor(rootSequelize);
     VendorBankDetails(rootSequelize);
     // RequestOrder(rootSequelize);
@@ -87,15 +87,15 @@ const defineTenantModels = (sequelize) => {
     RequisitionItem(sequelize)
     HSN(sequelize);
 
-    VendorQuotation(sequelize);
-    VendorQuotationItems(sequelize);
+    Quotation(sequelize);
+    QuotationItems(sequelize);
     Vendor(sequelize);
     PurchasOrder(sequelize);
     // RequestOrder(sequelize);
 
     PurchaseOrderItems(sequelize);
-    PurchaseInvoice(sequelize);
-    PurchaseInvoiceItems(sequelize);
+    Invoice(sequelize);
+    InvoiceItems(sequelize);
     VendorBankDetails(sequelize);
 
     return sequelize.models;

@@ -8,9 +8,9 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/all-list").get(verifyPermission("category:read"), allCategoryList); // optional ?barcode= &page= &limit=
-router.route("/delete/:id").get(verifyPermission("category:delete"), deleteCategory);
+router.route("/delete/:id").delete(verifyPermission("category:delete"), deleteCategory);
 
 router.route("/create").post(verifyPermission("category:create"), createCategory);
-router.route("/update").post(verifyPermission("category:update"), updateCategory);
+router.route("/update").put(verifyPermission("category:update"), updateCategory);
 
 export default router;

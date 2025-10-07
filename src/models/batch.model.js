@@ -18,6 +18,14 @@ function Batch(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
+        },
+        cost_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+        },
+        warehouse_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
         }
     })
 }

@@ -25,7 +25,7 @@ function Vehicle(sequelize) {
             allowNull: true
         },
         owned_by: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: true
         }
     })

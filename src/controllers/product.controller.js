@@ -57,7 +57,7 @@ const createProduct = asyncHandler(async (req, res) => {
     const { Product, HSN, Category } = req.dbModels;
 
     try {
-        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", batch_no = "" } = req.body;
+        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "" } = req.body;
         const profile_image = req?.file?.filename || null;
 
         if ([name, category_id, hsn_code, barcode, unit_of_measure, cost_price].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
@@ -83,7 +83,6 @@ const createProduct = asyncHandler(async (req, res) => {
             cost_price: parseInt(cost_price),
             selling_price: parseInt(selling_price),
             reorder_level,
-            batch_no,
             photo: profile_image
         });
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });

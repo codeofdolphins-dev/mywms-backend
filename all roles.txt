@@ -25,7 +25,10 @@ employee ✅
 :C-R-U-D
 
 inward ✅
-:C-R-D
+:C-R-D-U
+
+inward-item ✅
+:U
 
 warehouse ✅
 :C-R-U-D
@@ -61,4 +64,10 @@ quotation ✅
 :C-R-U-D
 
 quotation-item ✅
+:U
+
+invoice ✅
+:C-R-D-U
+
+invoice-item ✅
 :U

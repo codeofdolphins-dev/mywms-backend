@@ -2,12 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allAssignPermissions = asyncHandler(async (req, res) => {
-
     const { Permission, RolePermission } = req.dbModels;
-
     try {
         const { roleId } = req.params;
-
         if (!roleId) return res.status(500).json({ success: false, code: 500, message: "Role id Required." });
 
         const allPermissions = await Permission.findAll();
