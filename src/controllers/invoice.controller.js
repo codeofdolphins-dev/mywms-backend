@@ -1,13 +1,9 @@
 import { Op } from "sequelize";
-import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-const { models } = await rootDB();
-const { Vehicle, Driver } = models;
-
 
 // GET
 const getInvoice = asyncHandler(async (req, res) => {
-    const {  Invoice, InvoiceItems, PurchasOrder, Vendor, User } = req.dbModels;
+    const { Invoice, InvoiceItems, PurchasOrder, Vendor, User, Warehouse } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "", invoice_no = "" } = req.query;
         page = parseInt(page);
@@ -15,11 +11,11 @@ const getInvoice = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const invoice = await Invoice.findAndCountAll({
-            where: (id || invoice_no) ? { [Op.or]: [ { id: parseInt(id, 10) || null }, { invoice_number: invoice_no } ] } : undefined,
+            where: (id || invoice_no) ? { [Op.or]: [{ id: parseInt(id, 10) || null }, { invoice_number: invoice_no }] } : undefined,
             include: [
                 { model: PurchasOrder, as: "invoicePurchasOrder" },
-                // { model: Vendor, as: "stockVendor" },
-                // { model: Invoice, as: "purchaseInvoice" },
+                { model: Warehouse, as: "invoiceWarehouse" },
+                { model: InvoiceItems, as: "invoiceItems" },
                 // { model: User, as: "inwardBy" },
                 // { model: StockInwardItem, as: "items" }
             ],
@@ -143,20 +139,20 @@ const createInvoice = asyncHandler(async (req, res) => {
 
         };
 
-        const [ isInvoice ] = await Invoice.update(
+        const [isInvoice] = await Invoice.update(
             { total },
             { where: { id: invoice.id }, transaction }
         );
-        if(!isInvoice){
+        if (!isInvoice) {
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Invoice creation failed!!!" });
         }
 
-        const [ isStockInward ] = await StockInward.update(
+        const [isStockInward] = await StockInward.update(
             { invoice_id: invoice.id },
             { where: { id: inward_id }, transaction }
         );
-        if(!isStockInward){
+        if (!isStockInward) {
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Invoice creation failed!!!" });
         }
@@ -173,12 +169,12 @@ const createInvoice = asyncHandler(async (req, res) => {
 
 // DELETE
 const deleteInvoice = asyncHandler(async (req, res) => {
-    const { StockInward } = req.dbModels;
+    const { Invoice } = req.dbModels;
     try {
         const { id } = req.params;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "id required!!!" });
 
-        const isDeleted = await StockInward.destroy({ where: { id } });
+        const isDeleted = await Invoice.destroy({ where: { id } });
         if (!isDeleted) return res.status(500).json({ success: false, code: 500, message: "Delete failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Delete Successfull." });
@@ -191,47 +187,33 @@ const deleteInvoice = asyncHandler(async (req, res) => {
 
 // PUT
 const updateInvoice = asyncHandler(async (req, res) => {
-    const { StockInward, Vendor, Invoice } = req.dbModels;
+    const { Invoice, Warehouse } = req.dbModels;
     try {
-        const { id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "" } = req.body;
+        const { id = "", warehouse_id = "", invoice_number = "", invoice_date = "", due_date = "", status = "", note = "" } = req.body;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
 
-        const isStockInwardExists = await StockInward.findByPk(id);
-        if (!isStockInwardExists) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
+        const isInvoiceExists = await Invoice.findByPk(id);
+        if (!isInvoiceExists) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
         let updateDetails = {};
-        if (challan_no) updateDetails.challan_no = challan_no;
-        if (t_pass_no) updateDetails.t_pass_no = t_pass_no;
-        if (status) updateDetails.status = status.toLowerCase();
+        if (invoice_number) updateDetails.invoice_number = invoice_number;
+        if (invoice_date) updateDetails.invoice_date = new Date(invoice_date);
+        if (due_date) updateDetails.due_date = new Date(due_date);
+        if (status) updateDetails.status = status !== "" ? status.toLowerCase() : undefined;
         if (note) updateDetails.note = note;
-        if (vendor_id) {
-            const isExists = await Vendor.findByPk(vendor_id);
-            if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Vendor not found!!!" });
-            updateDetails.vendor_id = parseInt(vendor_id, 10);
-        }
-        if (invoice) {
-            const isExists = await Invoice.findOne({ invoice_number: invoice });
-            if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Invoice not found!!!" });
-            updateDetails.invoice_id = isExists.id;
-        }
-        if (vehicle_id) {
-            const isExists = await Vehicle.findByPk(vehicle_id);
-            if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Vehicle not found!!!" });
-            updateDetails.vehicle_id = parseInt(vehicle_id, 10);
-        }
-        if (driver_id) {
-            const isExists = await Driver.findByPk(driver_id);
-            if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Driver not found!!!" });
-            updateDetails.driver_id = parseInt(driver_id, 10);
+        if (warehouse_id) {
+            const isExists = await Warehouse.findByPk(parseInt(warehouse_id, 10));
+            if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Warehouse not found!!!" });
+            updateDetails.warehouse_id = parseInt(warehouse_id, 10);
         }
 
-        const isUpdate = await StockInward.update(
+        const isUpdate = await Invoice.update(
             updateDetails,
             { where: { id } }
         );
-        if (!isUpdate) return res.status(404).json({ success: false, code: 404, message: "Inward updation failed!!!" });
+        if (!isUpdate) return res.status(404).json({ success: false, code: 404, message: "Invoice updation failed!!!" });
 
-        return res.status(200).json({ success: true, code: 200, message: "Inward updated successfull." });
+        return res.status(200).json({ success: true, code: 200, message: "Invoice updated successfully." });
 
     } catch (error) {
         console.log(error);
@@ -240,39 +222,46 @@ const updateInvoice = asyncHandler(async (req, res) => {
 });
 
 const updateInvoiceItems = asyncHandler(async (req, res) => {
-    const { StockInwardItem, Batch, Product } = req.dbModels;
+    const { Invoice, InvoiceItems, Product } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { id = "", barcode = "", unit_cost = "", qty = "", d_qty = "0", s_qty = "0", e_date = "" } = req.body;
+        const { id = "", barcode = "", qty = "", unit_price = "", discount = "", CGST = "", SGST = "" } = req.body;
         if (!id) {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
         }
 
-        const stockInwardItem = await StockInwardItem.findByPk(id);
-        if (!stockInwardItem) {
+        const invoiceItems = await InvoiceItems.findByPk(id, { transaction });
+        if (!invoiceItems) {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         }
 
-        // Start with existing values
-        let newUnitCost = unit_cost || stockInwardItem.unit_cost;
-        let newQty = qty || stockInwardItem.quantity;
-        let newDamageQty = d_qty || stockInwardItem.damage_qty || 0;
-        let newShortageQty = s_qty || stockInwardItem.shortage_qty || 0;
+        const invoice = await Invoice.findByPk(invoiceItems.invoice_id, { transaction });
 
-        // Recalculate final quantity
-        let finalQty = parseInt(newQty) - (parseInt(newDamageQty) + parseInt(newShortageQty));
+        // Start with existing values
+        let newQty = parseInt(qty, 10) || parseInt(invoiceItems.qty);
+        let newUnit_price = parseFloat(unit_price) || parseFloat(invoiceItems.unit_price) || 0.00;
+        let newDiscount = parseFloat(discount) || parseFloat(invoiceItems.discount) || 0.00;
+        let newCGST = parseFloat(CGST) || parseFloat(invoiceItems.CGST) || 0.00;
+        let newSGST = parseFloat(SGST) || parseFloat(invoiceItems.SGST) || 0.00;
+
+        const gross_amount = newQty * newUnit_price;
+        const taxable_amount = gross_amount - newDiscount;
+        const total_amount = taxable_amount + newCGST + newSGST;
+        const old_total_amount = invoiceItems.total_amount;
 
         // Build updateDetails object
         let updateDetails = {
-            unit_cost: newUnitCost,
-            quantity: finalQty,
-            total_cost: finalQty * newUnitCost,
-            ...(d_qty && { damage_qty: d_qty }),
-            ...(s_qty && { shortage_qty: s_qty })
+            qty: newQty,
+            unit_price: newUnit_price,
+            gross_amount,
+            discount: newDiscount,
+            taxable_amount,
+            CGST: newCGST,
+            SGST: newSGST,
+            total_amount: total_amount
         };
-
         if (barcode) {
             const isExists = await Product.findOne({ where: { barcode }, transaction });
             if (!isExists) {
@@ -282,32 +271,28 @@ const updateInvoiceItems = asyncHandler(async (req, res) => {
             updateDetails.product_id = isExists.id;
         }
 
-        const [isUpdated] = await StockInwardItem.update(
+        const [isItemsUpdated] = await InvoiceItems.update(
             updateDetails,
             { where: { id }, transaction }
         );
+        if (!isItemsUpdated) {
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Invoice items updation failed!!!" });
+        };
+
+        const [isUpdated] = await Invoice.update(
+            {
+                total: invoice.total - old_total_amount + total_amount
+            },
+            { where: { id: invoiceItems.invoice_id }, transaction }
+        )
         if (!isUpdated) {
             await transaction.rollback();
-            return res.status(500).json({ success: false, code: 500, message: "Inward items updation failed!!!" });
-        }
-
-
-        const isUpdate = await Batch.update(
-            {
-                product_id: barcode ? updateDetails.product_id : stockInwardItem.product_id,
-                expiry_date: e_date,
-                qty: finalQty,
-                cost_price: newUnitCost
-            },
-            { where: { batch_number: stockInwardItem.batch_no, product_id: stockInwardItem.product_id }, transaction }
-        )
-        if (!isUpdate) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Inward items updation failed!!!" });
+            return res.status(500).json({ success: false, code: 500, message: "Invoice updation failed!!!" });
         }
 
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Inward items updated successfully." });
+        return res.status(200).json({ success: true, code: 200, message: "Invoice items updated successfully." });
 
     } catch (error) {
         await transaction.rollback();

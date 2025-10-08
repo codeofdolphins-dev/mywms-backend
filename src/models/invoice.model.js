@@ -24,8 +24,8 @@ function Invoice(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("Pending", "Verified", "Partially Paid", "Paid", "Cancelled"),
-            defaultValue: "Pending"
+            type: DataTypes.ENUM("pending", "verified", "partially paid", "paid", "cancelled"),
+            defaultValue: "pending"
         },
         note: {
             type: DataTypes.TEXT,

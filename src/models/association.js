@@ -308,13 +308,13 @@ const defineRootAssociations = (models) => {
     // InvoiceItems <-> Invoice
     InvoiceItems.belongsTo(Invoice, {
         foreignKey: "invoice_id",
-        as: "invoiceItems",
+        as: "invoice",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Invoice.hasMany(InvoiceItems, {
         foreignKey: "invoice_id",
-        as: "invoice",
+        as: "invoiceItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -913,13 +913,13 @@ const defineTenantAssociations = (models) => {
     // InvoiceItems <-> Invoice
     InvoiceItems.belongsTo(Invoice, {
         foreignKey: "invoice_id",
-        as: "invoiceItems",
+        as: "invoice",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Invoice.hasMany(InvoiceItems, {
         foreignKey: "invoice_id",
-        as: "invoice",
+        as: "invoiceItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

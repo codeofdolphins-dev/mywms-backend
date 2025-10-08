@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allAssignPermissions = asyncHandler(async (req, res) => {
-    const { Permission, RolePermission } = req.dbModels;
+    const { Permission, RolePermissions } = req.dbModels;   
     try {
         const { roleId } = req.params;
         if (!roleId) return res.status(500).json({ success: false, code: 500, message: "Role id Required." });
@@ -21,7 +21,7 @@ const allAssignPermissions = asyncHandler(async (req, res) => {
             });
         });
 
-        const rolePermissions = await RolePermission.findAll({
+        const rolePermissions = await RolePermissions.findAll({
             where: { roleId }
         });
         const rolePermissionIds = rolePermissions.map(rp => rp.permissionId);
@@ -38,7 +38,7 @@ const allAssignPermissions = asyncHandler(async (req, res) => {
 // POST request
 const modifyPermissions = asyncHandler(async (req, res) => {
 
-    const { RolePermission } = req.dbModels;
+    const { RolePermissions } = req.dbModels;
 
     try {
         const { roleId, assignedPermissionIds } = req.body;
@@ -46,7 +46,7 @@ const modifyPermissions = asyncHandler(async (req, res) => {
         if (!roleId && Array.isArray(assignedPermissionIds)) return res.status(500).json({ success: false, code: 500, message: "Invalid payload!!!" });
 
         // Remove old permissions for this role
-        await RolePermission.destroy({
+        await RolePermissions.destroy({
             where: { roleId }
         });
 
@@ -56,7 +56,7 @@ const modifyPermissions = asyncHandler(async (req, res) => {
             permissionId: pid
         }));
 
-        await RolePermission.bulkCreate(newMappings);
+        await RolePermissions.bulkCreate(newMappings);
 
         return res.status(200).json({ success: true, code: 200, message: "Permissions assigned." });
 
