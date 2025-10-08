@@ -8,12 +8,12 @@ import Product from "./product.model.js";
 import Role from "./role.model.js";
 import RolePermissions from "./rolePermissions.joinModel.js";
 import State from "./main/state.model.js";
-import StockInward from "./stockInward.model.js";
+import Inward from "./inward.model.js";
+import InwardItem from "./inwardItem.model.js";
 import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
 import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
-import StockInwardItem from "./stockInwardItem.model.js";
 import IndividualDetails from "./individualDetails.model.js";
 import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
@@ -28,12 +28,14 @@ import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
 import Vendor from "./vendor.model.js";
 import VendorBankDetails from "./vendorBankDetails.model.js";
+import Inventory from "./inventory.model.js";
+import Outward from "./outward.model.js";
 // import RequestOrder from "./requestOrder.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
     User(rootSequelize);
-    StockInward(rootSequelize);
+    Inward(rootSequelize);
     Category(rootSequelize);
     District(rootSequelize);
     State(rootSequelize);
@@ -44,7 +46,7 @@ const defineRootModels = (rootSequelize) => {
     Product(rootSequelize);
     CompanyDetails(rootSequelize);
     IndividualDetails(rootSequelize);
-    StockInwardItem(rootSequelize);
+    InwardItem(rootSequelize);
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
     Warehouse(rootSequelize);
@@ -62,6 +64,8 @@ const defineRootModels = (rootSequelize) => {
     InvoiceItems(rootSequelize);
     Vendor(rootSequelize);
     VendorBankDetails(rootSequelize);
+    Inventory(rootSequelize);
+    Outward(rootSequelize);
     // RequestOrder(rootSequelize);
     
     return rootSequelize.models;
@@ -76,8 +80,8 @@ const defineTenantModels = (sequelize) => {
     Product(sequelize);
     Role(sequelize);
     RolePermissions(sequelize);
-    StockInward(sequelize);
-    StockInwardItem(sequelize);
+    Inward(sequelize);
+    InwardItem(sequelize);
     User(sequelize);
     UserRoles(sequelize);
     Vehicle(sequelize);
@@ -92,12 +96,14 @@ const defineTenantModels = (sequelize) => {
     Vendor(sequelize);
     PurchasOrder(sequelize);
     // RequestOrder(sequelize);
-
+    
     PurchaseOrderItems(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
     VendorBankDetails(sequelize);
-
+    Inventory(sequelize);
+    Outward(sequelize);
+    
     return sequelize.models;
 }
 

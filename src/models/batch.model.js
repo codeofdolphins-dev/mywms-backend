@@ -6,6 +6,14 @@ function Batch(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
+        inventory_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        warehouse_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         batch_number: {
             type: DataTypes.STRING,
             allowNull: false
@@ -22,11 +30,14 @@ function Batch(sequelize) {
         cost_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
-        },
-        warehouse_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
         }
-    })
+    }, {
+        indexes: [
+            {
+                unique: true,
+                fields: ['product_id', 'warehouse_id', 'batch_number']
+            }
+        ]
+    });
 }
 export default Batch;

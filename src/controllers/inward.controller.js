@@ -6,21 +6,21 @@ const { Vehicle, Driver } = models;
 
 // GET
 const getInward = asyncHandler(async (req, res) => {
-    const { StockInward, StockInwardItem, PurchasOrder, Vendor, Invoice, User } = req.dbModels;
+    const { Inward, InwardItem, PurchasOrder, Vendor, Invoice, User } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const stockInward = await StockInward.findAndCountAll({
+        const stockInward = await Inward.findAndCountAll({
             where: id ? { id: parseInt(id) } : undefined,
             include: [
                 { model: PurchasOrder, as: "poReference" },
                 { model: Vendor, as: "stockVendor" },
                 { model: Invoice, as: "purchaseInvoice" },
                 { model: User, as: "inwardBy" },
-                { model: StockInwardItem, as: "items" }
+                { model: InwardItem, as: "items" }
             ],
             limit,
             offset,
@@ -70,7 +70,7 @@ const getInward = asyncHandler(async (req, res) => {
 
 // POST
 const createInward = asyncHandler(async (req, res) => {
-    const { StockInward, StockInwardItem, PurchasOrder, Product, Batch, Vendor, Warehouse } = req.dbModels;
+    const { Inward, InwardItem, PurchasOrder, Product, Batch, Vendor, Warehouse, Inventory } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
         const { po_id = "", warehouse_id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "", items = [] } = req.body;
@@ -111,10 +111,11 @@ const createInward = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Warehouse not found!!!" });
         }
 
-        const stockInward = await StockInward.create({
+        const stockInward = await Inward.create({
             po_id: parseInt(po_id, 10),
             vendor_id: parseInt(vendor_id, 10),
             inward_by: userDetails.id,
+            warehouse_id,
             challan_no,
             transport_pass_no: t_pass_no,
             vehicle_id: parseInt(vehicle_id, 10),
@@ -142,7 +143,7 @@ const createInward = asyncHandler(async (req, res) => {
             };
             const totalCost = totalQty * parseInt(item.unit_cost, 10);
 
-            await StockInwardItem.create({
+            await InwardItem.create({
                 stock_inward_id: stockInward.id,
                 product_id: product.id,
                 quantity: totalQty,
@@ -152,29 +153,65 @@ const createInward = asyncHandler(async (req, res) => {
                 ...item
             }, { transaction });
 
-            const batch = await Batch.findOne({
+
+            const inventory = await Inventory.findOne({
                 where: {
                     warehouse_id,
                     product_id: product.id,
-                    batch_number: item.batch_no,
                 }, transaction
             });
-            if (batch) {
-                const extendQty = batch.qty + totalQty;
-                await Batch.update(
-                    { qty: extendQty },
-                    { where: { id: batch.id }, transaction }
-                );
-            } else {
+            if (!inventory) {
+                const inventory = await Inventory.create({
+                    product_id: product.id,
+                    warehouse_id,
+                    available_qty: totalQty,
+                    last_inward_id: stockInward.id,
+                }, { transaction });
+
                 await Batch.create({
                     product_id: product.id,
+                    inventory_id: inventory.id,
+                    warehouse_id,
                     batch_number: item.batch_no,
                     expiry_date: item.e_date === "" ? undefined : new Date(item.e_date),
                     qty: totalQty,
-                    cost_price: parseInt(item.unit_cost, 10),
-                    warehouse_id: parseInt(warehouse_id, 10)
-                },
-                { transaction })
+                    cost_price: parseInt(item.unit_cost, 10)
+                }, { transaction });
+
+            } else {
+                const batch = await Batch.findOne({
+                    where: {
+                        warehouse_id,
+                        product_id: product.id,
+                        batch_number: item.batch_no,
+                    }, transaction
+                });
+                if (batch) {
+                    const extendQty = batch.qty + totalQty;
+                    await Batch.update(
+                        { qty: extendQty },
+                        { where: { id: batch.id }, transaction }
+                    );
+                } else {
+                    await Batch.create({
+                        product_id: product.id,
+                        batch_number: item.batch_no,
+                        expiry_date: item.e_date === "" ? undefined : new Date(item.e_date),
+                        qty: totalQty,
+                        cost_price: parseInt(item.unit_cost, 10)
+                    }, { transaction })
+                }
+
+                // increse inventory qty
+                await Inventory.update(
+                    { available_qty: inventory.available_qty + totalQty },
+                    {
+                        where: {
+                            warehouse_id,
+                            product_id: product.id,
+                        }, transaction
+                    }
+                );
             }
         };
 
@@ -190,12 +227,12 @@ const createInward = asyncHandler(async (req, res) => {
 
 // DELETE
 const deleteInward = asyncHandler(async (req, res) => {
-    const { StockInward } = req.dbModels;
+    const { Inward } = req.dbModels;
     try {
         const { id } = req.params;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "id required!!!" });
 
-        const isDeleted = await StockInward.destroy({ where: { id } });
+        const isDeleted = await Inward.destroy({ where: { id } });
         if (!isDeleted) return res.status(500).json({ success: false, code: 500, message: "Delete failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Delete Successfull." });
@@ -208,12 +245,12 @@ const deleteInward = asyncHandler(async (req, res) => {
 
 // PUT
 const updateInward = asyncHandler(async (req, res) => {
-    const { StockInward, Vendor, Invoice } = req.dbModels;
+    const { Inward, Vendor, Invoice } = req.dbModels;
     try {
         const { id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "" } = req.body;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
 
-        const isStockInwardExists = await StockInward.findByPk(id);
+        const isStockInwardExists = await Inward.findByPk(id);
         if (!isStockInwardExists) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
         let updateDetails = {};
@@ -242,7 +279,7 @@ const updateInward = asyncHandler(async (req, res) => {
             updateDetails.driver_id = parseInt(driver_id, 10);
         }
 
-        const isUpdate = await StockInward.update(
+        const isUpdate = await Inward.update(
             updateDetails,
             { where: { id } }
         );
@@ -257,16 +294,16 @@ const updateInward = asyncHandler(async (req, res) => {
 });
 
 const updateInwardItems = asyncHandler(async (req, res) => {
-    const { StockInwardItem, Batch, Product } = req.dbModels;
+    const { InwardItem, Batch, Product, Inventory } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { id = "", barcode = "", unit_cost = "", qty = "", d_qty = "0", s_qty = "0", e_date = "" } = req.body;
-        if (!id) {
+        const { id = "", barcode = "", unit_cost = "", qty = "", d_qty = "0", s_qty = "0", e_date = "", warehouse_id = "" } = req.body;
+        if (!id || !warehouse_id) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "id and warehouse id Both fields are required!!!" });
         }
 
-        const stockInwardItem = await StockInwardItem.findByPk(id);
+        const stockInwardItem = await InwardItem.findByPk(id);
         if (!stockInwardItem) {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
@@ -289,7 +326,6 @@ const updateInwardItems = asyncHandler(async (req, res) => {
             ...(d_qty && { damage_qty: d_qty }),
             ...(s_qty && { shortage_qty: s_qty })
         };
-
         if (barcode) {
             const isExists = await Product.findOne({ where: { barcode }, transaction });
             if (!isExists) {
@@ -299,7 +335,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
             updateDetails.product_id = isExists.id;
         }
 
-        const [ isUpdated ] = await StockInwardItem.update(
+        const [isUpdated] = await InwardItem.update(
             updateDetails,
             { where: { id }, transaction }
         );
@@ -308,8 +344,25 @@ const updateInwardItems = asyncHandler(async (req, res) => {
             return res.status(500).json({ success: false, code: 500, message: "Inward items updation failed!!!" });
         }
 
+        const inventory = await Inventory.findOne({
+            where: {
+                warehouse_id,
+                product_id: updateDetails.product_id,
+            }, transaction
+        });
 
-        const isUpdate = await Batch.update(
+        const [isInventoryUpdated] = await Inventory.update(
+            {
+                available_qty: inventory.available_qty - stockInwardItem.quantity + qty
+            },
+            { where: { id: inventory.id }, transaction }
+        );
+        if(!isInventoryUpdated){
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Inventory updation failed!!!" });
+        }
+
+        const [isUpdate] = await Batch.update(
             {
                 product_id: barcode ? updateDetails.product_id : stockInwardItem.product_id,
                 expiry_date: e_date,
@@ -320,7 +373,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
         )
         if (!isUpdate) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Inward items updation failed!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Batch updation failed!!!" });
         }
 
         await transaction.commit();

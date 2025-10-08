@@ -17,7 +17,7 @@ const getInvoice = asyncHandler(async (req, res) => {
                 { model: Warehouse, as: "invoiceWarehouse" },
                 { model: InvoiceItems, as: "invoiceItems" },
                 // { model: User, as: "inwardBy" },
-                // { model: StockInwardItem, as: "items" }
+                // { model: InwardItem, as: "items" }
             ],
             limit,
             offset,
@@ -65,7 +65,7 @@ const getInvoice = asyncHandler(async (req, res) => {
 
 // POST
 const createInvoice = asyncHandler(async (req, res) => {
-    const { Invoice, InvoiceItems, PurchasOrder, Product, StockInward, Warehouse } = req.dbModels;
+    const { Invoice, InvoiceItems, PurchasOrder, Product, Inward, Warehouse } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
         const { po_id = "", warehouse_id = "", inward_id = "", invoice_number = "", invoice_date = "", due_date = "", status = "", note = "", items = [] } = req.body;
@@ -89,7 +89,7 @@ const createInvoice = asyncHandler(async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Warehouse not found!!!" });
         }
-        const isInwardExists = await StockInward.findByPk(inward_id);
+        const isInwardExists = await Inward.findByPk(inward_id);
         if (!isInwardExists) {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "No Inward record found!!!" });
@@ -148,7 +148,7 @@ const createInvoice = asyncHandler(async (req, res) => {
             return res.status(500).json({ success: false, code: 500, message: "Invoice creation failed!!!" });
         }
 
-        const [isStockInward] = await StockInward.update(
+        const [isStockInward] = await Inward.update(
             { invoice_id: invoice.id },
             { where: { id: inward_id }, transaction }
         );

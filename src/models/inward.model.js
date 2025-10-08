@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function StockInward(sequelize) {
-  return sequelize.define("StockInward", {
+function Inward(sequelize) {
+  return sequelize.define("Inward", {
     po_id: {
       type: DataTypes.INTEGER,
       allowNull: false
@@ -9,6 +9,10 @@ function StockInward(sequelize) {
     vendor_id: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    warehouse_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     invoice_id: {
       type: DataTypes.INTEGER,
@@ -45,4 +49,4 @@ function StockInward(sequelize) {
   });
 }
 
-export default StockInward;
+export default Inward;

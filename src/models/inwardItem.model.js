@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function StockInwardItem(sequelize) {
-    return sequelize.define('StockInwardItem', {
+function InwardItem(sequelize) {
+    return sequelize.define('InwardItem', {
         stock_inward_id: { 
             type: DataTypes.INTEGER,
             allowNull: false
@@ -9,10 +9,6 @@ function StockInwardItem(sequelize) {
         product_id: { 
             type: DataTypes.INTEGER,
             allowNull: false
-        },
-        batch_no: {
-            type: DataTypes.STRING,
-            allowNull: true
         },
         quantity: {
             type: DataTypes.INTEGER,
@@ -40,4 +36,4 @@ function StockInwardItem(sequelize) {
     });
 }
 
-export default StockInwardItem;
+export default InwardItem;
