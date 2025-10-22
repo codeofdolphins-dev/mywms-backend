@@ -71,3 +71,9 @@ invoice ✅
 
 invoice-item ✅
 :U
+
+outward ✅
+:C-R-D-U
+
+outward-item ✅
+:U

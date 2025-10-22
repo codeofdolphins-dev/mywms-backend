@@ -1002,6 +1002,13 @@ const permissions = [
   { permission: "quotation:update" },
   { permission: "quotation-item:update" },
   { permission: "quotation:delete" },
+  
+  // outward
+  { permission: "outward:create" },
+  { permission: "outward:read" },
+  { permission: "outward:update" },
+  { permission: "outward-item:update" },
+  { permission: "outward:delete" },
 ]
 
 

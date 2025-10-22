@@ -11,7 +11,7 @@ function OutwardItems(sequelize) {
             allowNull: false
         },
         batch_id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             allowNull: true
         },
         qty: {

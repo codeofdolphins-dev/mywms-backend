@@ -19,6 +19,12 @@ function Product(sequelize) {
         gst_type: {
             type: DataTypes.ENUM("include", "exclude"),
             defaultValue: "exclude",
+            allowNull: false
+        },
+        product_type: {
+            type: DataTypes.ENUM("raw", "finished"),
+            defaultValue: "raw",
+            allowNull: false
         },
         hsn_id: {
             type: DataTypes.INTEGER,

@@ -30,6 +30,8 @@ import Vendor from "./vendor.model.js";
 import VendorBankDetails from "./vendorBankDetails.model.js";
 import Inventory from "./inventory.model.js";
 import Outward from "./outward.model.js";
+import OutwardItems from "./outwardItems.model.js";
+import BillOfMaterial from "./billOfMaterial.model.js";
 // import RequestOrder from "./requestOrder.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
@@ -66,6 +68,8 @@ const defineRootModels = (rootSequelize) => {
     VendorBankDetails(rootSequelize);
     Inventory(rootSequelize);
     Outward(rootSequelize);
+    OutwardItems(rootSequelize);
+    BillOfMaterial(rootSequelize);
     // RequestOrder(rootSequelize);
     
     return rootSequelize.models;
@@ -103,6 +107,8 @@ const defineTenantModels = (sequelize) => {
     VendorBankDetails(sequelize);
     Inventory(sequelize);
     Outward(sequelize);
+    OutwardItems(sequelize);
+    BillOfMaterial(sequelize);
     
     return sequelize.models;
 }

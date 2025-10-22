@@ -27,7 +27,9 @@ const defineRootAssociations = (models) => {
         Vendor,
         VendorBankDetails,
         Inventory,
-        Outward
+        Outward,
+        OutwardItems,
+        BillOfMaterial
         // RequestOrder
     } = models;
 
@@ -376,7 +378,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // InwardItem - Product
     InwardItem.belongsTo(Product, {
         foreignKey: "product_id",
@@ -390,7 +392,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Product
     Inventory.belongsTo(Product, {
         foreignKey: "product_id",
@@ -404,7 +406,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Warehouse
     Inventory.belongsTo(Warehouse, {
         foreignKey: "warehouse_id",
@@ -432,7 +434,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inward - Warehouse
     Inward.belongsTo(Warehouse, {
         foreignKey: "warehouse_id",
@@ -446,7 +448,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Outward
     Inventory.belongsTo(Outward, {
         foreignKey: "last_outward_id",
@@ -457,6 +459,62 @@ const defineRootAssociations = (models) => {
     Outward.hasMany(Inventory, {
         foreignKey: "last_outward_id",
         as: "inventoryOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // OutwardItems <-> Outward
+    OutwardItems.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "outward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Outward.hasMany(OutwardItems, {
+        foreignKey: "outward_id",
+        as: "outwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> From_Warehouse
+    Outward.belongsTo(Warehouse, {
+        foreignKey: "host_warehouse_id",
+        as: "hostWarehouse",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.hasMany(Outward, {
+        foreignKey: "host_warehouse_id",
+        as: "hostWarehouseOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> target_Warehouse
+    Outward.belongsTo(Warehouse, {
+        foreignKey: "target_warehouse_id",
+        as: "targetWarehouse",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.hasMany(Outward, {
+        foreignKey: "target_warehouse_id",
+        as: "targetWarehouseOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> user
+    Outward.belongsTo(User, {
+        foreignKey: "outward_by",
+        as: "outwardBy",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    User.hasMany(Outward, {
+        foreignKey: "outward_by",
+        as: "userOutward",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -581,6 +639,61 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // Product <-> OutwardItems
+    Product.hasMany(OutwardItems, {
+        foreignKey: "product_id",
+        as: "productOutwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    OutwardItems.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "outwardProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Batch <-> OutwardItems
+    Batch.hasMany(OutwardItems, {
+        foreignKey: "batch_id",
+        as: "batchOutwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    OutwardItems.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "outwardBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product <-> BillOfMaterial
+    Product.hasMany(BillOfMaterial, {
+        foreignKey: "finished_product_id",
+        as: "bomItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BillOfMaterial.belongsTo(Product, {
+        foreignKey: "finished_product_id",
+        as: "finishedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product <-> BillOfMaterial
+    Product.hasMany(BillOfMaterial, {
+        foreignKey: "raw_product_id",
+        as: "usedInBoms",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BillOfMaterial.belongsTo(Product, {
+        foreignKey: "raw_product_id",
+        as: "rawMaterial",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
 
 
     // ********************************************Many-To-Many*********************************
@@ -685,7 +798,8 @@ const defineTenantAssociations = (models) => {
         Vendor,
         VendorBankDetails,
         Inventory,
-        Outward
+        Outward,
+        BillOfMaterial
         // RequestOrder,
 
     } = models;
@@ -1067,7 +1181,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Warehouse
     Inventory.belongsTo(Warehouse, {
         foreignKey: "warehouse_id",
@@ -1081,7 +1195,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Inward
     Inventory.belongsTo(Inward, {
         foreignKey: "last_inward_id",
@@ -1109,7 +1223,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    
+
     // Inventory - Outward
     Inventory.belongsTo(Outward, {
         foreignKey: "last_outward_id",
@@ -1120,6 +1234,62 @@ const defineTenantAssociations = (models) => {
     Outward.hasMany(Inventory, {
         foreignKey: "last_outward_id",
         as: "inventoryOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // OutwardItems <-> Outward
+    OutwardItems.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "outward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Outward.hasMany(OutwardItems, {
+        foreignKey: "outward_id",
+        as: "outwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> From_Warehouse
+    Outward.belongsTo(Warehouse, {
+        foreignKey: "host_warehouse_id",
+        as: "hostWarehouse",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.hasMany(Outward, {
+        foreignKey: "host_warehouse_id",
+        as: "hostWarehouseOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> target_Warehouse
+    Outward.belongsTo(Warehouse, {
+        foreignKey: "target_warehouse_id",
+        as: "targetWarehouse",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.hasMany(Outward, {
+        foreignKey: "target_warehouse_id",
+        as: "targetWarehouseOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Outward <-> user
+    Outward.belongsTo(User, {
+        foreignKey: "outward_by",
+        as: "outwardBy",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    User.hasMany(Outward, {
+        foreignKey: "outward_by",
+        as: "userOutward",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -1227,6 +1397,62 @@ const defineTenantAssociations = (models) => {
     InwardItem.belongsTo(Product, {
         foreignKey: "product_id",
         as: "productInwarded",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product <-> OutwardItems
+    Product.hasMany(OutwardItems, {
+        foreignKey: "product_id",
+        as: "productOutwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    OutwardItems.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "outwardProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Batch <-> OutwardItems
+    Batch.hasMany(OutwardItems, {
+        foreignKey: "batch_id",
+        as: "batchOutwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    OutwardItems.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "outwardBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product <-> BillOfMaterial
+    Product.hasMany(BillOfMaterial, {
+        foreignKey: "finished_product_id",
+        as: "bomItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BillOfMaterial.belongsTo(Product, {
+        foreignKey: "finished_product_id",
+        as: "finishedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product <-> BillOfMaterial
+    Product.hasMany(BillOfMaterial, {
+        foreignKey: "raw_product_id",
+        as: "usedInBoms",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BillOfMaterial.belongsTo(Product, {
+        foreignKey: "raw_product_id",
+        as: "rawMaterial",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

@@ -57,7 +57,7 @@ const createProduct = asyncHandler(async (req, res) => {
     const { Product, HSN, Category } = req.dbModels;
 
     try {
-        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "" } = req.body;
+        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", product_type = "" } = req.body;
         const profile_image = req?.file?.filename || null;
 
         if ([name, category_id, hsn_code, barcode, unit_of_measure, cost_price].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
@@ -71,6 +71,10 @@ const createProduct = asyncHandler(async (req, res) => {
         const category = await Category.findOne({ where: { id: category_id } })
         if (!category) return res.status(400).json({ success: false, code: 400, message: "Category not found!!!" });
 
+        if(product_type === ""){
+            
+        };
+
         const product = await Product.create({
             name: name.trim(),
             category_id: category.id,
@@ -83,6 +87,7 @@ const createProduct = asyncHandler(async (req, res) => {
             cost_price: parseInt(cost_price),
             selling_price: parseInt(selling_price),
             reorder_level,
+            product_type: product_type !== "" ? product_type.toLowercase() : undefined,
             photo: profile_image
         });
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
@@ -95,6 +100,7 @@ const createProduct = asyncHandler(async (req, res) => {
     }
 });
 
+// DELETE
 const deleteProduct = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
@@ -126,10 +132,11 @@ const deleteProduct = asyncHandler(async (req, res) => {
     }
 });
 
+// PUT
 const updateProduct = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
-        const { id = "", name = "", sku = "", gst_type = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", status = "" } = req.body;
+        const { id = "", name = "", sku = "", gst_type = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", status = "", product_type = "" } = req.body;
         if (!id && !barcode) return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
         const profile_image = req?.file?.filename || null;
 
@@ -149,6 +156,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         if (reorder_level) updateDetails.reorder_level = reorder_level;
         if (selling_price) updateDetails.selling_price = selling_price;
         if (status) updateDetails.status = status;
+        if (product_type) updateDetails.product_type = product_type.toLowercase();
 
         if (profile_image) {
             if (product.photo) {
@@ -183,6 +191,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 });
 
+// PUT
 const updateProductBatch = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
