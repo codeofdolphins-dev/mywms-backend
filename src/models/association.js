@@ -799,6 +799,7 @@ const defineTenantAssociations = (models) => {
         VendorBankDetails,
         Inventory,
         Outward,
+        OutwardItems,
         BillOfMaterial
         // RequestOrder,
 

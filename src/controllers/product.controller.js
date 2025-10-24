@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import fs from "fs";
-import path from "path";
+import { saveBase64Image, deleteImage } from "../utils/handelImage.js";
+
 
 // GET
 const allProductList = asyncHandler(async (req, res) => {
@@ -54,11 +54,15 @@ const allProductList = asyncHandler(async (req, res) => {
 
 // POST
 const createProduct = asyncHandler(async (req, res) => {
-    const { Product, HSN, Category } = req.dbModels;
-
+    const { Product, HSN, Category, BillOfMaterial } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    let profile_image = null;
+    
     try {
-        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", product_type = "" } = req.body;
-        const profile_image = req?.file?.filename || null;
+        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", product_type = "", base64Image = "" } = req.body;
+
+        // check image object exists or not
+        if (req?.file?.filename) profile_image = req?.file?.filename;
 
         if ([name, category_id, hsn_code, barcode, unit_of_measure, cost_price].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
 
@@ -71,8 +75,8 @@ const createProduct = asyncHandler(async (req, res) => {
         const category = await Category.findOne({ where: { id: category_id } })
         if (!category) return res.status(400).json({ success: false, code: 400, message: "Category not found!!!" });
 
-        if(product_type === ""){
-            
+        if (product_type === "finished" && req?.file === undefined && base64Image) {
+            profile_image = await saveBase64Image(base64Image);
         };
 
         const product = await Product.create({
@@ -87,16 +91,46 @@ const createProduct = asyncHandler(async (req, res) => {
             cost_price: parseInt(cost_price),
             selling_price: parseInt(selling_price),
             reorder_level,
-            product_type: product_type !== "" ? product_type.toLowercase() : undefined,
+            product_type: product_type !== "" ? product_type.toLowerCase() : undefined,
             photo: profile_image
-        });
+        }, { transaction });
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
 
+        if (product_type === "finished") {
+            const { items } = req.body;
+            if (items.length < 1) return res.status(400).json({ success: false, code: 400, message: "No Raw products found!!!" });
+
+            for (const item of items) {
+                const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
+                if (!rawProduct) {
+                    await transaction.rollback();
+                    await deleteImage(profile_image)
+                    return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
+                }
+
+                const BOM = await BillOfMaterial.create({
+                    finished_product_id: product.id,
+                    raw_product_id: rawProduct.id,
+                    quantity_required: parseInt(item.qty, 10),
+                    uom: item.uom
+                }, { transaction });
+
+                if(!BOM){
+                    await transaction.rollback();
+                    await deleteImage(profile_image)
+                    return res.status(200).json({ success: true, code: 200, message: "Insertion failed for BOM!!! " });
+                }
+            }
+        }
+
+        await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Product added successfully." });
 
     } catch (error) {
+        await transaction.rollback();
+        await deleteImage(profile_image)
         console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.errors[0] });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -104,21 +138,11 @@ const createProduct = asyncHandler(async (req, res) => {
 const deleteProduct = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
-        const { id } = req.params;      
+        const { id } = req.params;
 
         const product = await Product.findByPk(id);
         if (product.photo) {
-            const oldImagePath = path.join(
-                process.cwd(),
-                "public",
-                "user",
-                product.photo
-            );
-
-            // Safely unlink if file exists
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
-            }
+            await deleteImage(product.photo);
         }
 
         const isDeleted = await Product.destroy({ where: { id } });
@@ -160,17 +184,19 @@ const updateProduct = asyncHandler(async (req, res) => {
 
         if (profile_image) {
             if (product.photo) {
-                const oldImagePath = path.join(
-                    process.cwd(),
-                    "public",
-                    "user",
-                    product.photo
-                );
+                // const oldImagePath = path.join(
+                //     process.cwd(),
+                //     "public",
+                //     "user",
+                //     product.photo
+                // );
 
-                // Safely unlink if file exists
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
+                // // Safely unlink if file exists
+                // if (fs.existsSync(oldImagePath)) {
+                //     fs.unlinkSync(oldImagePath);
+                // }
+
+                await deleteImage(product.photo);
             }
             updateDetails.photo = profile_image;
         }

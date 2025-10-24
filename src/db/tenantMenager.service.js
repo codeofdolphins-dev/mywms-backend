@@ -46,20 +46,20 @@ export async function rootDB() {
     // });
 
     // ############### local postgresql ###############
-    const rootSequelize = new Sequelize("mywms", "postgres", "1", {
-        host: "localhost",
-        port: 5432,
-        dialect: "postgres",
-        logging: console.log,
-    });
-
-    // ############### cloud postgresql ###############
-    // const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
-    //     host: process.env.PG_DB_HOST,
-    //     port: process.env.PG_DB_PORT,
+    // const rootSequelize = new Sequelize("mywms", "postgres", "1", {
+    //     host: "localhost",
+    //     port: 5432,
     //     dialect: "postgres",
     //     logging: console.log,
     // });
+
+    // ############### cloud postgresql ###############
+    const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
+        host: process.env.PG_DB_HOST,
+        port: process.env.PG_DB_PORT,
+        dialect: "postgres",
+        logging: console.log,
+    });
 
 
     const models = defineRootModels(rootSequelize);
@@ -84,13 +84,6 @@ export async function generateDatabase(dbName) {
             port: process.env.PG_DB_PORT,
             database: "mywms"
         });
-        // const client = new pg.Client({
-        //     user: "postgres",
-        //     password: "1",
-        //     host: "localhost",
-        //     port: 5432,
-        //     database: "mywms"
-        // });
         await client.connect();
 
         const result = await client.query(
@@ -113,6 +106,8 @@ export async function generateDatabase(dbName) {
 
     } catch (error) {
         console.log("👷 ❌ error from service:");
+        console.log("👷 ❌ ROLLBACK...");
+        await deleteTenantDatabase(dbName);
         throw error;
     }
 }
