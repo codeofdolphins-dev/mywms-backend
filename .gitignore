@@ -28,3 +28,7 @@ coverage/
 # static data
 public/user/*
 !public/user/.gitkeep
+
+# ERD diagram
+mywms*.*
+!mywms.mwb
