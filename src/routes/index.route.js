@@ -20,6 +20,7 @@ import quotationApi from "./quotation.route.js";
 import purchaseOrderApi from "./purchasOrder.route.js";
 import invoiceApi from "./invoice.route.js";
 import outwardApi from "./outward.route.js";
+import bomApi from "./bom.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -49,6 +50,7 @@ router.use("/quotation", quotationApi);
 router.use("/purchaseOrder", purchaseOrderApi);
 router.use("/invoice", invoiceApi);
 router.use("/outward", outwardApi);
+router.use("/bom", bomApi);
 
 
 export default router;

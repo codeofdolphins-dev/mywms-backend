@@ -1,16 +1,28 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, User, Product } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "" } = req.query;
+        let { page = 1, limit = 10, id = "", title = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const requisition = await Requisition.findAndCountAll({
-            where: id ? { id } : undefined,
+            where: (id || title) ? { 
+                [Op.or]: [ 
+                    {
+                        id: parseInt(id, 10) || null
+                    },
+                    {
+                        title: {
+                            [Op.iLike]: `${title}%`
+                        }
+                    }
+                ]
+            } : undefined,
             include: [
                 {
                     model: User,
@@ -44,7 +56,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: requisition,
+            data: requisition.rows,
             meta: {
                 totalItems,
                 totalPages,

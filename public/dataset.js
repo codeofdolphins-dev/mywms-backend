@@ -1009,6 +1009,14 @@ const permissions = [
   { permission: "outward:update" },
   { permission: "outward-item:update" },
   { permission: "outward:delete" },
+  
+  // bom
+  { permission: "bom:create" },
+  { permission: "bom:read" },
+  { permission: "bom:update" },
+  { permission: "bom:delete" },
+  { permission: "bom-item:add" },
+  { permission: "bom-item:remove" },
 ]
 
 

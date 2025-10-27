@@ -8,8 +8,8 @@ const allProductList = asyncHandler(async (req, res) => {
     const { Product, Category, HSN } = req.dbModels;
     try {
         let { page = 1, limit = 10, barcode = "", id = "" } = req.query;
-        page = parseInt(page);
-        limit = parseInt(limit);
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
         const product = await Product.findAndCountAll({
@@ -140,13 +140,14 @@ const deleteProduct = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
 
-        const product = await Product.findByPk(id);
+        const product = await Product.findByPk(parseInt(id, 10));
+        if (!product) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         if (product.photo) {
             await deleteImage(product.photo);
         }
 
         const isDeleted = await Product.destroy({ where: { id } });
-        if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion failed!!!" });
+        if (!isDeleted) return res.status(501).json({ success: false, code: 501, message: "Deletion failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
 
@@ -201,7 +202,7 @@ const updateProduct = asyncHandler(async (req, res) => {
             updateDetails.photo = profile_image;
         }
 
-        const isUpdate = await Product.update(
+        const [ isUpdate ] = await Product.update(
             updateDetails,
             {
                 where: (barcode || id) ? { [Op.or]: [{ barcode: parseInt(barcode) || null }, { id: parseInt(id) || null }] } : undefined,
