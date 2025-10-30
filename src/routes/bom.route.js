@@ -5,7 +5,6 @@ import { addItem, allBOMList, createBOM, deleteBOM, removeItem, updateBOM } from
 
 const router = Router();
 
-
 router.use(verifyJWT);
 
 router.route("/all").get(verifyPermission("bom:read"), allBOMList);  // optional ?id= &page= &limit=

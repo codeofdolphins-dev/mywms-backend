@@ -21,6 +21,7 @@ import purchaseOrderApi from "./purchasOrder.route.js";
 import invoiceApi from "./invoice.route.js";
 import outwardApi from "./outward.route.js";
 import bomApi from "./bom.route.js";
+import brandApi from "./brand.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -32,6 +33,7 @@ router.use("/location", locationApi);
 router.use("/warehouse", warehouseApi);
 router.use("/user", userApi);
 router.use("/product", productApi);
+router.use("/brand", brandApi);
 
 router.use(defineUserScope, defineDbObject);
 

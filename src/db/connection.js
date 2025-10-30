@@ -20,7 +20,7 @@ const connectRootDB = async () => {
     } catch (error) {
         if (error.original && error.original.code === '42P01') {
             console.warn("⚠️  Tables not found — creating them now...");
-            await rootSequelize.sync({ force: true });
+            await rootSequelize.sync({ alter: true });
 
             console.log("👑 💾 Start data seeding...");
             await dataSeeder(models);

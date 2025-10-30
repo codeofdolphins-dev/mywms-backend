@@ -32,6 +32,7 @@ import Inventory from "./inventory.model.js";
 import Outward from "./outward.model.js";
 import OutwardItems from "./outwardItems.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
+import Brand from "./brand.model.js";
 // import RequestOrder from "./requestOrder.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
@@ -70,7 +71,7 @@ const defineRootModels = (rootSequelize) => {
     Outward(rootSequelize);
     OutwardItems(rootSequelize);
     BillOfMaterial(rootSequelize);
-    // RequestOrder(rootSequelize);
+    Brand(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -99,7 +100,6 @@ const defineTenantModels = (sequelize) => {
     QuotationItems(sequelize);
     Vendor(sequelize);
     PurchasOrder(sequelize);
-    // RequestOrder(sequelize);
     
     PurchaseOrderItems(sequelize);
     Invoice(sequelize);
@@ -109,6 +109,7 @@ const defineTenantModels = (sequelize) => {
     Outward(sequelize);
     OutwardItems(sequelize);
     BillOfMaterial(sequelize);
+    Brand(sequelize);
     
     return sequelize.models;
 }

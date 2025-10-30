@@ -83,3 +83,6 @@ bom ✅
 
 bom-item ✅
 :A-R
+
+brand ✅
+:C-R-D-U
