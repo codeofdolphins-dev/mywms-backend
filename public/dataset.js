@@ -1017,6 +1017,12 @@ const permissions = [
   { permission: "bom:delete" },
   { permission: "bom-item:add" },
   { permission: "bom-item:remove" },
+  
+  // brand
+  { permission: "brand:create" },
+  { permission: "brand:read" },
+  { permission: "brand:update" },
+  { permission: "brand:delete" },
 ]
 
 

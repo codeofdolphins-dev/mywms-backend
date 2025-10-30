@@ -11,6 +11,10 @@ function Product(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        brand_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         sku: {
             type: DataTypes.STRING,
             allowNull: true,

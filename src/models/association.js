@@ -29,7 +29,8 @@ const defineRootAssociations = (models) => {
         Inventory,
         Outward,
         OutwardItems,
-        BillOfMaterial
+        BillOfMaterial,
+        Brand
         // RequestOrder
     } = models;
 
@@ -691,6 +692,34 @@ const defineRootAssociations = (models) => {
     BillOfMaterial.belongsTo(Product, {
         foreignKey: "raw_product_id",
         as: "rawMaterial",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Brand <-> Product
+    Brand.hasMany(Product, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "belongingProducts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Vendor <-> Brand
+    Vendor.hasMany(Brand, {
+        foreignKey: "vendor_id",
+        as: "suppliedBrands",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsTo(Vendor, {
+        foreignKey: "vendor_id",
+        as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -1454,6 +1483,34 @@ const defineTenantAssociations = (models) => {
     BillOfMaterial.belongsTo(Product, {
         foreignKey: "raw_product_id",
         as: "rawMaterial",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Brand <-> Product
+    Brand.hasMany(Product, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "belongingProducts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Vendor <-> Brand
+    Vendor.hasMany(Brand, {
+        foreignKey: "vendor_id",
+        as: "suppliedBrands",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsTo(Vendor, {
+        foreignKey: "vendor_id",
+        as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
