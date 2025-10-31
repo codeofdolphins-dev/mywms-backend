@@ -553,11 +553,17 @@ const defineRootAssociations = (models) => {
 
     // Category ↔ Product
     Category.hasMany(Product, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "products",
     });
     Product.belongsTo(Category, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "category",
     });
 
@@ -712,13 +718,19 @@ const defineRootAssociations = (models) => {
 
     // Vendor <-> Brand
     Vendor.hasMany(Brand, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBrands",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Brand.belongsTo(Vendor, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
@@ -1357,11 +1369,17 @@ const defineTenantAssociations = (models) => {
 
     // Category ↔ Product
     Category.hasMany(Product, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "products",
     });
     Product.belongsTo(Category, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "category",
     });
 
@@ -1503,13 +1521,19 @@ const defineTenantAssociations = (models) => {
 
     // Vendor <-> Brand
     Vendor.hasMany(Brand, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBrands",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Brand.belongsTo(Vendor, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
