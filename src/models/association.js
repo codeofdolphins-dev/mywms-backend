@@ -553,11 +553,17 @@ const defineRootAssociations = (models) => {
 
     // Category ↔ Product
     Category.hasMany(Product, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "products",
     });
     Product.belongsTo(Category, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "category",
     });
 
@@ -1363,11 +1369,17 @@ const defineTenantAssociations = (models) => {
 
     // Category ↔ Product
     Category.hasMany(Product, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "products",
     });
     Product.belongsTo(Category, {
-        foreignKey: "category_id",
+        foreignKey: {
+            name: "last_category_id",
+            allowNull: true
+        },
         as: "category",
     });
 

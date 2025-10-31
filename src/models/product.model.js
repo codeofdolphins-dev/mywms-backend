@@ -7,17 +7,26 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        category_id: {
+        last_category_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        brand_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        brand_id: {
+        hsn_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
         sku: {
             type: DataTypes.STRING,
             allowNull: true,
+            unique: true,
+        },
+        barcode: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
             unique: true,
         },
         gst_type: {
@@ -30,24 +39,27 @@ function Product(sequelize) {
             defaultValue: "raw",
             allowNull: false
         },
-        hsn_id: {
-            type: DataTypes.INTEGER,
+        package_type: {
+            type: DataTypes.ENUM("tetra Pack", "plastic"),
+            allowNull: true
+        },
+        measure: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
-        barcode: {
-            type: DataTypes.INTEGER,
+        unit: {
+            type: DataTypes.STRING,
             allowNull: false,
-            unique: true,
         },
         description: {
             type: DataTypes.STRING,
             allowNull: true
         },
-        unit_of_measure: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
         selling_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+        },
+        MRP: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
@@ -55,7 +67,7 @@ function Product(sequelize) {
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
-        status: {
+        isActive: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },

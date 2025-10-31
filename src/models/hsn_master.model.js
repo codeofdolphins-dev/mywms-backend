@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 function HSN(sequelize) {
     return sequelize.define("HSN", {
         hsn_code: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
             unique: true
         },

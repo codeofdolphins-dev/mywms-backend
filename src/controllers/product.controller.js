@@ -54,12 +54,30 @@ const allProductList = asyncHandler(async (req, res) => {
 
 // POST
 const createProduct = asyncHandler(async (req, res) => {
-    const { Product, HSN, Category, BillOfMaterial } = req.dbModels;
+    const { Product, HSN, Category, BillOfMaterial, Brand } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     let profile_image = null;
-    
+
     try {
-        const { name = "", category_id = "", sku = "", gst_type = "", hsn_code = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", product_type = "", base64Image = "" } = req.body;
+        const {
+            name = "",
+            category_id = "",
+            last_category_id = "",
+            brand_id = "",
+            hsn_code = "",
+            sku = "",
+            barcode = "",
+            gst_type = "",
+            product_type = "raw",
+            package_type = "",
+            measure = "",
+            unit = "",
+            description = "",
+            selling_price = "",
+            MRP = "",
+            reorder_level = "",
+            base64Image = null
+        } = req.body;
 
         // check image object exists or not
         if (req?.file?.filename) profile_image = req?.file?.filename;
@@ -67,38 +85,63 @@ const createProduct = asyncHandler(async (req, res) => {
         if ([name, category_id, hsn_code, barcode, unit_of_measure, cost_price].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
 
         const isExists = await Product.findOne({ where: { barcode } })
-        if (isExists) return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${barcode} already exists!!!` });
+        if (isExists) {
+            await transaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: `Product with barcode: ${barcode} already exists!!!` });
+        }
 
         const hsn = await HSN.findOne({ where: { hsn_code } })
-        if (!hsn) return res.status(400).json({ success: false, code: 400, message: "HSN code not found!!!" });
+        if (!hsn) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
+        }
 
-        const category = await Category.findOne({ where: { id: category_id } })
-        if (!category) return res.status(400).json({ success: false, code: 400, message: "Category not found!!!" });
+        const category = await Category.findOne({ where: { id: parseInt(last_category_id, 10) } })
+        if (!category) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Category not found!!!" });
+        }
+
+        const brand = await Brand.findOne({ where: { id: parseInt(brand_id, 10) } })
+        if (!brand) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+        }
+
+        const product = await Product.create({
+            name: name.trim(),
+            last_category_id: category.id,
+            brand_id: brand.id,
+            hsn_id: hsn.id,
+            sku,
+            barcode,
+            gst_type: gst_type !== "" ? gst_type.trim().toLowerCase() : undefined,
+            product_type: product_type !== "" ? product_type.toLowerCase().trim() : undefined,
+            package_type: package_type !== "" ? package_type.trim().toLowerCase() : undefined,
+            measure,
+            unit,
+            description,
+            selling_price: parseFloat(selling_price),
+            cost_price: parseInt(cost_price),
+            MRP: parseInt(MRP),
+            reorder_level,
+            photo: profile_image
+        }, { transaction });
+        if (!product) {
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
+        }
 
         if (product_type === "finished" && req?.file === undefined && base64Image) {
             profile_image = await saveBase64Image(base64Image);
         };
 
-        const product = await Product.create({
-            name: name.trim(),
-            category_id: category.id,
-            sku,
-            gst_type: gst_type.trim(),
-            hsn_id: hsn.id,
-            barcode,
-            description,
-            unit_of_measure,
-            cost_price: parseInt(cost_price),
-            selling_price: parseInt(selling_price),
-            reorder_level,
-            product_type: product_type !== "" ? product_type.toLowerCase() : undefined,
-            photo: profile_image
-        }, { transaction });
-        if (!product) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
-
         if (product_type === "finished") {
             const { items } = req.body;
-            if (items.length < 1) return res.status(400).json({ success: false, code: 400, message: "No Raw products found!!!" });
+            if (items.length < 1) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "No Raw products found!!!" });
+            }
 
             for (const item of items) {
                 const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
@@ -115,14 +158,13 @@ const createProduct = asyncHandler(async (req, res) => {
                     uom: item.uom
                 }, { transaction });
 
-                if(!BOM){
+                if (!BOM) {
                     await transaction.rollback();
                     await deleteImage(profile_image)
-                    return res.status(200).json({ success: true, code: 200, message: "Insertion failed for BOM!!! " });
+                    return res.status(500).json({ success: false, code: 500, message: "Insertion failed for BOM!!! " });
                 }
             }
         }
-
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Product added successfully." });
 
@@ -159,50 +201,70 @@ const deleteProduct = asyncHandler(async (req, res) => {
 
 // PUT
 const updateProduct = asyncHandler(async (req, res) => {
-    const { Product } = req.dbModels;
+    const { Product, HSN, Category, Brand } = req.dbModels;
     try {
-        const { id = "", name = "", sku = "", gst_type = "", barcode = "", description = "", unit_of_measure = "", cost_price = "", selling_price = "", reorder_level = "", status = "", product_type = "" } = req.body;
+        const {
+            id = "",
+            barcode = "",
+            name = "",
+            last_category_id = "",
+            brand_id = "",
+            hsn_code = "",
+            sku = "",
+            gst_type = "",
+            package_type = "",
+            measure = "",
+            unit = "",
+            description = "",
+            selling_price = "",
+            MRP = "",
+            reorder_level = "",
+            isActive = "",
+        } = req.body;
         if (!id && !barcode) return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
         const profile_image = req?.file?.filename || null;
 
         const product = await Product.findOne({
             where: (barcode || id) ? { [Op.or]: [{ barcode: parseInt(barcode) || null }, { id: parseInt(id) || null }] } : undefined,
-
         });
         if (!product) return res.status(404).json({ success: false, code: 404, message: "Product not found!!!" });
 
+        const hsn = await HSN.findOne({ where: { hsn_code } })
+        if (!hsn) {
+            return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
+        };
+        const category = await Category.findOne({ where: { id: parseInt(last_category_id, 10) } })
+        if (!category) {
+            return res.status(404).json({ success: false, code: 404, message: "Category not found!!!" });
+        };
+        const brand = await Brand.findOne({ where: { id: parseInt(brand_id, 10) } })
+        if (!brand) {
+            return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+        };
+
         let updateDetails = {};
         if (name) updateDetails.name = name;
+        if (last_category_id) updateDetails.last_category_id = parseInt(last_category_id, 10)
+        if (brand_id) updateDetails.brand_id = parseInt(brand_id, 10);
+        if (hsn_code) updateDetails.hsn_id = hsn.id;
         if (sku) updateDetails.sku = sku;
         if (gst_type) updateDetails.gst_type = gst_type;
+        if (package_type) updateDetails.package_type = package_type;
+        if (measure) updateDetails.measure = measure;
+        if (unit) updateDetails.unit = unit;
         if (description) updateDetails.description = description;
-        if (unit_of_measure) updateDetails.unit_of_measure = unit_of_measure;
-        if (cost_price) updateDetails.cost_price = cost_price;
-        if (reorder_level) updateDetails.reorder_level = reorder_level;
         if (selling_price) updateDetails.selling_price = selling_price;
-        if (status) updateDetails.status = status;
-        if (product_type) updateDetails.product_type = product_type.toLowercase();
-
+        if (MRP) updateDetails.MRP = MRP;
+        if (reorder_level) updateDetails.reorder_level = reorder_level;
+        if (isActive) updateDetails.isActive = isActive;
         if (profile_image) {
             if (product.photo) {
-                // const oldImagePath = path.join(
-                //     process.cwd(),
-                //     "public",
-                //     "user",
-                //     product.photo
-                // );
-
-                // // Safely unlink if file exists
-                // if (fs.existsSync(oldImagePath)) {
-                //     fs.unlinkSync(oldImagePath);
-                // }
-
                 await deleteImage(product.photo);
             }
             updateDetails.photo = profile_image;
         }
 
-        const [ isUpdate ] = await Product.update(
+        const [isUpdate] = await Product.update(
             updateDetails,
             {
                 where: (barcode || id) ? { [Op.or]: [{ barcode: parseInt(barcode) || null }, { id: parseInt(id) || null }] } : undefined,
