@@ -45,11 +45,11 @@ function Product(sequelize) {
         },
         measure: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         unit: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         description: {
             type: DataTypes.STRING,
