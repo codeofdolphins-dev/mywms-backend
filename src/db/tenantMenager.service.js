@@ -39,19 +39,19 @@ export async function rootDB() {
     }
 
     // ############### local mysql ###############
-    const rootSequelize = new Sequelize("mywms", "root", "", {
-        host: "localhost",
-        dialect: "mysql",
-        logging: console.log,
-    });
-
-    // ############### local postgresql ###############
-    // const rootSequelize = new Sequelize("mywms", "postgres", "1", {
+    // const rootSequelize = new Sequelize("mywms", "root", "", {
     //     host: "localhost",
-    //     port: 5432,
-    //     dialect: "postgres",
+    //     dialect: "mysql",
     //     logging: console.log,
     // });
+
+    // ############### local postgresql ###############
+    const rootSequelize = new Sequelize("mywms", "postgres", "1", {
+        host: "localhost",
+        port: 5432,
+        dialect: "postgres",
+        logging: console.log,
+    });
 
     // ############### cloud postgresql ###############
     // const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {

@@ -712,13 +712,19 @@ const defineRootAssociations = (models) => {
 
     // Vendor <-> Brand
     Vendor.hasMany(Brand, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBrands",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Brand.belongsTo(Vendor, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
@@ -1503,13 +1509,19 @@ const defineTenantAssociations = (models) => {
 
     // Vendor <-> Brand
     Vendor.hasMany(Brand, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBrands",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
     Brand.belongsTo(Vendor, {
-        foreignKey: "vendor_id",
+        foreignKey: {
+            name: "vendor_id",
+            allowNull: false
+        },
         as: "suppliedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"

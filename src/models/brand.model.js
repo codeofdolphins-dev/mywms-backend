@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 function Brand(sequelize) {
     return sequelize.define("Brand", {
         name: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false
         },
         slug: {
@@ -26,13 +26,13 @@ function Brand(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
-        status: {
+        isActive: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
         vendor_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
     })
 }

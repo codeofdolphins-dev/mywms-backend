@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
 
@@ -11,7 +12,7 @@ const allBrand = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const brand = await Brand.findAndCountAll({
-            where: (barcode || id) ? {
+            where: (name || id) ? {
                 [Op.or]: [
                     {
                         id: parseInt(id) || null
@@ -78,7 +79,7 @@ const createBrand = asyncHandler(async (req, res) => {
             website,
             origin_country,
             status,
-            vendor_id: vendor.id
+            vendor_id: vendor ? vendor.id : undefined
         });
         if (!brand) return res.status(501).json({ succes: false, code: 501, message: "Record not created!!!" });
 
@@ -116,6 +117,10 @@ const updateBrand = asyncHandler(async (req, res) => {
             const vendor = await Vendor.findByPk(parseInt(vendor_id, 10));
             brand.vendor = vendor.id;
         }
+        const isUpdate = await brand.save();
+        if(!isUpdate) return res.status(501).json({ succes: false, code: 501, message: "Updation failed!!!" });
+
+        return res.status(200).json({ succes: true, code: 200, message: "Record Updated Successfully", data: isUpdate });
 
     } catch (error) {
         console.log(error);
