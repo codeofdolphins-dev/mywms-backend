@@ -841,7 +841,8 @@ const defineTenantAssociations = (models) => {
         Inventory,
         Outward,
         OutwardItems,
-        BillOfMaterial
+        BillOfMaterial,
+        Brand
         // RequestOrder,
 
     } = models;

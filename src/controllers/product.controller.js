@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { saveBase64Image, deleteImage } from "../utils/handelImage.js";
+import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js";
 
 
 // GET
@@ -56,6 +56,7 @@ const allProductList = asyncHandler(async (req, res) => {
 const createProduct = asyncHandler(async (req, res) => {
     const { Product, HSN, Category, BillOfMaterial, Brand } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+    const dbName = req.headers['x-tenant-id'];
     let profile_image = null;
 
     try {
@@ -79,7 +80,12 @@ const createProduct = asyncHandler(async (req, res) => {
         } = req.body;
 
         // check image object exists or not
-        if (req?.file?.filename) profile_image = req?.file?.filename;
+        if (req?.file?.filename) {
+            profile_image = req?.file?.filename;
+            if(!req?.isfileSave){
+                await moveFile(profile_image, dbName);
+            }
+        }
 
         if ([name, brand_id, hsn_code, barcode].some(item => item === "")) {
             await transaction.rollback();
@@ -110,6 +116,10 @@ const createProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
         }
 
+        if (product_type === "finished" && req?.file === undefined && base64Image) {
+            profile_image = await saveBase64Image(base64Image, dbName);
+        };
+
         const product = await Product.create({
             name: name.trim(),
             last_category_id: category.id,
@@ -126,29 +136,22 @@ const createProduct = asyncHandler(async (req, res) => {
             selling_price: parseFloat(selling_price),
             MRP: parseInt(MRP),
             reorder_level,
-            photo: profile_image
+            photo: profile_image ? `${dbName}/${profile_image}` : null
         }, { transaction });
         if (!product) {
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
         }
 
-        if (product_type === "finished" && req?.file === undefined && base64Image) {
-            profile_image = await saveBase64Image(base64Image);
-        };
 
-        if (product_type === "finished") {
+        if (product_type === "finished" && req.body?.items.length > 0) {
             const { items } = req.body;
-            if (items.length < 1) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, code: 400, message: "No Raw products found!!!" });
-            }
 
             for (const item of items) {
                 const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
                 if (!rawProduct) {
                     await transaction.rollback();
-                    await deleteImage(profile_image)
+                    await deleteImage(profile_image, dbName);
                     return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
                 }
 
@@ -161,7 +164,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
                 if (!BOM) {
                     await transaction.rollback();
-                    await deleteImage(profile_image)
+                    await deleteImage(profile_image, dbName);
                     return res.status(500).json({ success: false, code: 500, message: "Insertion failed for BOM!!! " });
                 }
             }
@@ -171,7 +174,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        if (profile_image) await deleteImage(profile_image)
+        if (profile_image) await deleteImage(profile_image, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -203,6 +206,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 // PUT
 const updateProduct = asyncHandler(async (req, res) => {
     const { Product, HSN, Category, Brand } = req.dbModels;
+    const dbName = req.headers["x-tenant-id"];
     try {
         const {
             id = "",
@@ -267,7 +271,7 @@ const updateProduct = asyncHandler(async (req, res) => {
             if (product.photo) {
                 await deleteImage(product.photo);
             }
-            updateDetails.photo = profile_image;
+            updateDetails.photo = `${dbName}/${profile_image}`;
         }
 
         const [isUpdate] = await Product.update(

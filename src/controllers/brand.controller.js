@@ -60,11 +60,17 @@ const allBrand = asyncHandler(async (req, res) => {
 
 const createBrand = asyncHandler(async (req, res) => {
     const { Brand, Vendor } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    const dbName = req.headers['x-tenant-id'];
+    const logo = req?.file?.filename || null;
 
     try {
         const { name = "", description = "", website = "", origin_country = "", status = "", vendor_id = "" } = req.body;
-        if (!name) return res.status(400).json({ succes: false, code: 400, message: "Name required!!!" });
-        const logo = req?.file?.filename;
+        if (!name) {
+            await deleteImage(logo, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ succes: false, code: 400, message: "Name required!!!" });
+        }
 
         let vendor = null;
         if (vendor_id) {
@@ -75,16 +81,24 @@ const createBrand = asyncHandler(async (req, res) => {
             name,
             slug: makeSlug(name),
             description,
-            logo,
+            logo: logo ? `${dbName}/${logo}` : null,
             website,
             origin_country,
             status,
             vendor_id: vendor ? vendor.id : undefined
-        });
-        if (!brand) return res.status(501).json({ succes: false, code: 501, message: "Record not created!!!" });
+        }, { transaction });
+        if (!brand) {
+            await deleteImage(logo, dbName);
+            await transaction.rollback();
+            return res.status(501).json({ succes: false, code: 501, message: "Record not created!!!" });
+        }
 
+        await transaction.commit();
         return res.status(200).json({ succes: true, code: 200, message: "Record created." });
+
     } catch (error) {
+        await deleteImage(logo, dbName);
+        await transaction.rollback();
         console.log(error);
         return res.status(500).json({ succes: false, code: 500, message: error.message });
     }
@@ -92,18 +106,28 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
     const { Brand, Vendor } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    const dbName = req.headers["x-tenant-id"];
+    const logo = req?.file?.filename || null;
 
     try {
         const { id = "", name = "", description = "", website = "", origin_country = "", status = "", vendor_id = "" } = req.body;
-        if (!id && !barcode) return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
-        const logo = req?.file?.filename || null;
+        if (!id && !barcode) {
+            await deleteImage(logo, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
+        }
 
         const brand = await Brand.findOne({ where: { id } });
-        if (!brand) return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+        if (!brand) {
+            await deleteImage(logo, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+        }
 
         if (brand.logo && logo) {
             const isDeleted = await deleteImage(brand.logo);
-            if (isDeleted) brand.logo = logo;
+            if (isDeleted) brand.logo = `${dbName}/${logo}`;
         }
         if (name) {
             brand.name = name;
@@ -117,12 +141,20 @@ const updateBrand = asyncHandler(async (req, res) => {
             const vendor = await Vendor.findByPk(parseInt(vendor_id, 10));
             brand.vendor = vendor.id;
         }
-        const isUpdate = await brand.save();
-        if(!isUpdate) return res.status(501).json({ succes: false, code: 501, message: "Updation failed!!!" });
+        const isUpdate = await brand.save({ transaction });
+        console.log(isUpdate); // FLAG:
+        if (!isUpdate) {
+            await deleteImage(logo, dbName);
+            await transaction.rollback();
+            return res.status(501).json({ succes: false, code: 501, message: "Updation failed!!!" });
+        }
 
+        await transaction.commit();
         return res.status(200).json({ succes: true, code: 200, message: "Record Updated Successfully", data: isUpdate });
 
     } catch (error) {
+        await deleteImage(logo, dbName);
+        await transaction.rollback();
         console.log(error);
         return res.status(500).json({ succes: false, code: 500, message: error.message });
     }
@@ -130,22 +162,29 @@ const updateBrand = asyncHandler(async (req, res) => {
 
 const deleteBrand = asyncHandler(async (req, res) => {
     const { Brand } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
 
     try {
         const { id } = req.params;
 
         const brand = await Brand.findByPk(parseInt(id, 10));
-        if (!brand) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
-        if (brand.logo) {
-            await deleteImage(brand.logo);
+        if (!brand) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         }
 
-        const isDeleted = await Brand.destroy({ where: { id } });
-        if (!isDeleted) return res.status(501).json({ success: false, code: 501, message: "Deletion failed!!!" });
+        const isDeleted = await Brand.destroy({ where: { id } }, { transaction });
+        if (!isDeleted) {
+            await transaction.rollback();
+            return res.status(501).json({ success: false, code: 501, message: "Deletion failed!!!" });
+        }
 
+        if (brand.logo) await deleteImage(brand.logo);
+        await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
 
     } catch (error) {
+        await transaction.commit();
         console.log(error);
         return res.status(500).json({ succes: false, code: 500, message: error.message });
     }

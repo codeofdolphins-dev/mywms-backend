@@ -1,7 +1,7 @@
 import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const defineUserScope = asyncHandler( async (req, res, next) => {
+export const defineUserScope = asyncHandler( async (req, res, next) => {    
     try {
         const tenantDB = req.headers["x-tenant-id"];
         if(tenantDB) return next();
@@ -21,8 +21,7 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
                     attributes: ["tenant"]
                 },
             ]
-        });
-        
+        });        
         if(!tenant) return res.status(404).json({ success: false, code: 404, message: `User with email: ${email} is not registered!!!` });
 
         const dbName = tenant.tenantsName.tenant;
