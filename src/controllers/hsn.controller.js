@@ -25,7 +25,7 @@ const allHSNList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: hsn,
+            data: hsn.rows,
             meta: {
                 totalItems,
                 totalPages,

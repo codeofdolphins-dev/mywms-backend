@@ -44,7 +44,7 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: purchasOrder,
+            data: purchasOrder.rows,
             meta: {
                 totalItems,
                 totalPages,

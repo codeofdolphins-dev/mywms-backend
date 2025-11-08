@@ -3,8 +3,16 @@ import { DataTypes } from "sequelize";
 
 function Warehouse(sequelize) {
     return sequelize.define("Warehouse", {
-        user_id: {
+        user_id : {
             type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        owner_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        owner_type: {
+            type: DataTypes.STRING,
             allowNull: false
         },
         full_name: {

@@ -32,7 +32,7 @@ const allCategoryList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: category,
+            data: category.rows,
             meta: {
                 totalItems,
                 totalPages,

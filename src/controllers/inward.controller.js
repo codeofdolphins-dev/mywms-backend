@@ -53,7 +53,7 @@ const getInward = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: data,
+            data: data.rows,
             meta: {
                 totalItems,
                 totalPages,

@@ -58,7 +58,7 @@ const allBOMList = asyncHandler(async (req, res) => {
       success: true,
       code: 200,
       message: "Fetched Successfully.",
-      data: paginated,
+      data: paginated.rows,
       meta: {
         totalItems,
         totalPages,

@@ -45,7 +45,7 @@ const allQuotation = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: quotation,
+            data: quotation.rows,
             meta: {
                 totalItems,
                 totalPages,

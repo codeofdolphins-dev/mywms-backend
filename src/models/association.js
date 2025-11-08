@@ -30,7 +30,9 @@ const defineRootAssociations = (models) => {
         Outward,
         OutwardItems,
         BillOfMaterial,
-        Brand
+        Brand,
+        Supplier,
+        Distributor,
         // RequestOrder
     } = models;
 
@@ -90,6 +92,34 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
     Warehouse.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ Supplier
+    User.hasOne(Supplier, {
+        foreignKey: "user_id",
+        as: "supplier",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Supplier.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ Distributor
+    User.hasOne(Distributor, {
+        foreignKey: "user_id",
+        as: "distributor",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Distributor.belongsTo(User, {
         foreignKey: "user_id",
         as: "user",
         onDelete: "CASCADE",
@@ -567,18 +597,18 @@ const defineRootAssociations = (models) => {
         as: "category",
     });
 
-    Warehouse.hasMany(User, {
-        foreignKey: "warehouse_id",
-        as: "employees",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    User.belongsTo(Warehouse, {
-        foreignKey: "warehouse_id",
-        as: "workplace",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // Warehouse.hasMany(User, {
+    //     foreignKey: "warehouse_id",
+    //     as: "employees",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // User.belongsTo(Warehouse, {
+    //     foreignKey: "warehouse_id",
+    //     as: "workplace",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // user <-> requisition
     User.hasMany(Requisition, {
@@ -842,7 +872,9 @@ const defineTenantAssociations = (models) => {
         Outward,
         OutwardItems,
         BillOfMaterial,
-        Brand
+        Brand,
+        Supplier,
+        Distributor,
         // RequestOrder,
 
     } = models;
@@ -899,6 +931,34 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
     Warehouse.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ Supplier
+    User.hasOne(Supplier, {
+        foreignKey: "user_id",
+        as: "supplier",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Supplier.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "user",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ Distributor
+    User.hasOne(Distributor, {
+        foreignKey: "user_id",
+        as: "distributor",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Distributor.belongsTo(User, {
         foreignKey: "user_id",
         as: "user",
         onDelete: "CASCADE",
@@ -1384,18 +1444,18 @@ const defineTenantAssociations = (models) => {
         as: "category",
     });
 
-    Warehouse.hasMany(User, {
-        foreignKey: "warehouse_id",
-        as: "employees", // plural because it's a hasMany relationship
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    User.belongsTo(Warehouse, {
-        foreignKey: "warehouse_id",
-        as: "workplace", // singular because each user belongs to one warehouse
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // Warehouse.hasMany(User, {
+    //     foreignKey: "warehouse_id",
+    //     as: "employees", // plural because it's a hasMany relationship
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // User.belongsTo(Warehouse, {
+    //     foreignKey: "warehouse_id",
+    //     as: "workplace", // singular because each user belongs to one warehouse
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // user <-> requisition
     User.hasMany(Requisition, {

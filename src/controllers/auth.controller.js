@@ -217,6 +217,97 @@ const register_employee = asyncHandler(async (req, res) => {
     }
 });
 
+const register_supplier = asyncHandler(async (req, res) => {
+    const dbObject = req.dbObject;
+    const transaction = await dbObject.transaction();
+    const { IndividualDetails, Role, User } = req.dbModels;
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const profile_image = req?.file?.filename || null;
+
+    try {
+        const { email = "", password = "", full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "", warehouse_id = "" } = req.body;
+        const dbName = req.headers["x-tenant-id"];
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } }, { transaction: rootTransaction });
+        if (!tenantsName) {
+            if (profile_image) await deleteImage(profile_image);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(501).json({ success: false, code: 501, message: "Not Implemented, database not found!!!" });
+        }
+
+        if ([email, password, full_name].some(field => field === "")) {
+            if (profile_image) await deleteImage(profile_image);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        };
+
+        const userRole = await Role.findOne({ where: { role: "user" } }, { transaction });
+        if (!userRole) {
+            if (profile_image) await deleteImage(profile_image);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Role 'user' not found. Make sure roles are seeded." });
+        }
+
+        const isRegister = await User.findOne({ where: { email } }, { transaction });
+        if (isRegister) {
+            if (profile_image) await deleteImage(profile_image);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `Employee with email: ${email} already exists!!!` });
+        }
+
+        const encryptPassword = await hashPassword(password);
+
+        const user = await User.create({
+            email,
+            password: encryptPassword,
+            type: "employee",
+            warehouse_id: warehouse_id === "" ? undefined : parseInt(warehouse_id, 10),
+        }, { transaction });
+
+        await IndividualDetails.create({
+            user_id: user.id,
+            first_name: full_name.split(" ")[0],
+            last_name: full_name.split(" ")[1],
+            full_name,
+            phone,
+            address,
+            state_id,
+            district_id,
+            pincode,
+            profile_image: profile_image ? `${dbName}/${profile_image}` : null
+        }, { transaction });
+
+        await user.addRole(userRole, { transaction });
+        await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
+
+        if (!IndividualDetails) {
+            if (profile_image) await deleteImage(profile_image);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(200).json({ success: true, code: 200, message: "Employee Register Successfully." });
+        }
+
+        await transaction.commit();
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Employee Register Successfully." });
+
+    } catch (error) {
+        if (profile_image) await deleteImage(profile_image);
+        await transaction.rollback();
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 const login = asyncHandler(async (req, res) => {
     const { User, CompanyDetails, IndividualDetails, Role } = req.dbModels;
     try {
@@ -419,6 +510,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 });
 
+// DELETE
 const delete_employee = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
     try {

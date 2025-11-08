@@ -7,13 +7,27 @@ import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js"
 const allProductList = asyncHandler(async (req, res) => {
     const { Product, Category, HSN } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "" } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", hsn_code = "", name = "" } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
+        const updateQuery = {};
+        if (barcode) updateQuery.barcode = barcode;
+        if (id) updateQuery.id = parseInt(id, 10);
+        if (hsn_code) {
+            const hsn = await HSN.findOne({ where: { hsn_code } });
+            if(!hsn) return res.status(404).json({ success: false, code: 404, message: "Hsn record not found!!!" });
+            updateQuery.hsn_id = hsn.id;
+        }
+        if (name) updateQuery.name = {
+            [Op.iLike]: `${name}%`
+        };
+
+        // console.log(updateQuery); return        
+
         const product = await Product.findAndCountAll({
-            where: (barcode || id) ? { [Op.or]: [{ barcode: parseInt(barcode) || null }, { id: parseInt(id) || null }] } : undefined,
+            where: updateQuery ? updateQuery : undefined,
             include: [
                 {
                     model: Category,
@@ -37,7 +51,7 @@ const allProductList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: product,
+            data: product.rows,
             meta: {
                 totalItems,
                 totalPages,
@@ -82,7 +96,7 @@ const createProduct = asyncHandler(async (req, res) => {
         // check image object exists or not
         if (req?.file?.filename) {
             profile_image = req?.file?.filename;
-            if(!req?.isfileSave){
+            if (!req?.isfileSave) {
                 await moveFile(profile_image, dbName);
             }
         }
