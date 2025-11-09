@@ -21,14 +21,13 @@ function User(sequelize) {
       allowNull: true
     },
     type: {
-      type: DataTypes.ENUM("warehouse", "distributor", "employee", "supplier", "other"),
+      type: DataTypes.ENUM("warehouse", "distributor", "employee", "supplier", "other", "admin"),
       allowNull: false,
-      defaultValue: "user"
+      defaultValue: "other"
     },
     owner_type: {
       type: DataTypes.ENUM("warehouse", "distributor", "other"),
-      defaultValue: "other",
-      allowNull: false
+      allowNull: true
     },
     owner_id: {
       type: DataTypes.INTEGER,

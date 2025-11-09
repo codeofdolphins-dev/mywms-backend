@@ -35,7 +35,7 @@ import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import Supplier from "./supplier.model.js";
 import Distributor from "./distributor.model.js";
-// import RequestOrder from "./requestOrder.joinModel.js";
+import Unit from "./unit.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -60,7 +60,6 @@ const defineRootModels = (rootSequelize) => {
     Requisition(rootSequelize)
     RequisitionItem(rootSequelize)
     HSN(rootSequelize);
-
     Quotation(rootSequelize);
     QuotationItems(rootSequelize);
     PurchasOrder(rootSequelize);
@@ -76,6 +75,7 @@ const defineRootModels = (rootSequelize) => {
     Brand(rootSequelize);
     Supplier(rootSequelize);
     Distributor(rootSequelize);
+    Unit(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -99,12 +99,10 @@ const defineTenantModels = (sequelize) => {
     Requisition(sequelize),
     RequisitionItem(sequelize)
     HSN(sequelize);
-
     Quotation(sequelize);
     QuotationItems(sequelize);
     Vendor(sequelize);
-    PurchasOrder(sequelize);
-    
+    PurchasOrder(sequelize);    
     PurchaseOrderItems(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
@@ -116,6 +114,7 @@ const defineTenantModels = (sequelize) => {
     Brand(sequelize);
     Supplier(sequelize);
     Distributor(sequelize);
+    Unit(sequelize);
     
     return sequelize.models;
 }
