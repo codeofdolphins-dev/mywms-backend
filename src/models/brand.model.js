@@ -30,9 +30,9 @@ function Brand(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
-        vendor_id: {
+        supplier_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: false
         },
     })
 }

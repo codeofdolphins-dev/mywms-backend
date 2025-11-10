@@ -59,22 +59,22 @@ const allBrand = asyncHandler(async (req, res) => {
 });
 
 const createBrand = asyncHandler(async (req, res) => {
-    const { Brand, Vendor } = req.dbModels;
+    const { Brand, Supplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers['x-tenant-id'];
     const logo = req?.file?.filename || null;
 
     try {
-        const { name = "", description = "", website = "", origin_country = "", status = "", vendor_id = "" } = req.body;
+        const { name = "", description = "", website = "", origin_country = "", status = "", supplier_id = "" } = req.body;
         if (!name) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ succes: false, code: 400, message: "Name required!!!" });
         }
 
-        let vendor = null;
-        if (vendor_id) {
-            vendor = await Vendor.findByPk(parseInt(vendor_id, 10));
+        let supplier = null;
+        if (supplier_id) {
+            supplier = await Supplier.findByPk(parseInt(supplier_id, 10));
         };
 
         const brand = await Brand.create({
@@ -195,7 +195,7 @@ export { allBrand, createBrand, updateBrand, deleteBrand };
 // helper method
 function makeSlug(str) {
     return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')   // replace spaces/special chars with -
-        .replace(/(^-|-$)/g, '');      // remove leading/trailing hyphens
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')   // replace spaces/special chars with -
+    .replace(/(^-|-$)/g, '');      // remove leading/trailing hyphens
 }

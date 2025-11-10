@@ -2,6 +2,9 @@ import { Op } from "sequelize";
 import { deleteTenantDatabase, generateDatabase } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import bcrypt from "bcrypt";
+import path from "path";
+import fs from "fs";
+
 
 const all_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
@@ -80,6 +83,55 @@ const register = asyncHandler(async (req, res) => {
     }
 });
 
+const updateCompanyDetails = asyncHandler(async (req, res) => {
+    const { User, CompanyDetails } = req.dbModels;
+    try {
+        const { companyDetails } = req.user || null;
+
+        const { email = "", c_name = "", ph_no = "", status = "" } = req.body;
+        const profile_image = req?.file?.filename || null;
+        if (!email) return res.status(400).json({ success: false, code: 400, message: "Email must required!!!" });
+
+        const user = await User.findOne({
+            where: { email }
+        })
+        if (!user) return res.status(400).json({ success: false, code: 400, message: `Company with email ${email} not found!!!` });
+
+        let updateDetails = {};
+        if (c_name) updateDetails.c_name = c_name;
+        if (ph_no) updateDetails.ph_no = ph_no;
+        if (status) updateDetails.status = status;
+
+        if (profile_image) {
+            const oldImagePath = path.join(
+                process.cwd(),
+                "public",
+                "user",
+                companyDetails.profile_image
+            );
+
+            // Safely unlink if file exists
+            if (fs.existsSync(oldImagePath)) {
+                fs.unlinkSync(oldImagePath);
+            }
+            updateDetails.profile_image = profile_image;
+        }
+
+        const isUpdated = await CompanyDetails.update({
+            where: { id: userDetails.id },
+            updateDetails
+        });
+
+        if (!isUpdated) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+
+        return res.status(200).json({ success: true, code: 200, message: "Company details updated successfully" });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 const delete_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName, User } = req.dbModels;
 
@@ -116,4 +168,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { register, delete_company, all_company };
+export { register, delete_company, all_company, updateCompanyDetails };

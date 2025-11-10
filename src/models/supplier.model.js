@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 
-function Supplier (sequelize){
+function Supplier(sequelize) {
     return sequelize.define("Supplier", {
         user_id: {
             type: DataTypes.INTEGER,
@@ -12,7 +12,7 @@ function Supplier (sequelize){
         },
         contact_person: {
             type: DataTypes.STRING,
-            allowNull: true
+            allowNull: false
         },
         phone: {
             type: DataTypes.STRING,
@@ -22,7 +22,19 @@ function Supplier (sequelize){
             type: DataTypes.TEXT,
             allowNull: true
         },
-        logo: {
+        state_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        district_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        pincode: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        profile_image: {
             type: DataTypes.STRING,
             allowNull: true
         },

@@ -7,14 +7,6 @@ function Warehouse(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        owner_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        owner_type: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
         full_name: {
             type: DataTypes.STRING,
             allowNull: true

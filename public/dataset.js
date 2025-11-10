@@ -897,6 +897,9 @@ const roles = [
   { role: "company/owner" },
   { role: "user" },
   { role: "admin" },
+  { role: "supplier" },
+  { role: "distributor" },
+  { role: "warehouse" },
 ]
 
 const permissions = [
@@ -1023,6 +1026,18 @@ const permissions = [
   { permission: "brand:read" },
   { permission: "brand:update" },
   { permission: "brand:delete" },
+
+  // supplier
+  { permission: "supplier:create" },
+  { permission: "supplier:read" },
+  { permission: "supplier:update" },
+  { permission: "supplier:delete" },
+
+  // distributor
+  { permission: "distributor:create" },
+  { permission: "distributor:read" },
+  { permission: "distributor:update" },
+  { permission: "distributor:delete" },
 ]
 
 

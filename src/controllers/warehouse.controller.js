@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
-import fs, { stat } from "fs";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { rootDB } from "../db/tenantMenager.service.js";
@@ -62,59 +62,6 @@ const allWarehouse = asyncHandler(async (req, res) => {
 
     }
     catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-const addWarehouse = asyncHandler(async (req, res) => {
-    const { User, Warehouse } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-
-    try {
-        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "" } = req.body;
-        const profile_image = req?.file?.filename || null;
-
-
-        if ([full_name, ph_number, address, state_id, district_id, pincode, gst_no, license_no].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-
-
-        const isRegister = await User.findOne({ where: { email } }, { transaction });
-        if (isRegister) return res.status(400).json({ success: false, code: 400, message: `Warehouse with email: ${email} already exists!!!` });
-
-        const encryptPassword = await hashPassword(password);
-
-        const user = await User.create({
-            email,
-            password: encryptPassword,
-            type: "warehouse"
-        }, { transaction });
-
-        const warehouse = await Warehouse.create({
-            user_id: user.id,
-            full_name,
-            f_name: full_name.split(" ")[0],
-            l_name: full_name.split(" ")[1],
-            ph_number,
-            profile_image,
-            address,
-            state_id,
-            district_id,
-            pincode,
-            gst_no,
-            license_no,
-            lat,
-            long,
-        }, { transaction });
-
-        await transaction.commit();
-
-        if (!warehouse) return res.status(500).json({ success: false, code: 500, message: "Warehouse creation failed!!!" });
-
-        return res.status(200).json({ success: true, code: 200, message: "Warehouse Register Successfully." });
-
-    } catch (error) {
-        if (transaction) await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -215,4 +162,4 @@ async function hashPassword(pass) {
     return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10));
 }
 
-export { addWarehouse, allWarehouse, editWarehouse, deleteWarehouse };
+export { allWarehouse, editWarehouse, deleteWarehouse };

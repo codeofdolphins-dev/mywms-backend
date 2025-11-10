@@ -86,3 +86,9 @@ bom-item ✅
 
 brand ✅
 :C-R-D-U
+
+supplier ✅
+:C-R-D-U
+
+distributor ✅
+:C-R-D-U

@@ -18,12 +18,24 @@ function Distributor(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
-        logo: {
+        profile_image: {
             type: DataTypes.STRING,
             allowNull: true
         },
         address: {
             type: DataTypes.TEXT,
+            allowNull: true
+        },
+        state_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        district_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        pincode: {
+            type: DataTypes.STRING,
             allowNull: true
         },
         desc: {

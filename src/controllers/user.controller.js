@@ -1,11 +1,9 @@
-import path from "path";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import fs from "fs";
 import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, CompanyDetails, IndividualDetails, Role, Permission } = req.dbModels;
+    const { User, CompanyDetails, IndividualDetails, Role, Permission, Warehouse, Supplier, Distributor } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -19,6 +17,18 @@ const currentUser = asyncHandler(async (req, res) => {
                 {
                     model: IndividualDetails,
                     as: "individualDetails"
+                },
+                {
+                    model: Warehouse,
+                    as: "warehouse"
+                },
+                {
+                    model: Supplier,
+                    as: "supplier"
+                },
+                {
+                    model: Distributor,
+                    as: "distributor"
                 },
                 {
                     model: Role,
@@ -36,28 +46,38 @@ const currentUser = asyncHandler(async (req, res) => {
                 }
             ]
         });
-        if(!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
         const plainUser = user.get({ plain: true });
 
         if (plainUser.companyDetails === null) {
             delete plainUser.companyDetails;
-        } else if (plainUser.individualDetails === null) {
+        }
+        if (plainUser.individualDetails === null) {
             delete plainUser.individualDetails;
-        };
+        }
+        if (plainUser.warehouse === null) {
+            delete plainUser.warehouse;
+        }
+        if (plainUser.supplier === null) {
+            delete plainUser.supplier;
+        }
+        if (plainUser.distributor === null) {
+            delete plainUser.distributor;
+        }
 
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,
-            permissions: 
-                role.role === "company/owner" 
-                    ? "all access" 
-                    : role.role === "admin" 
-                ? "all access" 
-                    : role.permissions?.map(p => p.permission) || []
+            permissions:
+                role.role === "company/owner"
+                    ? "all access"
+                    : role.role === "admin"
+                        ? "all access"
+                        : role.permissions?.map(p => p.permission) || []
         }));
-        
+
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
-        
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -67,127 +87,109 @@ const currentUser = asyncHandler(async (req, res) => {
 const allEmployeeList = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
     try {
-        const { id = "", email = "" } = req.query;
+        let { page = 1, limit = 10, id = "", email = "", name = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
 
-        const conditions = [];
-        if(id) conditions.push({ id });
-        if(email) conditions.push({ email });
+        const logginUser = req.user;
 
-        const user = await User.findAll({
-            where:  conditions.length > 0 ? { [Op.or]: conditions } : undefined,
-            attributes: ["id", "email", "createdAt", "updatedAt"],
+        const user = await User.findAndCountAll({
+            where: {
+                type: "user",
+                owner_type: logginUser.type,
+                ...(id || email ? {
+                    [Op.or]: [
+                        ...(id ? [{ id: parseInt(id, 10) }] : []),
+                        ...(email ? [{ email }] : []),
+                    ]
+                } : undefined)
+            },
+            attributes: {
+                exclude: ["password", "accessToken", "owner_id"]
+            },
             include: [
                 {
                     model: IndividualDetails,
-                    as: "individualDetails"
+                    as: "individualDetails",
+                    required: !!name,
+                    ...(name ? { where: { full_name: { [Op.iLike]: `%${name}%` } } } : {})
                 }
-            ]
+            ],
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
-        if(!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
-        
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: user });
-        
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
-const warehouseEmployeeList = asyncHandler(async (req, res) => {
-    const { User, IndividualDetails } = req.dbModels;
-    try {
-        const { warehouse_id = "" } = req.query;
-        if(!warehouse_id) return res.status(400).json({ success: false, code: 400, message: "Warehouse id must required!!!" });
+        const totalItems = user.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
-        const user = await User.findAll({
-            where: { warehouse_id },
-            attributes: ["id", "email", "createdAt", "updatedAt"],
-            include: [
-                {
-                    model: IndividualDetails,
-                    as: "individualDetails"
-                }
-            ]
-        });
-        if(!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
-        
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
-        
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-
-
-// POST
-const updateCompanyDetails = asyncHandler(async (req, res) => {
-    const { User, CompanyDetails } = req.dbModels;
-    try {
-        const { companyDetails } = req.user || null;
-
-        const { email = "", c_name = "", ph_no = "", status = "" } = req.body;
-        const profile_image = req?.file?.filename || null;
-        if(!email) return res.status(400).json({ success: false, code: 400, message: "Email must required!!!" });
-        
-        const user = await User.findOne({ 
-            where: { email }
-        })
-        if(!user) return res.status(400).json({ success: false, code: 400, message: `Company with email ${email} not found!!!` });
-
-        let updateDetails = {};
-        if(c_name) updateDetails.c_name = c_name;
-        if(ph_no) updateDetails.ph_no = ph_no;
-        if(status) updateDetails.status = status;
-
-        if(profile_image){
-            const oldImagePath = path.join(
-                process.cwd(),
-                "public",
-                "user",
-                companyDetails.profile_image
-            );
-
-            // Safely unlink if file exists
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: user.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
             }
-            updateDetails.profile_image = profile_image;
-        }
-
-        const isUpdated = await CompanyDetails.update({
-            where: { id: userDetails.id },
-            updateDetails
         });
-
-        if(!isUpdated) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
-
-        return res.status(200).json({ success: true, code: 200, message: "Company details updated successfully" });
 
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+// const warehouseEmployeeList = asyncHandler(async (req, res) => {
+//     const { User, IndividualDetails } = req.dbModels;
+//     try {
+//         const { warehouse_id = "" } = req.query;
+//         if (!warehouse_id) return res.status(400).json({ success: false, code: 400, message: "Warehouse id must required!!!" });
+
+//         const user = await User.findAll({
+//             where: { warehouse_id },
+//             attributes: ["id", "email", "createdAt", "updatedAt"],
+//             include: [
+//                 {
+//                     model: IndividualDetails,
+//                     as: "individualDetails"
+//                 }
+//             ]
+//         });
+//         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+
+//         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
+
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ success: false, code: 500, message: error.message });
+//     }
+// });
+
+
+// PUT
+
 
 const updateEmployeeDetails = asyncHandler(async (req, res) => {
-    const { IndividualDetails } = req.dbModels;    
+    const { IndividualDetails } = req.dbModels;
     try {
         const { individualDetails } = req.user || null;
-
         const { full_name = "", phone = "", address = "", state_id = "", district_id = "", pincode = "" } = req.body;
         const profile_image = req?.file?.filename || null;
 
         let updateDetails = {};
-        if(full_name) updateDetails.full_name = full_name;
-        if(phone) updateDetails.phone = phone;
-        if(address) updateDetails.address = address;
-        if(state_id) updateDetails.state_id = state_id;
-        if(district_id) updateDetails.district_id = district_id;
-        if(pincode) updateDetails.pincode = pincode;
+        if (full_name) updateDetails.full_name = full_name;
+        if (phone) updateDetails.phone = phone;
+        if (address) updateDetails.address = address;
+        if (state_id) updateDetails.state_id = state_id;
+        if (district_id) updateDetails.district_id = district_id;
+        if (pincode) updateDetails.pincode = pincode;
 
-        if(profile_image){
+        if (profile_image) {
             const oldImagePath = path.join(
                 process.cwd(),
                 "public",
@@ -203,14 +205,60 @@ const updateEmployeeDetails = asyncHandler(async (req, res) => {
         }
 
         const isUpdated = await IndividualDetails.update({
-            where: { id: userDetails.id },
-            updateDetails
+            updateDetails,
+            where: { id: individualDetails.id },
         });
 
-        if(!isUpdated) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+        if (!isUpdated) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Employee details updated successfully" });
-        
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const delete_employee = asyncHandler(async (req, res) => {
+    const { User, IndividualDetails } = req.dbModels;
+    try {
+        const { targetEmail, adminPassword } = req.body;
+        if (!targetEmail || !adminPassword) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        const userDetails = req.user;
+
+        const user = await User.findOne({
+            where: { email: targetEmail },
+            include: [
+                {
+                    model: IndividualDetails,
+                    as: "individualDetails"
+                }
+            ]
+        });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+
+        const admin = await User.findByPk(userDetails.id);
+
+        const is_password_matched = await bcrypt.compare(adminPassword, admin.password);
+
+        if (!is_password_matched) return res.status(401).json({ success: false, code: 401, message: "Wrong password!!!" });
+
+        if (user.individualDetails.profile_image !== null) {
+            const oldImagePath = path.join(
+                process.cwd(),
+                "public",
+                "user",
+                user.individualDetails.profile_image
+            );
+            if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+        }
+
+        const isDeleted = await user.destroy({ where: { email: targetEmail } });
+
+        if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion filled!!!" });
+
+        return res.status(200).json({ success: true, code: 200, message: "Employee successfully deleted." });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -218,15 +266,4 @@ const updateEmployeeDetails = asyncHandler(async (req, res) => {
 });
 
 
-export { currentUser, updateCompanyDetails, updateEmployeeDetails, allEmployeeList, warehouseEmployeeList };
-
-
-// const currentUser = asyncHandler(async (req, res) => {
-//     const { User, IndividualDetails } = req.dbModels;
-//     try {
-        
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
+export { currentUser, allEmployeeList, updateEmployeeDetails, delete_employee };
