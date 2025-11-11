@@ -1038,6 +1038,12 @@ const permissions = [
   { permission: "distributor:read" },
   { permission: "distributor:update" },
   { permission: "distributor:delete" },
+  
+  // unit
+  { permission: "unit:create" },
+  { permission: "unit:read" },
+  { permission: "unit:update" },
+  { permission: "unit:delete" },
 ]
 
 

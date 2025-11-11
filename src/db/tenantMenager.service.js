@@ -47,20 +47,20 @@ export async function rootDB() {
     // });
 
   // ############### local postgresql ###############
-  const rootSequelize = new Sequelize("mywms", "postgres", "1", {
-      host: "localhost",
-      port: 5432,
-      dialect: "postgres",
-      logging: console.log,
-  });
+  // const rootSequelize = new Sequelize("mywms", "postgres", "1", {
+  //     host: "localhost",
+  //     port: 5432,
+  //     dialect: "postgres",
+  //     logging: console.log,
+  // });
 
     // ############### cloud postgresql ###############
-    // const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
-    //     host: process.env.PG_DB_HOST,
-    //     port: process.env.PG_DB_PORT,
-    //     dialect: "postgres",
-    //     logging: console.log,
-    // });
+    const rootSequelize = new Sequelize("mywms", process.env.PG_DB_USER, process.env.PG_DB_PASSWORD, {
+        host: process.env.PG_DB_HOST,
+        port: process.env.PG_DB_PORT,
+        dialect: "postgres",
+        logging: console.log,
+    });
 
 
   const models = defineRootModels(rootSequelize);

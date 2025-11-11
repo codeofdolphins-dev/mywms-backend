@@ -1,36 +1,53 @@
+import { Op } from "sequelize";
 import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 const { models } = await rootDB();
 const { Vehicle } = models;
 
 
-
 // GET request
 const allVehicleList = asyncHandler(async (req, res) => {
     try {
-        const { id = "", v_number = "" } = req.query;
+        let { page = 1, limit = 10, v_number = "", id = "" } = req.query;
 
-        let whereClause = {};
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
 
-        if (id) {
-            whereClause.id = {
-                [Op.eq]: id
-            };
-        };
-        if (v_number) {
-            whereClause.v_number = {
-                [Op.like]: `%${v_number}%`
-            };
-        };        
-
-        const vehicleList = await Vehicle.findAll({
-            where: Object.keys(whereClause).length ? whereClause : undefined
+        const vehicleList = await Vehicle.findAndCountAll({
+            where: (v_number || id) ? {
+                [Op.or]: [
+                    {
+                        id: parseInt(id) || null
+                    },
+                    {
+                        number: {
+                            [Op.iLike]: `%${v_number}%`
+                        }
+                    }
+                ]
+            } : undefined,
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
-
         if (!vehicleList) return res.status(500).json({ success: false, code: 500, message: "Not Found!!!" });
 
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully", data: vehicleList });
+        const totalItems = vehicleList.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: vehicleList.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -40,15 +57,44 @@ const allVehicleList = asyncHandler(async (req, res) => {
 const myVehicleList = asyncHandler(async (req, res) => {
     try {
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });      
 
-        const vehicleList = await Vehicle.findAll({
-            where: { owned_by: dbName }
+        let { page = 1, limit = 10, v_number = "", id = "" } = req.query;
+
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
+
+        const vehicleList = await Vehicle.findAndCountAll({
+            where: {
+                owned_by: dbName,
+                ...(v_number || id ? {
+                    [Op.or]: [
+                        ...(id ? [{ id: parseInt(id, 10) }] : []),
+                        ...(v_number ? [{ v_number }] : []),
+                    ]
+                } : undefined)
+            },
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
         if (!vehicleList) return res.status(500).json({ success: false, code: 500, message: "Not Found!!!" });
 
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully", data: vehicleList });
+        const totalItems = vehicleList.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: vehicleList.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -58,12 +104,12 @@ const myVehicleList = asyncHandler(async (req, res) => {
 const deleteVehicle = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        if(!id) return res.status(400).json({ success: false, code: 400, message: "Vehicle id Required!!!" });
+        if (!id) return res.status(400).json({ success: false, code: 400, message: "Vehicle id Required!!!" });
 
         const dbName = req.headers["x-tenant-id"];
 
         const isDelete = await Vehicle.destroy({ where: { id, owned_by: dbName } });
-        if(!isDelete) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
+        if (!isDelete) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Deleted." });
 
@@ -78,7 +124,7 @@ const addVehicle = asyncHandler(async (req, res) => {
     try {
         const { v_number = "", rc_no = "", ch_no = "", en_no = "", type = "" } = req.body;
         if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
-        
+
         const dbName = req.headers["x-tenant-id"];
 
         const isVehicleExists = await Vehicle.findOne({ where: { number: v_number, owned_by: dbName } });
@@ -92,7 +138,7 @@ const addVehicle = asyncHandler(async (req, res) => {
             type,
             owned_by: dbName
         });
-        if(!vehicle) return res.status(500).json({ success: false, code: 500, message: "Failed to add vehicle!!!" });
+        if (!vehicle) return res.status(500).json({ success: false, code: 500, message: "Failed to add vehicle!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Vehicle added successfully." });
 
@@ -108,7 +154,7 @@ const editVehicle = asyncHandler(async (req, res) => {
         if (!v_number) return res.status(400).json({ succss: false, code: 400, message: "Vehicle number is required!!!" });
 
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
+        if (!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
 
         const isVehicleExists = await Vehicle.findOne({ where: { number: v_number, owned_by: dbName } });
         if (!isVehicleExists) return res.status(409).json({ success: false, code: 409, message: `Vehicle not found Or Not Possible!!!` });
@@ -124,7 +170,7 @@ const editVehicle = asyncHandler(async (req, res) => {
             { where: { number: v_number } }
         );
 
-        if(!vehicle) return res.status(500).json({ success: false, code: 500, message: "Updation Failed!!!" });
+        if (!vehicle) return res.status(500).json({ success: false, code: 500, message: "Updation Failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Vehicle Details Updated." });
 

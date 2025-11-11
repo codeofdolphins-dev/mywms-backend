@@ -1,25 +1,25 @@
 import { Op } from "sequelize";
-import asyncHandler from "../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
-const AllUnit = asyncHandler(async (req, res) => {
+const allUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
 
     try {
-        let { page = 1, limit = 10, unit = "", id = "" } = req.query;
+        let { page = 1, limit = 10, name = "", id = "" } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
         const unitRecord = await Unit.findAndCountAll({
-            where: (unit || id) ? {
+            where: (name || id) ? {
                 [Op.or]: [
                     {
                         id: parseInt(id) || null
                     },
                     {
                         unit: {
-                            [Op.iLike]: `${unit}%`
+                            [Op.iLike]: `%${name}%`
                         }
                     }
                 ]
@@ -50,16 +50,17 @@ const AllUnit = asyncHandler(async (req, res) => {
         return res.success(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 // POST
 const createUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
     try {
-        const { unit } = res.body;
+        const { name } = req.body;
 
-        const isExists = await Unit.findOne({ where: { unit } });
+        const isExists = await Unit.findOne({ where: { unit: name } });
         if (isExists) return res.status(409).json({ success: false, code: 409, message: "Record already exists!!!" });
 
-        const isCreated = await Unit.create({ unit });
+        const isCreated = await Unit.create({ unit: name });
         if (!isCreated) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully." });
@@ -69,20 +70,22 @@ const createUnit = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 // UPDATE
-const UpdateUnit = asyncHandler(async (req, res) => {
+const updateUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
     try {
 
-        const { unit } = req.body;
-
-        const unitRecord = await Unit.findOne({ where: { unit } });
+        const { id, name } = req.body;        
+        
+        const unitRecord = await Unit.findByPk(parseInt(id, 10));
         if (!unitRecord) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
-        unitRecord.unit = unit;
-        const [isUpdate] = await unitRecord.save();
+        
+        unitRecord.unit = name;
+        const isUpdate = await unitRecord.save();
         if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Record updation failed!!!" });
-
+        
         return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully." });
 
     } catch (error) {
@@ -90,8 +93,9 @@ const UpdateUnit = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 // DELETE
-const DeleteUnit = asyncHandler(async (req, res) => {
+const deleteUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
     try {
 
@@ -112,4 +116,4 @@ const DeleteUnit = asyncHandler(async (req, res) => {
 });
 
 
-export { AllUnit, createUnit, DeleteUnit, UpdateUnit };
+export { allUnit, createUnit, deleteUnit, updateUnit };

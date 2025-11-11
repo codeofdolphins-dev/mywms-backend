@@ -8,30 +8,51 @@ const { Driver } = models;
 // GET request
 const allDriverList = asyncHandler(async (req, res) => {
     try {
-        const { id = "", license_no = "" } = req.query;
+        let { page = 1, limit = 10, license_no = null, id = null, name = null } = req.query;
 
-        let whereClause = {};
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
 
-        if (id) {
-            whereClause.id = {
-                [Op.eq]: id
-            };
-        };
-
-        if (license_no) {
-            whereClause.license_no = {
-                [Op.like]: `%${license_no}%`
-            };
-        };
-
-        const driverList = await Driver.findAll({
-            where: Object.keys(whereClause).length ? whereClause : undefined
+        const driverList = await Driver.findAndCountAll({
+            where: (license_no || id || name) ? {
+                [Op.or]: [
+                    {
+                        id: parseInt(id) || null
+                    },
+                    {
+                        license_no: {
+                            [Op.like]: `${license_no}%`
+                        }
+                    },
+                    {
+                        name: {
+                            [Op.iLike]: `%${name}%`
+                        }
+                    }
+                ]
+            } : undefined,
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
+        if (!driverList) return res.status(500).json({ success: false, code: 500, message: "Not Found!!!" });
 
-        if (!driverList) return res.status(500).json({ success: false, code: 500, message: "Fatching errro!!!" });
+        const totalItems = driverList.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
-        return res.status(200).json({ success: true, code: 200, data: driverList });
-
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: driverList.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -41,15 +62,53 @@ const allDriverList = asyncHandler(async (req, res) => {
 const myDriverList = asyncHandler(async (req, res) => {
     try {
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
 
-        const driverList = await Driver.findAll({
-            where: { owned_by: dbName }
+        let { page = 1, limit = 10, license_no = null, id = null, name = null } = req.query;
+
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
+
+        const driverList = await Driver.findAndCountAll({
+            where: {
+                owned_by: dbName,
+                ...(license_no || id ? {
+                    [Op.or]: [
+                        ...(id ? [{ id: parseInt(id, 10) }] : []),
+                        ...(
+                            license_no ?
+                                [{ license_no: { [Op.like]: `${license_no}%` } }]
+                                : []
+                        ),
+                        ...(
+                            name ?
+                                [{ name: { [Op.iLike]: `%${name}%` } }]
+                                : []
+                        ),
+                    ]
+                } : undefined)
+            },
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
         if (!driverList) return res.status(500).json({ success: false, code: 500, message: "Not Found!!!" });
 
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully", data: driverList });
+        const totalItems = driverList.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: driverList.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -64,7 +123,7 @@ const deleteDriver = asyncHandler(async (req, res) => {
         const dbName = req.headers["x-tenant-id"];
 
         const isDeleted = await Driver.destroy({ where: { id, owned_by: dbName } });
-        if(!isDeleted) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
+        if (!isDeleted) return res.status(403).json({ success: false, code: 403, message: "Not Possible!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Deleted." });
 
@@ -92,7 +151,7 @@ const addDriver = asyncHandler(async (req, res) => {
             address,
             owned_by: dbName
         });
-        if(!driver) return res.status(500).json({ success: false, code: 500, message: "Failed to add driver!!!" });
+        if (!driver) return res.status(500).json({ success: false, code: 500, message: "Failed to add driver!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Driver added successfully." });
 
@@ -108,7 +167,7 @@ const editDriver = asyncHandler(async (req, res) => {
         if (!license_no) return res.status(400).json({ succss: false, code: 400, message: "License number is required!!!" });
 
         const dbName = req.headers["x-tenant-id"];
-        if(!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
+        if (!dbName) return res.status(400).json({ succss: false, code: 400, message: "'x-tenant-id' header required!!!" });
 
         const isDriverExists = await Driver.findOne({ where: { license_no } });
         if (!isDriverExists) return res.status(409).json({ success: false, code: 409, message: `Driver with license number ${license_no} is not exists!!!` });
@@ -122,7 +181,7 @@ const editDriver = asyncHandler(async (req, res) => {
             replace_object,
             { where: { license_no, owned_by: dbName } }
         );
-        if(!isUpdate) return res.status(403).json({ success: false, code: 403, message: "Updation not possible!!!" });
+        if (!isUpdate) return res.status(403).json({ success: false, code: 403, message: "Updation not possible!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Details updated." });
 

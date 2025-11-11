@@ -11,7 +11,7 @@ const allHSNList = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const hsn = await HSN.findAndCountAll({
-            where: (id || code) ? { [Op.or]: [ { id: parseInt(id) || null }, { hsn_code: parseInt(code) || null } ] } : undefined,
+            where: (id || code) ? { [Op.or]: [ { id: parseInt(id, 10) || null }, { hsn_code: code || null } ] } : undefined,
             limit,
             offset,
             order: [["createdAt", "ASC"]],

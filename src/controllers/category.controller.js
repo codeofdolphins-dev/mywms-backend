@@ -1,16 +1,28 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allCategoryList = asyncHandler(async (req, res) => {
     const { Category } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "" } = req.query;
+        let { page = 1, limit = 10, id = null, name = null } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const category = await Category.findAndCountAll({
-            where: id ? { id } : { parent_id: null },
+            where: {
+                ...(id || name ? {
+                    [Op.or]: [
+                        ...(id ? [{ id: parseInt(id, 10) }] : []),
+                        ...(
+                            name ?
+                                [{ name: { [Op.iLike]: `%${name}%` } }]
+                                : []
+                        )
+                    ]
+                } : {parent_id: null})
+            },
             include: {
                 model: Category,
                 as: 'subcategories',
@@ -25,7 +37,7 @@ const allCategoryList = asyncHandler(async (req, res) => {
         });
         if (!category) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const totalItems = category.count - 1;
+        const totalItems = category.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         return res.status(200).json({
@@ -53,9 +65,9 @@ const createCategory = asyncHandler(async (req, res) => {
         const { name = "", description = "", parent_id = "" } = req.body;
         if (!name) return res.status(400).json({ success: false, code: 400, message: "Both fields are  required!!!" });
 
-        if(parent_id){
+        if (parent_id) {
             const isAvailable = await Category.findOne({ where: { id: parent_id } })
-            if(!isAvailable) return res.status(404).json({ success: false, code: 404, message: `Parent id not found!!!` });
+            if (!isAvailable) return res.status(404).json({ success: false, code: 404, message: `Parent id not found!!!` });
         }
 
         const isExists = await Category.findOne({ where: { name } });
@@ -106,7 +118,7 @@ const updateCategory = asyncHandler(async (req, res) => {
             updateDetails.parent_id = parent_id == 0 ? null : parent_id;
         }
 
-        console.log(updateDetails);        
+        console.log(updateDetails);
 
         const isUpdate = await Category.update(
             updateDetails,
