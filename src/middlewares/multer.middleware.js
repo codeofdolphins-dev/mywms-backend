@@ -11,8 +11,7 @@ const storage = multer.diskStorage({
       desticationLocation = path.join(process.cwd(), "public", "user", folderName);
       fs.mkdirSync(desticationLocation, { recursive: true });
       req.isfileSave = true;
-    }    
-    req.isfileSave = false;
+    }else req.isfileSave = false;
     
     cb(null, desticationLocation)
   },

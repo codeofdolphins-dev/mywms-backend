@@ -42,6 +42,7 @@ const register_company = asyncHandler(async (req, res) => {
         // const isfileSave = req?.isfileSave === undefined ? false : req.isfileSave;
         const isfileSave = req?.isfileSave;
         let image_path = null;
+        
 
         if ([email, password, c_name].some(field => field === "")) {
             if (profile_image) await deleteImage(profile_image);
@@ -60,7 +61,8 @@ const register_company = asyncHandler(async (req, res) => {
 
         const isRegister = await User.findOne({ where: { email, type: "company/owner" }, transaction });
         if (isRegister) {
-            if (profile_image) await deleteImage(profile_image);
+            if (profile_image && isfileSave) await deleteImage(profile_image, dbName);
+            else if (profile_image && !isfileSave) await deleteImage(profile_image);
             await rootTransaction.rollback();
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: `Company with email: ${email} already exists!!!` });
