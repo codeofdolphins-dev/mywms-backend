@@ -30,7 +30,11 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 
 app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
-app.use('/image', express.static(path.join(process.cwd(),'public', 'user')));
+app.use('/image', express.static(path.join(process.cwd(), 'public', 'user')));
+
+app.get("/", (_, res) => {
+  return res.send("Response from Backend!")
+})
 
 
 // setup session
