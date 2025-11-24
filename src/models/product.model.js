@@ -25,7 +25,7 @@ function Product(sequelize) {
             unique: true,
         },
         barcode: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             allowNull: false,
             unique: true,
         },

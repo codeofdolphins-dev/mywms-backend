@@ -18,8 +18,8 @@ function RequisitionItem(sequelize) {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false
     },
-    uom: {
-      type: DataTypes.STRING,   // Unit of measure (pcs, kg, box, etc.)
+    uom_id: {
+      type: DataTypes.INTEGER,   // Unit of measure (pcs, kg, box, etc.)
       allowNull: false,
     },
     unit_price_estimate: {

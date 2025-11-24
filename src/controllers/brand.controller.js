@@ -72,7 +72,7 @@ const createBrand = asyncHandler(async (req, res) => {
             return res.status(400).json({ succes: false, code: 400, message: "Name & supplier_id both are required!!!" });
         }
 
-        const supplier = await Supplier.findByPk(parseInt(supplier_id, 10));        
+        const supplier = await Supplier.findByPk(parseInt(supplier_id, 10) || null);        
         if (!supplier) {
             await deleteImage(logo, dbName);
             await transaction.rollback();

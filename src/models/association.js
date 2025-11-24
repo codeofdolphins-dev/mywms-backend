@@ -33,6 +33,7 @@ const defineRootAssociations = (models) => {
         Brand,
         Supplier,
         Distributor,
+        Unit
         // RequestOrder
     } = models;
 
@@ -550,6 +551,16 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // Unit ↔ RequisitionItem
+    RequisitionItem.belongsTo(Unit, {
+        foreignKey: "uom_id",
+        as: "unit"
+    });
+    Unit.hasMany(RequisitionItem, {
+        foreignKey: "uom_id",
+        as: "requisitionItemUnit"
+    });
+
 
     // ********************************************Many-To-One*********************************
 
@@ -875,6 +886,7 @@ const defineTenantAssociations = (models) => {
         Brand,
         Supplier,
         Distributor,
+        Unit,
         // RequestOrder,
 
     } = models;
@@ -1395,6 +1407,16 @@ const defineTenantAssociations = (models) => {
         as: "userOutward",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
+    });
+
+    // Unit ↔ RequisitionItem
+    RequisitionItem.belongsTo(Unit, {
+        foreignKey: "uom_id",
+        as: "unit"
+    });
+    Unit.hasMany(RequisitionItem, {
+        foreignKey: "uom_id",
+        as: "requisitionItemUnit"
     });
 
 

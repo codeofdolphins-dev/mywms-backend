@@ -38,6 +38,8 @@ async function saveBase64Image(base64String, folderName) {
 * @param {string} folderName - folder name
 */
 async function deleteImage(filename, folderName = null) {
+    if(filename === null) return;
+
     let imgPath = null;
 
     if(folderName) imgPath = path.join(process.cwd(), "public", "user", folderName, filename); 

@@ -57,7 +57,10 @@ const createUnit = asyncHandler(async (req, res) => {
     try {
         const { name } = req.body;
 
-        const isExists = await Unit.findOne({ where: { unit: name } });
+        if (!name) return res.status(400).json({ success: false, code: 400, message: "Name required!!!" });
+
+        const isExists = await Unit.findOne({ where: { unit: { [Op.iLike]: name } } });
+
         if (isExists) return res.status(409).json({ success: false, code: 409, message: "Record already exists!!!" });
 
         const isCreated = await Unit.create({ unit: name });
@@ -76,16 +79,16 @@ const updateUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
     try {
 
-        const { id, name } = req.body;        
-        
+        const { id, name } = req.body;
+
         const unitRecord = await Unit.findByPk(parseInt(id, 10));
         if (!unitRecord) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
-        
+
         unitRecord.unit = name;
         const isUpdate = await unitRecord.save();
         if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Record updation failed!!!" });
-        
+
         return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully." });
 
     } catch (error) {
@@ -98,14 +101,15 @@ const updateUnit = asyncHandler(async (req, res) => {
 const deleteUnit = asyncHandler(async (req, res) => {
     const { Unit } = req.dbModels
     try {
-
         const { id } = req.params;
 
-        const isExists = await Unit.findOne({ where: { id } });
+        if (!id) return res.status(400).json({ success: false, code: 400, message: "id must required!!!" });
+
+        const isExists = await Unit.findOne({ where: { id: parseInt(id, 10) } });
         if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
-        const isDeleted = await Unit.destroy({ where: { id } })
-        if (!isDeleted) return res.status(500).json({ success: false, code: 500, message: "Record not deleted!!!" });
+        const isDeleted = await Unit.destroy({ where: { id: parseInt(id, 10) } })
+        if (!isDeleted) return res.status(500).json({ success: false, code: 500, message: "Record not deleted!!!" });        
 
         return res.status(200).json({ success: true, code: 200, message: "Record Deleted." });
 

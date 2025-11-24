@@ -14,10 +14,6 @@ function Requisition(sequelize) {
         type: DataTypes.ENUM("low", "normal", "high"),
         defaultValue: "normal"
     },
-    required_by: {
-      type: DataTypes.DATEONLY,
-      allowNull: true
-    },
     notes: {
       type: DataTypes.TEXT,
       allowNull: true

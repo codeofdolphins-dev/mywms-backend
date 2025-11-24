@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, User, Product } = req.dbModels;
+    const { Requisition, RequisitionItem, User, Product, Unit } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "", title = "" } = req.query;
         page = parseInt(page);
@@ -11,8 +11,8 @@ const allRequisitionList = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const requisition = await Requisition.findAndCountAll({
-            where: (id || title) ? { 
-                [Op.or]: [ 
+            where: (id || title) ? {
+                [Op.or]: [
                     {
                         id: parseInt(id, 10) || null
                     },
@@ -27,7 +27,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                 {
                     model: User,
                     as: "createdBy",
-                    attributes: ["id", "email"]
+                    attributes: ["id", "email", "type"]
                 },
                 {
                     model: RequisitionItem,
@@ -39,7 +39,11 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                         {
                             model: Product,
                             as: "product"
-                        }
+                        },
+                        {
+                            model: Unit,
+                            as: "unit"
+                        },                        
                     ]
                 },
             ],
@@ -73,48 +77,61 @@ const allRequisitionList = asyncHandler(async (req, res) => {
 
 // POST
 const createRequisition = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, Product } = req.dbModels;
+    const { Requisition, RequisitionItem, Product, Unit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { title = "", status = "", priority = "", required_by = "", notes = "", items = [] } = req.body;
+        const { title = "", status = "", priority = "", notes = "", items = [] } = req.body;
         const userDetails = req.user;
 
-        if (!title || !required_by){
+        if (!title) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Title required!!!" });
         }
 
         const requisition = await Requisition.create({
             title,
             status: status.toLowerCase(),
             priority: priority.toLowerCase(),
-            required_by,
             notes,
-            created_by: userDetails.id,
-        },
-        { transaction });
+            created_by: parseInt(userDetails.id, 10),
+        }, { transaction });
 
         const total = items.reduce((accumulator, item) => accumulator + parseInt(item.unit_price_estimate), 0);
+        requisition.total = total;
 
         for (const item of items) {
-            const product = await Product.findOne({ where: { barcode: parseInt(item.barcode) } });
+
+            if (!item.barcode || !item.uom_id) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "barcode & uom_id both are required for product!!!" });
+            }
+
+            const product = await Product.findOne({ where: { barcode: parseInt(item.barcode, 10) } });
             if (!product) {
                 await transaction.rollback();
-                return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
+                return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
+            }
+
+            const uom = await Unit.findByPk(parseInt(item.uom_id, 10));
+            if (!uom) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: `Unit of messure record not found` });
             }
 
             await RequisitionItem.create({
                 requisition_id: requisition.id,
                 product_id: product.id,
+                uom_id: uom.id,
                 ...item,
-            },
-            { transaction });
+            }, { transaction });
         }
 
-        await Requisition.update(
-            { total },
-            { where: { id: requisition.id }, transaction }
-        );
+        const isSave = await Requisition.save({ transaction });
+
+        if (!isSave) {
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Record insertion failed!!!" });
+        };
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
@@ -131,8 +148,8 @@ const deleteRequisition = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
 
-        const isDeleted = await Requisition.destroy({ where: { id } });
-        if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion failed!!!" });
+        const isDeleted = await Requisition.destroy({ where: { id: parseInt(id, 10) } });
+        if (!isDeleted) return res.status(503).json({ success: false, code: 503, message: "Deletion failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
 
@@ -145,10 +162,10 @@ const deleteRequisition = asyncHandler(async (req, res) => {
 const updateRequisition = asyncHandler(async (req, res) => {
     const { Requisition } = req.dbModels;
     try {
-        const { id = "", title = "", status = "", priority = "", required_by = "", notes = "" } = req.body;
+        const { id = "", title = "", status = "", priority = "", notes = "" } = req.body;
 
-        const requisition = await Requisition.findByPk(id);
-        if (!requisition) return res.status(400).json({ success: false, code: 400, message: "No requisition found!!!" });
+        const requisition = await Requisition.findByPk(parseInt(id, 10));
+        if (!requisition) return res.status(404).json({ success: false, code: 404, message: "No requisition record found!!!" });
 
         const currentStatus = requisition.status;
 
@@ -159,17 +176,16 @@ const updateRequisition = asyncHandler(async (req, res) => {
             if (status) updateDetails.status = status;
             if (priority) updateDetails.priority = priority;
             if (notes) updateDetails.notes = notes;
-            if (required_by) updateDetails.required_by = required_by;
 
             const isUpdate = await Requisition.update(
                 updateDetails,
                 { where: { id } }
             );
-            if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+            if (!isUpdate) return res.status(503).json({ success: false, code: 503, message: "Updation failed!!!" });
 
             return res.status(200).json({ success: true, code: 200, message: "Updated Successfully." });
         };
-        return res.status(400).json({ success: false, code: 400, message: "Updation not possible!!!" });
+        return res.status(422).json({ success: false, code: 422, message: "Updation not possible!!!" });
 
     } catch (error) {
         console.log(error);
@@ -178,11 +194,11 @@ const updateRequisition = asyncHandler(async (req, res) => {
 });
 
 const updateRequisitionItems = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem } = req.dbModels;
+    const { Requisition, RequisitionItem, Unit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { id = "", description = "", quantity = "", uom = "", unit_price_estimate = "" } = req.body;
-        if (!id){
+        const { id = "", description = "", quantity = "", uom_id = "", unit_price_estimate = "" } = req.body;
+        if (!id) {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
         }
@@ -190,23 +206,30 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
         let updateDetails = {};
         if (description) updateDetails.description = description;
         if (quantity) updateDetails.quantity = quantity;
-        if (uom) updateDetails.uom = uom;
+        if (uom_id) {
+            const uom = await Unit.findByPk(parseInt(uom_id, 10));
+            if (!uom) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: `Unit of messure record not found` });
+            }
+            updateDetails.uom_id = uom.id;
+        }
         if (unit_price_estimate) updateDetails.unit_price_estimate = unit_price_estimate;
 
-        const requisitionItem = await RequisitionItem.findOne({ where: { id }, transaction });
-        if (!requisitionItem){
+        const requisitionItem = await RequisitionItem.findOne({ where: { id: parseInt(id, 10) } });
+        if (!requisitionItem) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Item not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         }
 
-        const isUpdate = await RequisitionItem.update(
+        const [isUpdate] = await RequisitionItem.update(
             updateDetails,
             {
-                where: { id },
+                where: { id: parseInt(id, 10) },
                 transaction
             }
         );
-        if (!isUpdate){
+        if (!isUpdate) {
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
         }
