@@ -895,11 +895,24 @@ const districts = [
 
 const roles = [
   { role: "company/owner" },
-  { role: "user" },
   { role: "admin" },
+  { role: "user" },
   { role: "supplier" },
-  { role: "distributor" },
-  { role: "warehouse" },
+
+  { role: "Mfg Bond Warehouse" },
+  { role: "Mother Warehouse (National level)" },
+  { role: "Central Warehouse" },
+  { role: "Regional Warehouse" },
+  { role: "State Warehouse" },
+  { role: "CFA / C&F Agent" },
+  { role: "3PL Warehouse" },
+  { role: "Storage Hub" },
+  { role: "Super Stockist" },
+  { role: "Dealer" },
+  { role: "Distributor" },
+  { role: "Sub-Distributor" },
+  { role: "Fullfilment Centre" },
+  { role: "Retail Warehouse / Backroom Storage" },
 ]
 
 const permissions = [
@@ -910,13 +923,13 @@ const permissions = [
   { permission: "role:delete" },
   { permission: "role:assign" },
   { permission: "role:remove" },
-  
+
   // vehicle
   { permission: "vehicle:create" },
   { permission: "vehicle:read" },
   { permission: "vehicle:update" },
   { permission: "vehicle:delete" },
-  
+
   // driver
   { permission: "drive:create" },
   { permission: "drive:read" },
@@ -945,74 +958,74 @@ const permissions = [
   { permission: "inward:delete" },
   { permission: "inward:update" },
   { permission: "inward-item:update" },
-  
+
   // invoice
   { permission: "invoice:create" },
   { permission: "invoice:read" },
   { permission: "invoice:delete" },
   { permission: "invoice:update" },
   { permission: "invoice-item:update" },
-  
+
   //warehouse
   { permission: "warehouse:create" },
   { permission: "warehouse:read" },
   { permission: "warehouse:update" },
   { permission: "warehouse:delete" },
-  
+
   // requisition
   { permission: "requisition:create" },
   { permission: "requisition:read" },
   { permission: "requisition:update" },
   { permission: "requisition-item:update" },
   { permission: "requisition:delete" },
-  
+
   // hsn
   { permission: "hsn:create" },
   { permission: "hsn:read" },
   { permission: "hsn:update" },
   { permission: "hsn:delete" },
-  
+
   // product
   { permission: "product:create" },
   { permission: "product:read" },
   { permission: "product:update" },
   { permission: "product:update-batch" },
   { permission: "product:delete" },
- 
+
   // category
   { permission: "category:create" },
   { permission: "category:read" },
   { permission: "category:update" },
   { permission: "category:delete" },
-  
+
   // vendor
   { permission: "vendor:create" },
   { permission: "vendor:read" },
   { permission: "vendor:update" },
   { permission: "vendor-bank:update" },
   { permission: "vendor:delete" },
-  
+
   // purchaseOrder
   { permission: "purchaseOrder:create" },
   { permission: "purchaseOrder:read" },
   { permission: "purchaseOrder:update" },
   { permission: "purchaseOrder-item:update" },
   { permission: "purchaseOrder:delete" },
-  
+
   // quotation
   { permission: "quotation:create" },
   { permission: "quotation:read" },
   { permission: "quotation:update" },
   { permission: "quotation-item:update" },
   { permission: "quotation:delete" },
-  
+
   // outward
   { permission: "outward:create" },
   { permission: "outward:read" },
   { permission: "outward:update" },
   { permission: "outward-item:update" },
   { permission: "outward:delete" },
-  
+
   // bom
   { permission: "bom:create" },
   { permission: "bom:read" },
@@ -1020,7 +1033,7 @@ const permissions = [
   { permission: "bom:delete" },
   { permission: "bom-item:add" },
   { permission: "bom-item:remove" },
-  
+
   // brand
   { permission: "brand:create" },
   { permission: "brand:read" },
@@ -1038,7 +1051,7 @@ const permissions = [
   { permission: "distributor:read" },
   { permission: "distributor:update" },
   { permission: "distributor:delete" },
-  
+
   // unit
   { permission: "unit:create" },
   { permission: "unit:read" },
@@ -1046,5 +1059,22 @@ const permissions = [
   { permission: "unit:delete" },
 ]
 
+const requisitionLevelMaster = [
+  { module_name: "Mfg Bond Warehouse" },
+  { module_name: "Mother Warehouse (National level)" },
+  { module_name: "Central Warehouse" },
+  { module_name: "Regional Warehouse" },
+  { module_name: "State Warehouse" },
+  { module_name: "CFA / C&F Agent" },
+  { module_name: "3PL Warehouse" },
+  { module_name: "Storage Hub" },
+  { module_name: "Super Stockist" },
+  { module_name: "Dealer" },
+  { module_name: "Distributor" },
+  { module_name: "Sub-Distributor" },
+  { module_name: "Fullfilment Centre" },
+  { module_name: "Retail Warehouse / Backroom Storage" },
+]
 
-export { districts, states, roles, permissions };
+
+export { districts, states, roles, permissions, requisitionLevelMaster };
