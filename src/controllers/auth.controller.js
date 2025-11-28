@@ -2,8 +2,6 @@ import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { rootDB } from "../db/tenantMenager.service.js";
-import path from "path";
-import fs from "fs";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
 
 // GET request
@@ -42,7 +40,7 @@ const register_company = asyncHandler(async (req, res) => {
         // const isfileSave = req?.isfileSave === undefined ? false : req.isfileSave;
         const isfileSave = req?.isfileSave;
         let image_path = null;
-        
+
 
         if ([email, password, c_name].some(field => field === "")) {
             if (profile_image) await deleteImage(profile_image);
@@ -315,29 +313,15 @@ const register_distributor = asyncHandler(async (req, res) => {
     const dbObject = req.dbObject;
     const transaction = await dbObject.transaction();
     const { Distributor, Role, User } = req.dbModels;
-
-    // const { models, rootSequelize } = await rootDB();
-    // const { Tenant, TenantsName } = models;
-    // const rootTransaction = await rootSequelize.transaction();
-
     const profile_image = req?.file?.filename || null;
 
     try {
         const { email = "", password = "", full_name = "", phone = "", alter_phone = null, address = "", state_id = "", district_id = "", pincode = "", desc = "" } = req.body;
         const dbName = req.headers["x-tenant-id"];
 
-        // const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } }, { transaction: rootTransaction });
-        // if (!tenantsName) {
-        //     if (profile_image) await deleteImage(profile_image);
-        //     await transaction.rollback();
-        //     await rootTransaction.rollback();
-        //     return res.status(501).json({ success: false, code: 501, message: "Not Implemented, database not found!!!" });
-        // }
-
         if ([email, password, full_name, phone].some(field => field === "")) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            // await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         };
 
@@ -345,7 +329,6 @@ const register_distributor = asyncHandler(async (req, res) => {
         if (!userRole) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            // await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Role 'distributor' not found. Make sure roles are seeded." });
         }
 
@@ -353,7 +336,6 @@ const register_distributor = asyncHandler(async (req, res) => {
         if (isRegister) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            // await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: `Distributor with email: ${email} already exists!!!` });
         }
 
@@ -379,36 +361,88 @@ const register_distributor = asyncHandler(async (req, res) => {
         }, { transaction });
 
         await user.addRole(userRole, { transaction });
-        // await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
 
         if (!distributor) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            // await rootTransaction.rollback();
             return res.status(200).json({ success: true, code: 200, message: "Distributor Registration failed!!!" });
         }
 
         await transaction.commit();
-        // await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Distributor Register Successfully." });
 
     } catch (error) {
         if (profile_image) await deleteImage(profile_image);
         await transaction.rollback();
-        // await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
-const register_warehouse = asyncHandler(async (req, res) => {
-    const { User, Warehouse, Role } = req.dbModels;
+// const register_warehouse = asyncHandler(async (req, res) => {
+//     const { User, Warehouse, Role } = req.dbModels;
+//     const transaction = await req.dbObject.transaction();
+//     const profile_image = req?.file?.filename || null;
+
+//     try {
+//         const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "", user_type_id = "" } = req.body;
+//         const dbName = req.headers["x-tenant-id"];
+//         const loginUser = req.user;
+
+//         if ([full_name, ph_number, address, state_id, district_id, pincode, gst_no, license_no].some(item => item === "")) {
+//             if (profile_image) await deleteImage(profile_image);
+//             await transaction.rollback();
+//             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+//         }
+
+//         const userRole = await Role.findByPk(parseInt(user_type_id, 10));
+//         if (!userRole) {
+//             if (profile_image) await deleteImage(profile_image);
+//             await transaction.rollback();
+//             // await rootTransaction.rollback();
+//             return res.status(400).json({ success: false, code: 400, message: "Role not found. Make sure roles are seeded." });
+//         }
+
+//         const isRegister = await User.findOne({ where: { email, type: userRole.role } });
+//         if (isRegister) {
+//             if (profile_image) await deleteImage(profile_image);
+//             await transaction.rollback();
+//             return res.status(400).json({ success: false, code: 400, message: `${userRole.role} with email: ${email} already exists!!!` });
+//         }
+
+//         const encryptPassword = await hashPassword(password);
+
+//         const user = await User.create({
+//             email,
+//             password: encryptPassword,
+//             type: userRole.role,
+//             owner_type: loginUser.type,
+//             owner_id: loginUser.id
+//         }, { transaction });
+
+//         await registerWarehouse(req, user, Warehouse, transaction, profile_image);
+
+//         await user.addRole(userRole, { transaction });
+
+//         await transaction.commit();
+
+//         return res.status(200).json({ success: true, code: 200, message: "Warehouse Register Successfully." });
+
+//     } catch (error) {
+//         if (profile_image) await deleteImage(profile_image);
+//         await transaction.rollback();
+//         console.log(error);
+//         return res.status(500).json({ success: false, code: 500, message: error.message });
+//     }
+// });
+
+const user_registration = asyncHandler(async (req, res) => {
+    const { User, Warehouse, Role, WarehouseType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const profile_image = req?.file?.filename || null;
 
     try {
-        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "" } = req.body;
-        const dbName = req.headers["x-tenant-id"];
+        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", user_type_id = "" } = req.body;
         const loginUser = req.user;
 
         if ([full_name, ph_number, address, state_id, district_id, pincode, gst_no, license_no].some(item => item === "")) {
@@ -417,19 +451,19 @@ const register_warehouse = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
 
-        const userRole = await Role.findOne({ where: { role: "warehouse" } }, { transaction });
+        const userRole = await Role.findByPk(parseInt(user_type_id, 10));
         if (!userRole) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
             // await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Role 'distributor' not found. Make sure roles are seeded." });
+            return res.status(400).json({ success: false, code: 400, message: "Role not found. Make sure roles are seeded." });
         }
 
-        const isRegister = await User.findOne({ where: { email, type: "warehouse" } }, { transaction });
+        const isRegister = await User.findOne({ where: { email, type: userRole.role } });
         if (isRegister) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `Warehouse with email: ${email} already exists!!!` });
+            return res.status(400).json({ success: false, code: 400, message: `${userRole.role} with email: ${email} already exists!!!` });
         }
 
         const encryptPassword = await hashPassword(password);
@@ -437,39 +471,26 @@ const register_warehouse = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
-            type: "warehouse",
-            owner_type: loginUser.type,
-            owner_id: loginUser.id
+            type: userRole.role,
+            ...( loginUser && {owner_type: loginUser.type}),
+            ...(loginUser && {owner_id: loginUser.id})
         }, { transaction });
 
-        const warehouse = await Warehouse.create({
-            user_id: user.id,
-            full_name,
-            f_name: full_name.split(" ")[0],
-            l_name: full_name.split(" ")[1],
-            ph_number,
-            profile_image: profile_image ? `${dbName}/${profile_image}` : null,
-            address,
-            state_id,
-            district_id,
-            pincode,
-            gst_no,
-            license_no,
-            lat,
-            long,
-        }, { transaction });
+        const roleInLower = userRole.role.toLowerCase();
+        const isWarehouse = roleInLower.includes("warehouse");
+        if (isWarehouse) {
+            const warehouse = await registerWarehouse(req, user, Warehouse, WarehouseType, userRole.role, transaction, profile_image);
+            if (!warehouse) {
+                if (profile_image) await deleteImage(profile_image);
+                await transaction.rollback();
+                return res.status(500).json({ success: false, code: 500, message: "Creation failed!!!" });
+            }
+        }
 
         await user.addRole(userRole, { transaction });
 
         await transaction.commit();
-
-        if (!warehouse) {
-            if (profile_image) await deleteImage(profile_image);
-            await transaction.rollback();
-            return res.status(500).json({ success: false, code: 500, message: "Warehouse creation failed!!!" });
-        }
-
-        return res.status(200).json({ success: true, code: 200, message: "Warehouse Register Successfully." });
+        return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
 
     } catch (error) {
         if (profile_image) await deleteImage(profile_image);
@@ -682,13 +703,81 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 
-export { register_company, register_employee, register_supplier, register_distributor, register_warehouse, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };
+export { register_company, register_employee, register_supplier, register_distributor, user_registration, login, logout, forgetPassword, resetPassword, request_otp, verify_otp };
 
-// helper methods
+/** ================================== helper =============================== */
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 async function hashPassword(pass) {
     return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10));
+}
+
+async function registerWarehouse(req, user, Warehouse, WarehouseType, roleInLower, transaction, profile_image) {
+    try {
+        const { full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "" } = req.body;
+        const dbName = req.headers["x-tenant-id"];
+
+        console.log(roleInLower);        
+
+        const wareType = await WarehouseType.findOne({ where: { warehouse_type: roleInLower } });
+        if(!wareType) throw new Error("Role is not matching");
+
+        const warehouse = await Warehouse.create({
+            user_id: user.id,
+            warehouse_type_id: wareType.id,
+            full_name,
+            f_name: full_name.split(" ")[0],
+            l_name: full_name.split(" ")[1],
+            ph_number,
+            profile_image: profile_image ? `${dbName}/${profile_image}` : null,
+            address,
+            state_id,
+            district_id,
+            pincode,
+            gst_no,
+            license_no,
+            lat,
+            long,
+        }, { transaction });
+
+        return warehouse;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function registerOthers(req, user, Warehouse, WarehouseType, roleInLower, transaction, profile_image) {
+    try {
+        const { full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", gst_no = "", license_no = "", lat = "", long = "" } = req.body;
+        const dbName = req.headers["x-tenant-id"];
+
+        console.log(roleInLower);        
+
+        const wareType = await WarehouseType.findOne({ where: { warehouse_type: roleInLower } });
+        if(!wareType) throw new Error("Role is not matching");
+
+        const warehouse = await Warehouse.create({
+            user_id: user.id,
+            warehouse_type_id: wareType.id,
+            full_name,
+            f_name: full_name.split(" ")[0],
+            l_name: full_name.split(" ")[1],
+            ph_number,
+            profile_image: profile_image ? `${dbName}/${profile_image}` : null,
+            address,
+            state_id,
+            district_id,
+            pincode,
+            gst_no,
+            license_no,
+            lat,
+            long,
+        }, { transaction });
+
+        return warehouse;
+    } catch (error) {
+        throw error;
+    }
 }

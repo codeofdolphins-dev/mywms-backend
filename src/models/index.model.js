@@ -14,7 +14,7 @@ import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
 import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
-import IndividualDetails from "./individualDetails.model.js";
+import UserDetails from "./userDetails.model.js";
 import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
@@ -36,6 +36,9 @@ import Brand from "./brand.model.js";
 import Supplier from "./supplier.model.js";
 import Distributor from "./distributor.model.js";
 import Unit from "./unit.model.js";
+import RequisitionHierarchyMaster from "./main/requisitionHierarchyMaster.model.js";
+import WarehouseType from "./warehouseTypes.model.js";
+import RequisitionHierarchy from "./main/requisitionHierarchy.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -50,7 +53,7 @@ const defineRootModels = (rootSequelize) => {
     RolePermissions(rootSequelize);
     Product(rootSequelize);
     CompanyDetails(rootSequelize);
-    IndividualDetails(rootSequelize);
+    UserDetails(rootSequelize);
     InwardItem(rootSequelize);
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
@@ -76,6 +79,9 @@ const defineRootModels = (rootSequelize) => {
     Supplier(rootSequelize);
     Distributor(rootSequelize);
     Unit(rootSequelize);
+    RequisitionHierarchyMaster(rootSequelize);
+    RequisitionHierarchy(rootSequelize);
+    WarehouseType(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -84,7 +90,7 @@ const defineTenantModels = (sequelize) => {
     Category(sequelize);
     CompanyDetails(sequelize);
     Driver(sequelize);
-    IndividualDetails(sequelize);
+    UserDetails(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);
@@ -115,6 +121,7 @@ const defineTenantModels = (sequelize) => {
     Supplier(sequelize);
     Distributor(sequelize);
     Unit(sequelize);
+    WarehouseType(sequelize);
     
     return sequelize.models;
 }

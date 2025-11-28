@@ -1,8 +1,8 @@
 // import { db_obj } from "../db/config.js";
 import { DataTypes } from "sequelize";
 
-function IndividualDetails(sequelize) {
-  return sequelize.define("IndividualDetails", {
+function UserDetails(sequelize) {
+  return sequelize.define("UserDetails", {
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -42,9 +42,14 @@ function IndividualDetails(sequelize) {
     profile_image: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    meta: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {}
     }
   });
 }
 
 
-export default IndividualDetails;
+export default UserDetails;

@@ -7,6 +7,10 @@ function Warehouse(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
+        warehouse_type_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
         full_name: {
             type: DataTypes.STRING,
             allowNull: true

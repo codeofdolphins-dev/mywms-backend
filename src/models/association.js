@@ -2,14 +2,14 @@ const defineRootAssociations = (models) => {
     const {
         Category,
         CompanyDetails,
-        IndividualDetails,
+        User,
+        UserDetails,
         Permission,
         Product,
         Role,
         RolePermissions,
         Inward,
         InwardItem,
-        User,
         UserRoles,
         Warehouse,
         Batch,
@@ -33,13 +33,16 @@ const defineRootAssociations = (models) => {
         Brand,
         Supplier,
         Distributor,
-        Unit
-        // RequestOrder
+        Unit,
+        RequisitionHierarchyMaster,
+        RequisitionHierarchy,
+        WarehouseType
+
+
     } = models;
 
 
     // ******************************************** Self-Association *********************************
-
     // category → category
     Category.hasMany(Category, {
         as: "subcategories",
@@ -53,6 +56,22 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
+
+    // User → User (self one-to-many)
+    User.hasMany(User, {
+        foreignKey: "owner_id",
+        as: "ownedUsers",   // an owner can have many users
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    User.belongsTo(User, {
+        foreignKey: "owner_id",
+        as: "owner",        // each user has one owner
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
 
     // ********************************************One-To-One*********************************
@@ -71,14 +90,14 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // User ↔ IndividualDetails
-    User.hasOne(IndividualDetails, {
+    // User ↔ UserDetails
+    User.hasOne(UserDetails, {
         foreignKey: "user_id",
         as: "individualDetails",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    IndividualDetails.belongsTo(User, {
+    UserDetails.belongsTo(User, {
         foreignKey: "user_id",
         as: "user",
         onDelete: "CASCADE",
@@ -777,6 +796,34 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // WarehouseType <-> Warehouse
+    WarehouseType.hasMany(Warehouse, {
+        foreignKey: "warehouse_type_id",
+        as: "warehouseList",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.belongsTo(WarehouseType, {
+        foreignKey: "warehouse_type_id",
+        as: "warehouseType",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // RequisitionHierarchyMaster <-> RequisitionHierarchy
+    RequisitionHierarchyMaster.hasMany(RequisitionHierarchy, {
+        foreignKey: "module_id",
+        as: "requisitionHierarchies",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    RequisitionHierarchy.belongsTo(RequisitionHierarchyMaster, {
+        foreignKey: "module_id",
+        as: "requisitionMasterData",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************Many-To-Many*********************************
     // user - role
@@ -857,7 +904,7 @@ const defineTenantAssociations = (models) => {
     const {
         Category,
         CompanyDetails,
-        IndividualDetails,
+        UserDetails,
         Permission,
         Product,
         Role,
@@ -887,6 +934,7 @@ const defineTenantAssociations = (models) => {
         Supplier,
         Distributor,
         Unit,
+        WarehouseType
         // RequestOrder,
 
     } = models;
@@ -921,14 +969,14 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // User ↔ IndividualDetails
-    User.hasOne(IndividualDetails, {
+    // User ↔ UserDetails
+    User.hasOne(UserDetails, {
         foreignKey: "user_id",
         as: "individualDetails",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    IndividualDetails.belongsTo(User, {
+    UserDetails.belongsTo(User, {
         foreignKey: "user_id",
         as: "user",
         onDelete: "CASCADE",
@@ -1618,6 +1666,20 @@ const defineTenantAssociations = (models) => {
             allowNull: false
         },
         as: "suppliedBy",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // WarehouseType <-> Warehouse
+    WarehouseType.hasMany(Warehouse, {
+        foreignKey: "warehouse_type_id",
+        as: "warehouseList",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Warehouse.belongsTo(WarehouseType, {
+        foreignKey: "warehouse_type_id",
+        as: "warehouseType",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

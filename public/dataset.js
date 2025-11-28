@@ -898,7 +898,8 @@ const roles = [
   { role: "admin" },
   { role: "user" },
   { role: "supplier" },
-
+];
+const reqisitionRole = [
   { role: "Mfg Bond Warehouse" },
   { role: "Mother Warehouse (National level)" },
   { role: "Central Warehouse" },
@@ -913,7 +914,7 @@ const roles = [
   { role: "Sub-Distributor" },
   { role: "Fullfilment Centre" },
   { role: "Retail Warehouse / Backroom Storage" },
-]
+];
 
 const permissions = [
   // role
@@ -1059,6 +1060,7 @@ const permissions = [
   { permission: "unit:delete" },
 ]
 
+
 const requisitionLevelMaster = [
   { module_name: "Mfg Bond Warehouse" },
   { module_name: "Mother Warehouse (National level)" },
@@ -1076,5 +1078,15 @@ const requisitionLevelMaster = [
   { module_name: "Retail Warehouse / Backroom Storage" },
 ]
 
+const warehouseTypeMaster = [
+  { warehouse_type: "Mfg Bond Warehouse" },
+  { warehouse_type: "Mother Warehouse (National level)" },
+  { warehouse_type: "Central Warehouse" },
+  { warehouse_type: "Regional Warehouse" },
+  { warehouse_type: "State Warehouse" },
+  { warehouse_type: "3PL Warehouse" },
+  { warehouse_type: "Retail Warehouse / Backroom Storage" },
+]
 
-export { districts, states, roles, permissions, requisitionLevelMaster };
+
+export { districts, states, roles, permissions, requisitionLevelMaster, warehouseTypeMaster, reqisitionRole };
