@@ -10,7 +10,7 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
         if(!email) return res.status(400).json({ success: false, code: 400, message: "User EMAIL must required!!! or Header is not set properly!!!" });
 
         /**
-         * super-admin bypass
+         * super-admin bypass 
          */
         if(email === process.env.SUPER_ADMIN_EMAIL){
             req.headers["x-tenant-id"] = "mywms";
