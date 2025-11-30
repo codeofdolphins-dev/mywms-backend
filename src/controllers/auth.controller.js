@@ -56,7 +56,7 @@ const register_company = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "Role 'company' not found. Make sure roles are seeded." });
         }
 
-        const isRegister = await User.findOne({ where: { email, type: "company/owner" }, transaction });
+        const isRegister = await User.findOne({ where: { email }, transaction });
         if (isRegister) {
             if (profile_image && isfileSave) await deleteImage(profile_image, dbName);
             else if (profile_image && !isfileSave) await deleteImage(profile_image);
@@ -75,7 +75,7 @@ const register_company = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
-            type: "company/owner",
+            user_type_id: "2", // company/owner user_type_id is 2
             phone_no: ph_no,
             company_name: c_name,
             ...(image_path && { profile_image: image_path }),
@@ -629,7 +629,7 @@ function generateOTP() {
 };
 
 async function hashPassword(pass) {
-    return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10));
+    return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10) || 10);
 }
 
 /**

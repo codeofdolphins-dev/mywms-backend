@@ -895,10 +895,14 @@ const districts = [
 
 const roles = [
   { role: "company/owner" },
+  { role: "owner" },
   { role: "admin" },
   { role: "user" },
 ];
 const userType = [
+  { type: "System", level_code: null, hierarchy_level: null },
+  { type: "Company/Owner", level_code: null, hierarchy_level: null },
+  { type: "Supplier", level_code: null, hierarchy_level: null },
   { type: "Mfg Bond Warehouse", level_code: "L-101", hierarchy_level: 101 },
   { type: "Mother Warehouse (National level)", level_code: "L-102", hierarchy_level: 102 },
   { type: "Central Warehouse", level_code: "L-103", hierarchy_level: 103 },
@@ -913,7 +917,6 @@ const userType = [
   { type: "Sub-Distributor", level_code: "L-112", hierarchy_level: 112 },
   { type: "Fullfilment Centre", level_code: "L-113", hierarchy_level: 113 },
   { type: "Retail Warehouse / Backroom Storage", level_code: "L-114", hierarchy_level: 114 },
-  { type: "supplier", level_code: null, hierarchy_level: null },
 ];
 
 const permissions = [

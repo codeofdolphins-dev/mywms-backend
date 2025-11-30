@@ -33,7 +33,7 @@ app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 app.use('/image', express.static(path.join(process.cwd(), 'public', 'user')));
 
 app.get("/", (_, res) => {
-  return res.send("Response from Backend!")
+  return res.send("Response from MYWMS Backend!")
 })
 
 
@@ -52,5 +52,14 @@ app.use(session({
 import apiRoutes from "./routes/index.route.js";
 
 app.use("/api", apiRoutes);
+
+app.use("/hash", async(req, res) => {
+  // console.log(req.query); return
+  const bcrypt = await import('bcrypt');
+  const myPlaintextPassword = req.query?.w || "admin123";
+  bcrypt.hash(myPlaintextPassword, parseInt(process.env.SALTROUNDS, 10) || 10, function (err, hash) {
+    res.send({ hash });
+  });
+});
 
 export { app }
