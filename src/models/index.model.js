@@ -1,5 +1,4 @@
 import Category from "./category.model.js";
-import CompanyDetails from "./companyDetails.model.js";
 import Tenant from "./main/tenant.model.js"
 import District from "./main/district.model.js";
 import Driver from "./main/driver.model.js";
@@ -14,7 +13,7 @@ import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
 import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
-import UserDetails from "./userDetails.model.js";
+import OtherDetails from "./otherDetails.model.js";
 import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
@@ -26,19 +25,16 @@ import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItems from "./purchaseOrderItems.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
-import Vendor from "./vendor.model.js";
-import VendorBankDetails from "./vendorBankDetails.model.js";
+import SupplierBankDetails from "./supplierBankDetails.model.js";
 import Inventory from "./inventory.model.js";
 import Outward from "./outward.model.js";
 import OutwardItems from "./outwardItems.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
-import Supplier from "./supplier.model.js";
-import Distributor from "./distributor.model.js";
 import Unit from "./unit.model.js";
-import RequisitionHierarchyMaster from "./main/requisitionHierarchyMaster.model.js";
+import UserType from "./userType.model.js";
 import WarehouseType from "./warehouseTypes.model.js";
-import RequisitionHierarchy from "./main/requisitionHierarchy.model.js";
+import RequisitionRule from "./requisitionRule.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -52,8 +48,7 @@ const defineRootModels = (rootSequelize) => {
     Role(rootSequelize);
     RolePermissions(rootSequelize);
     Product(rootSequelize);
-    CompanyDetails(rootSequelize);
-    UserDetails(rootSequelize);
+    OtherDetails(rootSequelize);
     InwardItem(rootSequelize);
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
@@ -69,28 +64,24 @@ const defineRootModels = (rootSequelize) => {
     PurchaseOrderItems(rootSequelize);
     Invoice(rootSequelize);
     InvoiceItems(rootSequelize);
-    Vendor(rootSequelize);
-    VendorBankDetails(rootSequelize);
     Inventory(rootSequelize);
     Outward(rootSequelize);
     OutwardItems(rootSequelize);
     BillOfMaterial(rootSequelize);
     Brand(rootSequelize);
-    Supplier(rootSequelize);
-    Distributor(rootSequelize);
     Unit(rootSequelize);
-    RequisitionHierarchyMaster(rootSequelize);
-    RequisitionHierarchy(rootSequelize);
+    UserType(rootSequelize);
+    RequisitionRule(rootSequelize);
     WarehouseType(rootSequelize);
+    SupplierBankDetails(rootSequelize);
     
     return rootSequelize.models;
 }
 
 const defineTenantModels = (sequelize) => {
     Category(sequelize);
-    CompanyDetails(sequelize);
     Driver(sequelize);
-    UserDetails(sequelize);
+    OtherDetails(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);
@@ -112,16 +103,16 @@ const defineTenantModels = (sequelize) => {
     PurchaseOrderItems(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
-    VendorBankDetails(sequelize);
     Inventory(sequelize);
     Outward(sequelize);
     OutwardItems(sequelize);
     BillOfMaterial(sequelize);
     Brand(sequelize);
-    Supplier(sequelize);
-    Distributor(sequelize);
     Unit(sequelize);
     WarehouseType(sequelize);
+    UserType(sequelize);
+    SupplierBankDetails(sequelize);
+    RequisitionRule(sequelize);
     
     return sequelize.models;
 }

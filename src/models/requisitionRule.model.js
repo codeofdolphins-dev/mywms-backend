@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 
-function RequisitionHierarchy(sequelize) {
-    return sequelize.define("RequisitionHierarchy", {
-        company_id: {   // NOTE: not define yet
+function RequisitionRule(sequelize) {
+    return sequelize.define("RequisitionRule", {
+        company_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -16,4 +16,4 @@ function RequisitionHierarchy(sequelize) {
         }
     });
 }
-export default RequisitionHierarchy;
+export default RequisitionRule;

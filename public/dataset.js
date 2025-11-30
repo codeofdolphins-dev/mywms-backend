@@ -897,23 +897,23 @@ const roles = [
   { role: "company/owner" },
   { role: "admin" },
   { role: "user" },
-  { role: "supplier" },
 ];
-const reqisitionRole = [
-  { role: "Mfg Bond Warehouse" },
-  { role: "Mother Warehouse (National level)" },
-  { role: "Central Warehouse" },
-  { role: "Regional Warehouse" },
-  { role: "State Warehouse" },
-  { role: "CFA / C&F Agent" },
-  { role: "3PL Warehouse" },
-  { role: "Storage Hub" },
-  { role: "Super Stockist" },
-  { role: "Dealer" },
-  { role: "Distributor" },
-  { role: "Sub-Distributor" },
-  { role: "Fullfilment Centre" },
-  { role: "Retail Warehouse / Backroom Storage" },
+const userType = [
+  { type: "Mfg Bond Warehouse", level_code: "L-101", hierarchy_level: 101 },
+  { type: "Mother Warehouse (National level)", level_code: "L-102", hierarchy_level: 102 },
+  { type: "Central Warehouse", level_code: "L-103", hierarchy_level: 103 },
+  { type: "Regional Warehouse", level_code: "L-104", hierarchy_level: 104 },
+  { type: "State Warehouse", level_code: "L-105", hierarchy_level: 105 },
+  { type: "CFA / C&F Agent", level_code: "L-106", hierarchy_level: 106 },
+  { type: "3PL Warehouse", level_code: "L-107", hierarchy_level: 107 },
+  { type: "Storage Hub", level_code: "L-108", hierarchy_level: 108 },
+  { type: "Super Stockist", level_code: "L-109", hierarchy_level: 109 },
+  { type: "Dealer", level_code: "L-110", hierarchy_level: 110 },
+  { type: "Distributor", level_code: "L-111", hierarchy_level: 111 },
+  { type: "Sub-Distributor", level_code: "L-112", hierarchy_level: 112 },
+  { type: "Fullfilment Centre", level_code: "L-113", hierarchy_level: 113 },
+  { type: "Retail Warehouse / Backroom Storage", level_code: "L-114", hierarchy_level: 114 },
+  { type: "supplier", level_code: null, hierarchy_level: null },
 ];
 
 const permissions = [
@@ -1061,23 +1061,6 @@ const permissions = [
 ]
 
 
-const requisitionLevelMaster = [
-  { module_name: "Mfg Bond Warehouse" },
-  { module_name: "Mother Warehouse (National level)" },
-  { module_name: "Central Warehouse" },
-  { module_name: "Regional Warehouse" },
-  { module_name: "State Warehouse" },
-  { module_name: "CFA / C&F Agent" },
-  { module_name: "3PL Warehouse" },
-  { module_name: "Storage Hub" },
-  { module_name: "Super Stockist" },
-  { module_name: "Dealer" },
-  { module_name: "Distributor" },
-  { module_name: "Sub-Distributor" },
-  { module_name: "Fullfilment Centre" },
-  { module_name: "Retail Warehouse / Backroom Storage" },
-]
-
 const warehouseTypeMaster = [
   { warehouse_type: "Mfg Bond Warehouse" },
   { warehouse_type: "Mother Warehouse (National level)" },
@@ -1089,4 +1072,4 @@ const warehouseTypeMaster = [
 ]
 
 
-export { districts, states, roles, permissions, requisitionLevelMaster, warehouseTypeMaster, reqisitionRole };
+export { districts, states, roles, permissions, warehouseTypeMaster, userType };

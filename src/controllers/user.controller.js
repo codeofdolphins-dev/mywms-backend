@@ -3,24 +3,24 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, CompanyDetails, IndividualDetails, Role, Permission, Warehouse, Supplier, Distributor } = req.dbModels;
+    const { User, Role, Permission, Warehouse, Supplier, Distributor, WarehouseType } = req.dbModels;
     try {
         const { id } = req.user;
 
         const user = await User.findByPk(id, {
-            attributes: ["id", "email", "status", "createdAt"],
+            attributes: {
+                exclude: ["password", "accessToken", "owner_id"]
+            },
             include: [
                 {
-                    model: CompanyDetails,
-                    as: "companyDetails"
-                },
-                {
-                    model: IndividualDetails,
-                    as: "individualDetails"
-                },
-                {
                     model: Warehouse,
-                    as: "warehouse"
+                    as: "warehouseDetails",
+                    include: [
+                        {
+                            model: WarehouseType,
+                            as: "warehouseType"
+                        }
+                    ]
                 },
                 {
                     model: Supplier,
@@ -50,14 +50,8 @@ const currentUser = asyncHandler(async (req, res) => {
 
         const plainUser = user.get({ plain: true });
 
-        if (plainUser.companyDetails === null) {
-            delete plainUser.companyDetails;
-        }
-        if (plainUser.individualDetails === null) {
-            delete plainUser.individualDetails;
-        }
-        if (plainUser.warehouse === null) {
-            delete plainUser.warehouse;
+        if (plainUser.warehouseDetails === null) {
+            delete plainUser.warehouseDetails;
         }
         if (plainUser.supplier === null) {
             delete plainUser.supplier;
@@ -144,35 +138,31 @@ const allEmployeeList = asyncHandler(async (req, res) => {
     }
 });
 
-// const warehouseEmployeeList = asyncHandler(async (req, res) => {
-//     const { User, IndividualDetails } = req.dbModels;
-//     try {
-//         const { warehouse_id = "" } = req.query;
-//         if (!warehouse_id) return res.status(400).json({ success: false, code: 400, message: "Warehouse id must required!!!" });
+const warehouseEmployeeList = asyncHandler(async (req, res) => {
+    const { User, IndividualDetails } = req.dbModels;
+    try {
+        const { warehouse_id = "" } = req.query;
+        if (!warehouse_id) return res.status(400).json({ success: false, code: 400, message: "Warehouse id must required!!!" });
 
-//         const user = await User.findAll({
-//             where: { warehouse_id },
-//             attributes: ["id", "email", "createdAt", "updatedAt"],
-//             include: [
-//                 {
-//                     model: IndividualDetails,
-//                     as: "individualDetails"
-//                 }
-//             ]
-//         });
-//         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+        const user = await User.findAll({
+            where: { warehouse_id },
+            attributes: ["id", "email", "createdAt", "updatedAt"],
+            include: [
+                {
+                    model: IndividualDetails,
+                    as: "individualDetails"
+                }
+            ]
+        });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
-//         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
 
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
-
-
-// PUT
-
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
 
 const updateEmployeeDetails = asyncHandler(async (req, res) => {
     const { IndividualDetails } = req.dbModels;

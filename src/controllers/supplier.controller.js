@@ -2,7 +2,7 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
-const vendorList = asyncHandler(async (req, res) => {
+const supplierList = asyncHandler(async (req, res) => {
     const { Vendor, VendorBankDetails } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
@@ -54,7 +54,7 @@ const vendorList = asyncHandler(async (req, res) => {
     }
 });
 
-const deleteVendor = asyncHandler(async (req, res) => {
+const deleteSupplier = asyncHandler(async (req, res) => {
     const { Vendor } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
@@ -76,7 +76,7 @@ const deleteVendor = asyncHandler(async (req, res) => {
 });
 
 // POST
-const registerVendor = asyncHandler(async (req, res) => {
+const registerSupplier = asyncHandler(async (req, res) => {
     const { Vendor, VendorBankDetails } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
@@ -122,7 +122,7 @@ const registerVendor = asyncHandler(async (req, res) => {
     }
 });
 
-const updateVendorDetails = asyncHandler(async (req, res) => {
+const updateSupplierDetails = asyncHandler(async (req, res) => {
     const { Vendor } = req.dbModels;
     try {
         const { name, primary_phone, secondary_phone, email, address, gst_number } = req.body;
@@ -152,7 +152,7 @@ const updateVendorDetails = asyncHandler(async (req, res) => {
     }
 });
 
-const updateVendorBankDetails = asyncHandler(async (req, res) => {
+const updateSupplierBankDetails = asyncHandler(async (req, res) => {
     const { VendorBankDetails } = req.dbModels;
     try {
         const { vendor_id = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "" } = req.body;
@@ -183,4 +183,4 @@ const updateVendorBankDetails = asyncHandler(async (req, res) => {
     }
 });
 
-export { vendorList, deleteVendor, registerVendor, updateVendorDetails, updateVendorBankDetails };
+export {};

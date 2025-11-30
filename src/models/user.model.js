@@ -4,23 +4,49 @@ function User(sequelize) {
   return sequelize.define("User", {
     email: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     password: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    status: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
+    user_type_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    last_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    full_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    company_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    phone_no: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    profile_image: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    address: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
     },
     accessToken: {
       type: DataTypes.STRING,
       allowNull: true
-    },
-    type: {
-      type: DataTypes.STRING,
-      allowNull: false,
     },
     owner_id: {
       type: DataTypes.INTEGER,
@@ -30,11 +56,15 @@ function User(sequelize) {
       type: DataTypes.STRING,
       allowNull: true
     },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
   }, {
     indexes: [
       {
         unique: true,
-        fields: [ "email", "type" ]
+        fields: ["email", "user_type_id"]
       }
     ]
   });

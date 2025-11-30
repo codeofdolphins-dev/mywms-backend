@@ -11,42 +11,6 @@ function Warehouse(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        full_name: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        f_name: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        l_name: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        ph_number: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        profile_image: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        address: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        state_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        district_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        pincode: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
         gst_no: {
             type: DataTypes.STRING,
             allowNull: true,

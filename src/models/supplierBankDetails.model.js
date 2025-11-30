@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 
-function VendorBankDetails(sequelize) {
-    return sequelize.define("VendorBankDetails", {
-        vendor_id: {
+function SupplierBankDetails(sequelize) {
+    return sequelize.define("SupplierBankDetails", {
+        user_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -33,4 +33,4 @@ function VendorBankDetails(sequelize) {
         }
     });
 }
-export default VendorBankDetails;
+export default SupplierBankDetails;
