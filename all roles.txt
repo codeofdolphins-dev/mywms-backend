@@ -95,3 +95,5 @@ distributor ✅
 
 unit ✅
 :C-R-D-U
+
+userType:read

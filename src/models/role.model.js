@@ -5,7 +5,7 @@ function Role(sequelize) {
     return sequelize.define("Role", {
         role: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         }
     })
 }

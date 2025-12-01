@@ -30,10 +30,6 @@ function Brand(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
-        supplier_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
     })
 }
 export default Brand;

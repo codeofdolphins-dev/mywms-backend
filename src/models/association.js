@@ -32,7 +32,8 @@ const defineRootAssociations = (models) => {
         Unit,
         UserType,
         WarehouseType,
-        RequisitionRule
+        RequisitionRule,
+        SupplierBrand
 
 
     } = models;
@@ -781,6 +782,30 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // User - Brand
+    User.belongsToMany(Brand, {
+        through: {
+            model: SupplierBrand,
+            unique: false
+        },
+        as: "supplier",
+        foreignKey: 'supplierId',
+        otherKey: 'brandId',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsToMany(User, {
+        through: {
+            model: SupplierBrand,
+            unique: false
+        },
+        as: "brands",
+        foreignKey: 'brandId',
+        otherKey: 'supplierId',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
     // Requisition - PurchasOrder
     // Requisition.belongsToMany(PurchasOrder, {
     //     through: {
@@ -839,7 +864,8 @@ const defineTenantAssociations = (models) => {
         Unit,
         WarehouseType,
         UserType,
-        RequisitionRule
+        RequisitionRule,
+        SupplierBrand
 
     } = models;
 
@@ -1577,6 +1603,30 @@ const defineTenantAssociations = (models) => {
         as: "roles",
         foreignKey: 'permissionId',
         otherKey: 'roleId',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User - Brand
+    User.belongsToMany(Brand, {
+        through: {
+            model: SupplierBrand,
+            unique: false
+        },
+        as: "supplier",
+        foreignKey: 'supplierId',
+        otherKey: 'brandId',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsToMany(User, {
+        through: {
+            model: SupplierBrand,
+            unique: false
+        },
+        as: "brands",
+        foreignKey: 'brandId',
+        otherKey: 'supplierId',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

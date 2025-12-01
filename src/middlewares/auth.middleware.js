@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-    const { User, Warehouse } = req.dbModels;
+    const { User, Warehouse, UserType } = req.dbModels;
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
         if (!token) return res.status(401).json({ success: false, code: 401, message: "Unauthorized request" });
@@ -15,13 +15,17 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
             {
                 include: [
                     {
+                        model: UserType,
+                        as: "userType"
+                    },
+                    {
                         model: Warehouse,
                         as: "warehouseDetails"  
                     },
                 ]
             }
         );
-        if (!user || !user.accessToken || user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });
+        if (!user || !user.accessToken || user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });       
 
         req.user = user;
         req.isAdmin = decodedToken?.isAdmin ? decodedToken.isAdmin : false;
