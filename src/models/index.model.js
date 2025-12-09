@@ -35,6 +35,7 @@ import Unit from "./unit.model.js";
 import UserType from "./userType.model.js";
 import WarehouseType from "./warehouseTypes.model.js";
 import RequisitionRule from "./requisitionRule.model.js";
+import SupplierBrand from "./supplierBrand.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -74,6 +75,7 @@ const defineRootModels = (rootSequelize) => {
     RequisitionRule(rootSequelize);
     WarehouseType(rootSequelize);
     SupplierBankDetails(rootSequelize);
+    SupplierBrand(rootSequelize)
     
     return rootSequelize.models;
 }
@@ -113,6 +115,7 @@ const defineTenantModels = (sequelize) => {
     UserType(sequelize);
     SupplierBankDetails(sequelize);
     RequisitionRule(sequelize);
+    SupplierBrand(sequelize);
     
     return sequelize.models;
 }

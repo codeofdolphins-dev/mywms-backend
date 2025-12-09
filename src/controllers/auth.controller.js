@@ -53,7 +53,7 @@ const register_company = asyncHandler(async (req, res) => {
             if (profile_image) await deleteImage(profile_image);
             await rootTransaction.rollback();
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Role 'company' not found. Make sure roles are seeded." });
+            return res.status(400).json({ success: false, code: 400, message: "Role 'company/owner' not found. Make sure roles are seeded." });
         }
 
         const isRegister = await User.findOne({ where: { email }, transaction });
@@ -341,7 +341,7 @@ const register_company = asyncHandler(async (req, res) => {
 
 
 const user_registration = asyncHandler(async (req, res) => {
-    const { User, Warehouse, Role, WarehouseType } = req.dbModels;
+    const { User, Warehouse, WarehouseType, UserType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -361,18 +361,18 @@ const user_registration = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
 
-        const userRole = await Role.findByPk(parseInt(user_type_id, 10));
-        if (!userRole) {
+        const userType = await UserType.findByPk(parseInt(user_type_id, 10));
+        if (!userType) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Role not found. Make sure roles are seeded." });
+            return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
         }
 
-        const isRegister = await User.findOne({ where: { email, type: userRole.role } });
+        const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `${userRole.role} with email: ${email} already exists!!!` });
+            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} already exists!!!` });
         }
 
         const encryptPassword = await hashPassword(password);
@@ -380,12 +380,12 @@ const user_registration = asyncHandler(async (req, res) => {
         const user = await User.create({
             email: email.toLowerCase().trim(),
             password: encryptPassword,
-            type: userRole.role,
+            user_type_id: userType.id,
             full_name,
             first_name: full_name.split(" ")[0],
             last_name: full_name.split(" ")?.[1] || '',
             phone_no: ph_number,
-            profile_image: profile_image ? `${dbName}/${profile_image}` : null,
+            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
             address: {
                 address,
                 state_id,
@@ -394,13 +394,13 @@ const user_registration = asyncHandler(async (req, res) => {
             },
             ...(company_name && { company_name }),
             owner_id: loginUser.id,
-            owner_type: loginUser.type,
+            owner_type: loginUser.userType?.type,
         }, { transaction });
 
-        const roleInLower = userRole.role.toLowerCase();
-        const isWarehouse = roleInLower.includes("warehouse");
+        const typeInLower = userType.type.toLowerCase();
+        const isWarehouse = typeInLower.includes("warehouse");
         if (isWarehouse) {
-            const warehouse = await registerWarehouse(req, user, Warehouse, WarehouseType, userRole.role, transaction);
+            const warehouse = await registerWarehouse(req, user, Warehouse, WarehouseType, userType.type, transaction);
             if (!warehouse) {
                 if (profile_image) await deleteImage(profile_image);
                 await transaction.rollback();
@@ -408,18 +408,18 @@ const user_registration = asyncHandler(async (req, res) => {
             }
         }
 
-        await user.addRole(userRole, { transaction });
-
         const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
         await Tenant.create({
             tenant_id: tenantsName.id,
             email,
+            password,
+            ...(company_name && { companyName: company_name })
         }, { transaction: rootTransaction });
 
         await transaction.commit();
         await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
-        
+
     } catch (error) {
         if (profile_image) await deleteImage(profile_image);
         await rootTransaction.rollback();
@@ -638,24 +638,26 @@ async function hashPassword(pass) {
  * @param {object} user user object
  * @param {object} Warehouse models
  * @param {object} WarehouseType models
- * @param {string} roleInLower 
+ * @param {string} type 
  * @param {object} transaction db object
  * @returns object
  */
-async function registerWarehouse(req, user, Warehouse, WarehouseType, roleInLower, transaction) {
+async function registerWarehouse(req, user, Warehouse, WarehouseType, type, transaction) {
     try {
         const { gst_no = "", license_no = "", lat = "", long = "" } = req.body;
+        
+        if (!type) throw new Error("Warehouse type is required!!!");
 
-        const wareType = await WarehouseType.findOne({ where: { warehouse_type: roleInLower } });
-        if (!wareType) throw new Error("Role is not matching");
+        const wareType = await WarehouseType.findOne({ where: { warehouse_type: type } });
+        if (!wareType) throw new Error("Warehouse type is not matching!!!");
 
         const warehouse = await Warehouse.create({
             user_id: user.id,
             warehouse_type_id: wareType.id,
             gst_no,
             license_no,
-            lat,
-            long,
+            lat: parseFloat(lat),
+            long: parseFloat(long),
         }, { transaction });
 
         return warehouse;

@@ -9,7 +9,6 @@ function UserType(sequelize) {
         level_code: {
             type: DataTypes.STRING,
             allowNull: true,
-            unique: true
         },
         hierarchy_level: {
             type: DataTypes.INTEGER,

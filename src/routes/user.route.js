@@ -13,7 +13,7 @@ router.route("/update-employee-details").put(upload.single("image"), defineUserS
 router.use(defineUserScope, defineDbObject, verifyJWT);
 
 router.route("/current-user").get(currentUser);
-router.route("/employee-list").get(verifyPermission("employee:read"), allEmployeeList);        // optional ?id= &email=
-router.route("/delete-employee").post(verifyJWT, verifyPermission("employee:delete"), delete_employee);
+router.route("/employee-list").get(verifyPermission("employee:read"), allEmployeeList); // optional ?id= &email=
+router.route("/delete-employee").delete(verifyJWT, verifyPermission("employee:delete"), delete_employee);
 
 export default router;

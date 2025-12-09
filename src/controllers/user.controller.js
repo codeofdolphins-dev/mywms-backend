@@ -164,6 +164,7 @@ const warehouseEmployeeList = asyncHandler(async (req, res) => {
     }
 });
 
+// PUT
 const updateEmployeeDetails = asyncHandler(async (req, res) => {
     const { IndividualDetails } = req.dbModels;
     try {
@@ -209,6 +210,7 @@ const updateEmployeeDetails = asyncHandler(async (req, res) => {
     }
 });
 
+// DELETE
 const delete_employee = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
     try {
