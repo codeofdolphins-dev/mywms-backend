@@ -32,7 +32,7 @@ app.use(cookieParser());
 app.use('/assets', express.static(path.join(__dirname, '../public/assets')));
 app.use('/image', express.static(path.join(process.cwd(), 'public', 'user')));
 
-app.get("/", (_, res) => {
+app.get("/test", (_, res) => {
   return res.send("Response from MYWMS Backend!")
 })
 
