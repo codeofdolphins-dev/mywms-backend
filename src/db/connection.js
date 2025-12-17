@@ -5,7 +5,8 @@ import { rootDB } from "./tenantMenager.service.js";
 const connectRootDB = async () => {
     const { rootSequelize, models } = await rootDB();
     try {
-        
+        // await rootSequelize.sync({ force: true });
+
         const recordCount = await models.Role.count();
         if (recordCount === 0) {
             console.log("👑 💾 Start data seeding...");
@@ -15,7 +16,7 @@ const connectRootDB = async () => {
             console.log("👑 🛠️  Data already seeded. Skipping...");
         }
         console.log('Connection has been established successfully.');
-        
+
     } catch (error) {
         if (error.original && error.original.code === '42P01') {
             console.warn("⚠️  Tables not found — creating them now...");
@@ -24,7 +25,7 @@ const connectRootDB = async () => {
             console.log("👑 💾 Start data seeding...");
             await dataSeeder(models);
             console.log("👑 ✅ Data seeded Successfully.");
-            
+
         } else {
             console.error('Unable to connect to the database:', error);
             throw error;

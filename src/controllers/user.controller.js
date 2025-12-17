@@ -3,15 +3,19 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, Warehouse, Supplier, Distributor, WarehouseType } = req.dbModels;
+    const { User, Role, Permission, Warehouse, WarehouseType, OtherDetails, UserType } = req.dbModels;
     try {
         const { id } = req.user;
 
         const user = await User.findByPk(id, {
             attributes: {
-                exclude: ["password", "accessToken", "owner_id"]
+                exclude: ["password", "accessToken"]
             },
             include: [
+                {
+                    model: User,
+                    as: "owner",
+                },
                 {
                     model: Warehouse,
                     as: "warehouseDetails",
@@ -23,12 +27,13 @@ const currentUser = asyncHandler(async (req, res) => {
                     ]
                 },
                 {
-                    model: Supplier,
-                    as: "supplier"
+                    model: OtherDetails,
+                    as: "otherDetails"
                 },
                 {
-                    model: Distributor,
-                    as: "distributor"
+                    model: UserType,
+                    as: "userType",
+                    attributes: ["type"]
                 },
                 {
                     model: Role,

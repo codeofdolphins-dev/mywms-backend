@@ -53,7 +53,7 @@ import apiRoutes from "./routes/index.route.js";
 
 app.use("/api", apiRoutes);
 
-app.use("/hash", async(req, res) => {
+app.use("/hash", async (req, res) => {
   // console.log(req.query); return
   const bcrypt = await import('bcrypt');
   const myPlaintextPassword = req.query?.w || "admin123";
@@ -61,5 +61,14 @@ app.use("/hash", async(req, res) => {
     res.send({ hash });
   });
 });
+
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+  });
+});
+
 
 export { app }

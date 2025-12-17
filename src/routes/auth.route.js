@@ -9,7 +9,7 @@ import { verifyPermission } from "../middlewares/permission.middleware.js";
 const router = Router();
 
 router.route("/register-company").post(upload.single("image"), defineUserScope, defineDbObject, register_company);
-router.route("/user-register").post(upload.single("profile_image"), defineUserScope, defineDbObject, verifyJWT, user_registration);
+router.route("/register-user").post(upload.single("profile_image"), defineUserScope, defineDbObject, verifyJWT, user_registration);
 
 
 // router.route("/register-employee").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("employee:create"), register_employee);
