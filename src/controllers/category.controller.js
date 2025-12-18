@@ -5,7 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const allCategoryList = asyncHandler(async (req, res) => {
     const { Category } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = null, name = null } = req.query;
+        let { page = 1, limit = 10, id = null, name = null, noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -21,7 +21,7 @@ const allCategoryList = asyncHandler(async (req, res) => {
                                 : []
                         )
                     ]
-                } : {parent_id: null})
+                } : { parent_id: null })
             },
             include: {
                 model: Category,
@@ -31,8 +31,7 @@ const allCategoryList = asyncHandler(async (req, res) => {
                     as: 'subcategories',
                 }
             },
-            limit,
-            offset,
+            ...(noLimit ? {} : { limit, offset }),
             order: [['createdAt', 'ASC']]
         });
         if (!category) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -45,12 +44,17 @@ const allCategoryList = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: category.rows,
-            meta: {
-                totalItems,
-                totalPages,
-                currentPage: page,
-                limit
-            }
+            ...(noLimit
+                ? {} 
+                : {
+                    meta: {
+                        totalItems,
+                        totalPages,
+                        currentPage: page,
+                        limit
+                    }
+                }
+            ),
         });
     } catch (error) {
         console.log(error);
