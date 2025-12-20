@@ -24,6 +24,7 @@ import bomApi from "./bom.route.js";
 import brandApi from "./brand.route.js";
 import unitApi from "./unit.route.js";
 import userTypesApi from "./userTypes.route.js";
+import supplierApi from "./supplier.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -57,6 +58,7 @@ router.use("/outward", outwardApi);
 router.use("/bom", bomApi);
 router.use("/unit", unitApi);
 router.use("/user-types", userTypesApi);
+router.use("/supplier", supplierApi);
 
 
 export default router;

@@ -3,6 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { rootDB } from "../db/tenantMenager.service.js";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
+import { Op } from "sequelize";
+import { hashPassword } from "../utils/hashPassword.js";
 
 // GET request
 const logout = asyncHandler(async (req, res) => {
@@ -352,16 +354,23 @@ const user_registration = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", user_type_id = "" } = req.body;
+        const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", user_type = "" } = req.body;
         const loginUser = req.user;
 
-        if ([full_name, ph_number, address, state_id, district_id, pincode].some(item => item === "")) {
+        if ([email, full_name, ph_number, address, state_id, district_id, pincode].some(item => item === "")) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
 
-        const userType = await UserType.findByPk(parseInt(user_type_id, 10));
+        // const userType = await UserType.findByPk(parseInt(user_type_id, 10));
+        const userType = await UserType.findOne({
+            where: {
+                type: {
+                    [Op.iLike]: user_type
+                }
+            }
+        });
         if (!userType) {
             if (profile_image) await deleteImage(profile_image);
             await transaction.rollback();
@@ -628,9 +637,6 @@ function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-async function hashPassword(pass) {
-    return await bcrypt.hash(pass, parseInt(process.env.SALTROUNDS, 10) || 10);
-}
 
 /**
  * 

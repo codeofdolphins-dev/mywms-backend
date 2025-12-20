@@ -1,5 +1,8 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { deleteImage } from "../utils/handelImage.js";
+import { hashPassword } from "../utils/hashPassword.js";
+import { rootDB } from "../db/tenantMenager.service.js";
 
 // GET
 const supplierList = asyncHandler(async (req, res) => {
@@ -48,7 +51,7 @@ const supplierList = asyncHandler(async (req, res) => {
             }
         });
     } catch (error) {
-        if(transaction) await transaction.rollback();
+        if (transaction) await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -77,30 +80,79 @@ const deleteSupplier = asyncHandler(async (req, res) => {
 
 // POST
 const registerSupplier = asyncHandler(async (req, res) => {
-    const { Vendor, VendorBankDetails } = req.dbModels;
+    const { User, SupplierBankDetails, UserType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const profile_image = req?.file?.filename || null;
+    const dbName = req.headers["x-tenant-id"];
+
     try {
-        const { name = "", primary_phone = "", secondary_phone = "", email = "", address = "", gst_number = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "" } = req.body;
+        const { email = "", password = "", full_name = "", phone_no = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "", user_type = "" } = req.body;
+        const loginUser = req.user;
 
-        if ([name, primary_phone, email, address, gst_number, account_holder_name, bank_branch, bank_name, account_number, account_type, ifsc_code].some(item => item === "")) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
 
-        const isVendorExists = await Vendor.findOne({ where: { email }, transaction });
-        if (isVendorExists) return res.status(409).json({ success: false, code: 409, message: `Vendor: ${name} with email: ${email} already exists!!!` });
+        if ([email, password, full_name, phone_no, address, state_id, district_id, pincode, account_holder_name, bank_branch, bank_name, account_number, account_type, ifsc_code, user_type].some(item => item === "")) {
+            if (profile_image) deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        };
 
-        const isExists = await VendorBankDetails.findOne({ where: { account_number, ifsc_code }, transaction });
-        if (isExists) return res.status(409).json({ success: false, code: 409, message: `Vendor: ${name} with account number: ${account_number} already exists!!!` });
+        const isUserExists = await User.findOne({ where: { email }, transaction });
+        if (isUserExists) {
+            if (profile_image) deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: `Supplier: ${full_name} with email: ${email} already exists!!!` });
+        };
 
-        const vendor = await Vendor.create({
-            name,
-            primary_phone,
-            secondary_phone,
-            email,
-            address,
-            gst_number,
-            transaction
+        const isBankExists = await SupplierBankDetails.findOne({ where: { account_number, ifsc_code }, transaction });
+        if (isBankExists) {
+            if (profile_image) deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: `Supplier: ${full_name} with account number: ${account_number} already exists!!!` });
+        };
+
+        const userType = await UserType.findOne({
+            where: {
+                type: {
+                    [Op.iLike]: user_type
+                }
+            }
         });
-        const addVendorBank = await VendorBankDetails.create({
-            vendor_id: vendor.id,
+        if (!userType) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
+        }
+
+        const encryptPassword = await hashPassword(password);
+
+        const user = await User.create({
+            email: email.toLowerCase().trim(),
+            password: encryptPassword,
+            user_type_id: userType.id,
+            full_name,
+            first_name: full_name.split(" ")[0],
+            last_name: full_name.split(" ")?.[1] || '',
+            phone_no,
+            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
+            address: {
+                address,
+                state_id,
+                district_id,
+                pincode
+            },
+            ...(company_name && { company_name }),
+            owner_id: loginUser.id,
+            owner_type: loginUser.userType?.type,
+        }, { transaction });
+
+
+        const addSupplierBank = await SupplierBankDetails.create({
+            user_id: user.id,
             account_holder_name,
             bank_name,
             bank_branch,
@@ -109,14 +161,28 @@ const registerSupplier = asyncHandler(async (req, res) => {
             ifsc_code,
             transaction
         })
-        if (!addVendorBank) return res.status(500).json({ success: false, code: 500, message: "Bank details addition failed!!!" });
+        if (!addSupplierBank) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(500).json({ success: false, code: 500, message: "Bank details addition failed!!!" });
+        }
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
+        await Tenant.create({
+            tenant_id: tenantsName.id,
+            email,
+            password,
+            ...(company_name && { companyName: company_name })
+        }, { transaction: rootTransaction });
 
         await transaction.commit();
-
-        return res.status(200).json({ success: true, code: 200, message: "Vendor & Bank details added successfully." });
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Supplier & Bank details added successfully." });
 
     } catch (error) {
-        if (!transaction) await transaction.rollback();
+        if (profile_image) await deleteImage(profile_image, dbName);
+        await transaction.rollback();
+        await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -183,4 +249,4 @@ const updateSupplierBankDetails = asyncHandler(async (req, res) => {
     }
 });
 
-export {};
+export { registerSupplier };

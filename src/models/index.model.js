@@ -13,7 +13,6 @@ import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
 import Vehicle from "./main/vehicle.model.js";
 import Warehouse from "./warehouse.model.js";
-import OtherDetails from "./otherDetails.model.js";
 import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
@@ -49,7 +48,6 @@ const defineRootModels = (rootSequelize) => {
     Role(rootSequelize);
     RolePermissions(rootSequelize);
     Product(rootSequelize);
-    OtherDetails(rootSequelize);
     InwardItem(rootSequelize);
     UserRoles(rootSequelize);
     Vehicle(rootSequelize);
@@ -83,7 +81,6 @@ const defineRootModels = (rootSequelize) => {
 const defineTenantModels = (sequelize) => {
     Category(sequelize);
     Driver(sequelize);
-    OtherDetails(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);

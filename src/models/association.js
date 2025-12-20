@@ -2,7 +2,6 @@ const defineRootAssociations = (models) => {
     const {
         Category,
         User,
-        OtherDetails,
         Permission,
         Product,
         Role,
@@ -72,20 +71,6 @@ const defineRootAssociations = (models) => {
 
 
     // ********************************************One-To-One*********************************
-
-    // User ↔ OtherDetails
-    User.hasOne(OtherDetails, {
-        foreignKey: "user_id",
-        as: "otherDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    OtherDetails.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "user",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
 
     // User ↔ Warehouse
     User.hasOne(Warehouse, {
@@ -835,7 +820,6 @@ const defineTenantAssociations = (models) => {
 
     const {
         Category,
-        OtherDetails,
         Permission,
         Product,
         Role,
@@ -884,19 +868,6 @@ const defineTenantAssociations = (models) => {
 
 
     // ********************************************One-To-One*********************************
-    // User ↔ OtherDetails
-    User.hasOne(OtherDetails, {
-        foreignKey: "user_id",
-        as: "otherDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    OtherDetails.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "user",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
 
     // User ↔ Warehouse
     User.hasOne(Warehouse, {
