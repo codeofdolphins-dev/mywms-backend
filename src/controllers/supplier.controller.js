@@ -6,24 +6,53 @@ import { rootDB } from "../db/tenantMenager.service.js";
 
 // GET
 const supplierList = asyncHandler(async (req, res) => {
-    const { Vendor, VendorBankDetails } = req.dbModels;
+    const { User, SupplierBankDetails, UserType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
-        let { page = 1, limit = 10, id = "", email = "" } = req.query;
+        let { page = 1, limit = 10, id = "", text = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const vendor = await Vendor.findAndCountAll({
-            where: (id || email) ? { [Op.or]: [{ id: parseInt(id) || null }, { email }] } : undefined,
+        const userType = await UserType.findOne({
+            where: {
+                type: {
+                    [Op.iLike]: "supplier"
+                }
+            }
+        });
+
+        // console.log(userType);
+        // return
+
+
+        const supplier = await User.findAndCountAll({
+            where: {
+                user_type_id: userType.id,
+                ...((id || text) ? {
+                    [Op.or]: [
+                        ...(id && Number.isInteger(Number(id))
+                            ? [{ id: Number(id) }]
+                            : []),
+                        ...(text
+                            ? [
+                                { email: { [Op.iLike]: `${text}%` } },
+                                { full_name: { [Op.iLike]: `${text}%` } },
+                                { company_name: { [Op.iLike]: `${text}%` } },
+                                { phone_no: { [Op.iLike]: `${text}%` } },
+                            ]
+                            : []),
+                    ]
+                } : undefined)
+            },
+            attributes: {
+                exclude: ["password", "user_type_id", "accessToken"]
+            },
             include: [
                 {
-                    model: VendorBankDetails,
-                    as: "BankDetails",
-                    attributes: {
-                        exclude: ["vendor_id"]
-                    }
+                    model: SupplierBankDetails,
+                    as: "supplierBankDetails",
                 }
             ],
             limit,
@@ -31,9 +60,9 @@ const supplierList = asyncHandler(async (req, res) => {
             order: [["createdAt", "ASC"]],
             transaction
         });
-        if (!vendor) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+        if (!supplier) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const totalItems = vendor.count;
+        const totalItems = supplier.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         await transaction.commit();
@@ -42,7 +71,7 @@ const supplierList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: vendor,
+            data: supplier.rows,
             meta: {
                 totalItems,
                 totalPages,
@@ -91,7 +120,7 @@ const registerSupplier = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { email = "", password = "", full_name = "", phone_no = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "", user_type = "" } = req.body;
+        const { email = "", password = "", full_name = "", phone_no = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "", user_type = "", desc = "" } = req.body;
         const loginUser = req.user;
 
 
@@ -148,6 +177,9 @@ const registerSupplier = asyncHandler(async (req, res) => {
             ...(company_name && { company_name }),
             owner_id: loginUser.id,
             owner_type: loginUser.userType?.type,
+            meta: {
+                desc
+            }
         }, { transaction });
 
 
@@ -159,8 +191,7 @@ const registerSupplier = asyncHandler(async (req, res) => {
             account_number,
             account_type,
             ifsc_code,
-            transaction
-        })
+        }, { transaction })
         if (!addSupplierBank) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();
@@ -249,4 +280,4 @@ const updateSupplierBankDetails = asyncHandler(async (req, res) => {
     }
 });
 
-export { registerSupplier };
+export { registerSupplier, supplierList };
