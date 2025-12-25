@@ -7,12 +7,12 @@ const storage = multer.diskStorage({
     let desticationLocation = './public/user';
 
     const folderName = req.headers['x-tenant-id'];
-    if(folderName){
+    if (folderName) {
       desticationLocation = path.join(process.cwd(), "public", "user", folderName);
       fs.mkdirSync(desticationLocation, { recursive: true });
       req.isfileSave = true;
-    }else req.isfileSave = false;
-    
+    } else req.isfileSave = false;
+
     cb(null, desticationLocation)
   },
   filename: function (req, file, cb) {

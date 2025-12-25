@@ -1,16 +1,19 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js"
-import { registerSupplier, supplierList } from "../controllers/supplier.controller.js";
+import { deleteSupplier, registerSupplier, supplierList, updateSupplierDetails } from "../controllers/supplier.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
+import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT);
+router.route("/create").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("supplier:create"), registerSupplier);
+router.route("/update").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("supplier:update"), updateSupplierDetails);
 
+router.use(defineUserScope, defineDbObject, verifyJWT);
 router.route("/all").get(verifyPermission("supplier:read"), supplierList);
-router.route("/create").post(verifyPermission("supplier:create"), registerSupplier);
-// router.route("/update").put(verifyPermission("unit:update"), );
-// router.route("/delete/:id").delete(verifyPermission("unit:delete"), );
+router.route("/delete/:id").delete(verifyPermission("supplier:delete"), deleteSupplier);
 
 
 export default router;
