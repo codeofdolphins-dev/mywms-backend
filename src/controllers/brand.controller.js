@@ -3,35 +3,38 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
 
 const allBrand = asyncHandler(async (req, res) => {
-    const { Brand, Supplier } = req.dbModels;
+    const { Brand, User } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, name = "", id = "" } = req.query;
+        let { page = 1, limit = 10, text = "", id = "", noLimt = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
         const brand = await Brand.findAndCountAll({
-            where: (name || id) ? {
+            distinct: true,
+            where: (text || id) ? {
                 [Op.or]: [
-                    {
-                        id: parseInt(id) || null
-                    },
-                    {
-                        name: {
-                            [Op.iLike]: `${name}%`
-                        }
-                    }
+                    ...(id && Number.isInteger(Number(id))
+                        ? [{ id: Number(id) }]
+                        : []),
+                    ...(text
+                        ? [
+                            { name: { [Op.iLike]: `${text}%` } },
+                            { slug: { [Op.iLike]: `${text}%` } },
+                        ]
+                        : [])
                 ]
             } : undefined,
             include: [
                 {
-                    model: Supplier,
-                    as: "suppliedBy"
+                    model: User,
+                    as: "suppliers",
+                    attributes: ["id", "full_name"],
+                    through: { attributes: [] }
                 },
             ],
-            limit,
-            offset,
+            ...(noLimt ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!brand) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -59,24 +62,28 @@ const allBrand = asyncHandler(async (req, res) => {
 });
 
 const createBrand = asyncHandler(async (req, res) => {
-    const { Brand, Supplier } = req.dbModels;
+    const { Brand, User } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers['x-tenant-id'];
     const logo = req?.file?.filename || null;
 
     try {
-        const { name = "", description = "", website = "", origin_country = "", status = "", supplier_id = "" } = req.body;
-        if (!name || !supplier_id) {
+        const { name = "", description = "", website = "", origin_country = "", status = "", suppliers = [] } = req.body;
+        if (!name || suppliers.length < 1) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ succes: false, code: 400, message: "Name & supplier_id both are required!!!" });
         }
 
-        const supplier = await Supplier.findByPk(parseInt(supplier_id, 10) || null);        
-        if (!supplier) {
+        const existingSuppliers = await User.findAll({
+            where: {
+                id: suppliers
+            }, transaction
+        });
+        if (existingSuppliers.length !== suppliers.length) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(404).json({ succes: false, code: 404, message: "Supplier not found!!!" });
+            return res.status(404).json({ succes: false, code: 404, message: "Some Suppliers were not found!!!" });
         }
 
         const brand = await Brand.create({
@@ -87,42 +94,43 @@ const createBrand = asyncHandler(async (req, res) => {
             website,
             origin_country,
             status,
-            supplier_id: supplier?.id
         }, { transaction });
         if (!brand) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(501).json({ succes: false, code: 501, message: "Record not created!!!" });
-        }
+        };
+        // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(brand)));
+        await brand.addSuppliers(existingSuppliers, { transaction });
 
         await transaction.commit();
         return res.status(200).json({ succes: true, code: 200, message: "Record created." });
 
     } catch (error) {
-        await deleteImage(logo, dbName);
         await transaction.rollback();
+        await deleteImage(logo, dbName);
         console.log(error);
         return res.status(500).json({ succes: false, code: 500, message: error.message });
     }
 });
 
 const updateBrand = asyncHandler(async (req, res) => {
-    const { Brand, Supplier } = req.dbModels;
+    const { Brand, User } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers["x-tenant-id"];
     const logo = req?.file?.filename || null;
 
     try {
-        const { id = "", name = "", description = "", website = "", origin_country = "", status = "", supplier_id = "" } = req.body;
+        const { id = "", name = "", description = "", website = "", origin_country = "", status = "", suppliers = [] } = req.body;
         if (!id) {
-            if(logo) await deleteImage(logo, dbName);
+            if (logo) await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
         }
 
         const brand = await Brand.findOne({ where: { id: parseInt(id, 10) } });
         if (!brand) {
-            if(logo) await deleteImage(logo, dbName);
+            if (logo) await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
         }
@@ -139,22 +147,32 @@ const updateBrand = asyncHandler(async (req, res) => {
         if (website) brand.website = website;
         if (origin_country) brand.origin_country = origin_country;
         if (status) brand.status = status;
-        if (supplier_id) {
-            const supplier = await Supplier.findByPk(parseInt(vendor_id, 10));
-            brand.supplier_id = supplier.id;
+        if (suppliers.length) {
+            const newSuppliers = await User.findAll({
+                where: {
+                    id: suppliers
+                }, transaction
+            });
+            if (newSuppliers.length !== suppliers.length) {
+                await deleteImage(logo, dbName);
+                await transaction.rollback();
+                return res.status(404).json({ succes: false, code: 404, message: "Some Suppliers were not found!!!" });
+            }
+
+            brand.setSuppliers(newSuppliers, { transaction });
         }
         const isUpdate = await brand.save({ transaction });
         if (!isUpdate) {
-            if(logo) await deleteImage(logo, dbName);
+            if (logo) await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(501).json({ succes: false, code: 501, message: "Updation failed!!!" });
         }
 
         await transaction.commit();
-        return res.status(200).json({ succes: true, code: 200, message: "Record Updated Successfully"});
+        return res.status(200).json({ succes: true, code: 200, message: "Record Updated Successfully" });
 
     } catch (error) {
-        if(logo) await deleteImage(logo, dbName);
+        if (logo) await deleteImage(logo, dbName);
         await transaction.rollback();
         console.log(error);
         return res.status(500).json({ succes: false, code: 500, message: error.message });

@@ -773,7 +773,7 @@ const defineRootAssociations = (models) => {
             model: SupplierBrand,
             unique: false
         },
-        as: "supplier",
+        as: "brands",
         foreignKey: 'supplierId',
         otherKey: 'brandId',
         onDelete: "CASCADE",
@@ -784,7 +784,7 @@ const defineRootAssociations = (models) => {
             model: SupplierBrand,
             unique: false
         },
-        as: "brands",
+        as: "suppliers",
         foreignKey: 'brandId',
         otherKey: 'supplierId',
         onDelete: "CASCADE",
@@ -1584,7 +1584,7 @@ const defineTenantAssociations = (models) => {
             model: SupplierBrand,
             unique: false
         },
-        as: "supplier",
+        as: "brands",
         foreignKey: 'supplierId',
         otherKey: 'brandId',
         onDelete: "CASCADE",
@@ -1595,7 +1595,7 @@ const defineTenantAssociations = (models) => {
             model: SupplierBrand,
             unique: false
         },
-        as: "brands",
+        as: "suppliers",
         foreignKey: 'brandId',
         otherKey: 'supplierId',
         onDelete: "CASCADE",

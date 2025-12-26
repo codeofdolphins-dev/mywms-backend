@@ -10,7 +10,7 @@ const supplierList = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        let { page = 1, limit = 10, id = "", text = "" } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -22,10 +22,6 @@ const supplierList = asyncHandler(async (req, res) => {
                 }
             }
         });
-
-        // console.log(userType);
-        // return
-
 
         const supplier = await User.findAndCountAll({
             where: {
@@ -55,8 +51,7 @@ const supplierList = asyncHandler(async (req, res) => {
                     as: "supplierBankDetails",
                 }
             ],
-            limit,
-            offset,
+            ...(noLimit ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
             transaction
         });
