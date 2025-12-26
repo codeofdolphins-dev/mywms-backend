@@ -5,15 +5,14 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const allHSNList = asyncHandler(async (req, res) => {
     const { HSN } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", code = "" } = req.query;
+        let { page = 1, limit = 10, id = "", code = "", rate = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const hsn = await HSN.findAndCountAll({
             where: (id || code) ? { [Op.or]: [ { id: parseInt(id, 10) || null }, { hsn_code: code || null } ] } : undefined,
-            limit,
-            offset,
+            ...(noLimit ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!hsn) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
