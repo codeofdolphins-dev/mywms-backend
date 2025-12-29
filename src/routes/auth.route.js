@@ -18,7 +18,7 @@ router.route("/register-user").post(upload.single("profile_image"), defineUserSc
 // router.route("/register-warehouse").post(upload.single("profile_image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("warehouse:create"), register_warehouse);
 
 
-router.use(defineUserScope, defineDbObject);
+router.use(upload.none(), defineUserScope, defineDbObject);
 router.route("/login").post(login);
 router.route("/request-otp").post(request_otp);
 router.route("/verify-otp").post(verify_otp);

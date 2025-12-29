@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 export const defineUserScope = asyncHandler( async (req, res, next) => {    
     try {
         const tenantDB = req.headers["x-tenant-id"];
-        if(tenantDB) return next();
+        if(tenantDB) return next();  
         
         const email = req.body?.email || "";
         if(!email) return res.status(400).json({ success: false, code: 400, message: "User EMAIL must required!!! or Header is not set properly!!!" });
