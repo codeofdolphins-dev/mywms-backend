@@ -57,7 +57,7 @@ const allBrand = asyncHandler(async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ succes: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -72,7 +72,7 @@ const createBrand = asyncHandler(async (req, res) => {
         if (!name || suppliers.length < 1) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(400).json({ succes: false, code: 400, message: "Name & supplier_id both are required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Name & supplier_id both are required!!!" });
         }
 
         const existingSuppliers = await User.findAll({
@@ -83,7 +83,7 @@ const createBrand = asyncHandler(async (req, res) => {
         if (existingSuppliers.length !== suppliers.length) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(404).json({ succes: false, code: 404, message: "Some Suppliers were not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Some Suppliers were not found!!!" });
         }
 
         const brand = await Brand.create({
@@ -98,19 +98,19 @@ const createBrand = asyncHandler(async (req, res) => {
         if (!brand) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(501).json({ succes: false, code: 501, message: "Record not created!!!" });
+            return res.status(501).json({ success: false, code: 501, message: "Record not created!!!" });
         };
         // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(brand)));
         await brand.addSuppliers(existingSuppliers, { transaction });
 
         await transaction.commit();
-        return res.status(200).json({ succes: true, code: 200, message: "Record created." });
+        return res.status(200).json({ success: true, code: 200, message: "Record created." });
 
     } catch (error) {
         await transaction.rollback();
         await deleteImage(logo, dbName);
         console.log(error);
-        return res.status(500).json({ succes: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -156,7 +156,7 @@ const updateBrand = asyncHandler(async (req, res) => {
             if (newSuppliers.length !== suppliers.length) {
                 await deleteImage(logo, dbName);
                 await transaction.rollback();
-                return res.status(404).json({ succes: false, code: 404, message: "Some Suppliers were not found!!!" });
+                return res.status(404).json({ success: false, code: 404, message: "Some Suppliers were not found!!!" });
             }
 
             brand.setSuppliers(newSuppliers, { transaction });
@@ -165,17 +165,17 @@ const updateBrand = asyncHandler(async (req, res) => {
         if (!isUpdate) {
             if (logo) await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(501).json({ succes: false, code: 501, message: "Updation failed!!!" });
+            return res.status(501).json({ success: false, code: 501, message: "Updation failed!!!" });
         }
 
         await transaction.commit();
-        return res.status(200).json({ succes: true, code: 200, message: "Record Updated Successfully" });
+        return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully" });
 
     } catch (error) {
         if (logo) await deleteImage(logo, dbName);
         await transaction.rollback();
         console.log(error);
-        return res.status(500).json({ succes: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -205,7 +205,7 @@ const deleteBrand = asyncHandler(async (req, res) => {
     } catch (error) {
         await transaction.commit();
         console.log(error);
-        return res.status(500).json({ succes: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 

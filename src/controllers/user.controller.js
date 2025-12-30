@@ -79,6 +79,7 @@ const currentUser = asyncHandler(async (req, res) => {
     }
 });
 
+
 const allEmployeeList = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
     try {
