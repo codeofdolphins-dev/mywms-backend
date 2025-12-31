@@ -32,7 +32,9 @@ const defineRootAssociations = (models) => {
         UserType,
         WarehouseType,
         RequisitionRule,
-        SupplierBrand
+        SupplierBrand,
+        BrandProducts,
+        CategoryProducts
 
 
     } = models;
@@ -565,22 +567,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Category ↔ Product
-    Category.hasMany(Product, {
-        foreignKey: {
-            name: "last_category_id",
-            allowNull: true
-        },
-        as: "products",
-    });
-    Product.belongsTo(Category, {
-        foreignKey: {
-            name: "last_category_id",
-            allowNull: true
-        },
-        as: "category",
-    });
-
     // user <-> requisition
     User.hasMany(Requisition, {
         foreignKey: "created_by",
@@ -689,20 +675,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Brand <-> Product
-    Brand.hasMany(Product, {
-        foreignKey: "brand_id",
-        as: "brand",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Product.belongsTo(Brand, {
-        foreignKey: "brand_id",
-        as: "belongingProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
     // WarehouseType <-> Warehouse
     WarehouseType.hasMany(Warehouse, {
         foreignKey: "warehouse_type_id",
@@ -791,6 +763,56 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+
+    // Product - Brand
+    Product.belongsToMany(Brand, {
+        through: {
+            model: BrandProducts,
+            unique: false
+        },
+        as: "productBrands",
+        foreignKey: 'product_id',
+        otherKey: 'brand_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsToMany(Product, {
+        through: {
+            model: BrandProducts,
+            unique: false
+        },
+        as: "brandProducts",
+        foreignKey: 'brand_id',
+        otherKey: 'product_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    // Product - Category
+    Product.belongsToMany(Category, {
+        through: {
+            model: CategoryProducts,
+            unique: false
+        },
+        as: "productCategories",
+        foreignKey: 'product_id',
+        otherKey: 'category_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Category.belongsToMany(Product, {
+        through: {
+            model: CategoryProducts,
+            unique: false
+        },
+        as: "categoryProducts",
+        foreignKey: 'category_id',
+        otherKey: 'product_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
     // Requisition - PurchasOrder
     // Requisition.belongsToMany(PurchasOrder, {
     //     through: {
@@ -849,7 +871,9 @@ const defineTenantAssociations = (models) => {
         WarehouseType,
         UserType,
         RequisitionRule,
-        SupplierBrand
+        SupplierBrand,
+        BrandProducts,
+        CategoryProducts
 
     } = models;
 
@@ -1362,22 +1386,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Category ↔ Product
-    Category.hasMany(Product, {
-        foreignKey: {
-            name: "last_category_id",
-            allowNull: true
-        },
-        as: "products",
-    });
-    Product.belongsTo(Category, {
-        foreignKey: {
-            name: "last_category_id",
-            allowNull: true
-        },
-        as: "category",
-    });
-
     // Warehouse.hasMany(User, {
     //     foreignKey: "warehouse_id",
     //     as: "employees", // plural because it's a hasMany relationship
@@ -1500,20 +1508,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Brand <-> Product
-    Brand.hasMany(Product, {
-        foreignKey: "brand_id",
-        as: "brand",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Product.belongsTo(Brand, {
-        foreignKey: "brand_id",
-        as: "belongingProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
     // WarehouseType <-> Warehouse
     WarehouseType.hasMany(Warehouse, {
         foreignKey: "warehouse_type_id",
@@ -1598,6 +1592,55 @@ const defineTenantAssociations = (models) => {
         as: "suppliers",
         foreignKey: 'brandId',
         otherKey: 'supplierId',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // Product - Brand
+    Product.belongsToMany(Brand, {
+        through: {
+            model: BrandProducts,
+            unique: false
+        },
+        as: "productBrands",
+        foreignKey: 'product_id',
+        otherKey: 'brand_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Brand.belongsToMany(Product, {
+        through: {
+            model: BrandProducts,
+            unique: false
+        },
+        as: "brandProducts",
+        foreignKey: 'brand_id',
+        otherKey: 'product_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    // Product - Category
+    Product.belongsToMany(Category, {
+        through: {
+            model: CategoryProducts,
+            unique: false
+        },
+        as: "productCategories",
+        foreignKey: 'product_id',
+        otherKey: 'category_id',
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Category.belongsToMany(Product, {
+        through: {
+            model: CategoryProducts,
+            unique: false
+        },
+        as: "categoryProducts",
+        foreignKey: 'category_id',
+        otherKey: 'product_id',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

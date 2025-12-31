@@ -7,14 +7,6 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        last_category_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        brand_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
         hsn_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -40,7 +32,7 @@ function Product(sequelize) {
             allowNull: false
         },
         package_type: {
-            type: DataTypes.ENUM("tetra Pack", "plastic"),
+            type: DataTypes.STRING,
             allowNull: true
         },
         measure: {
