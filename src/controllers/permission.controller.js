@@ -1,14 +1,43 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allPermissions = asyncHandler(async (req, res) => {
-
     const { Permission } = req.dbModels;
 
     try {
-        const permissions = await Permission.findAll();
 
-        return res.status(200).json({ success: true, code: 200, message: "All Permissions fetched successfully", data: permissions });
+        let { limit = 10, page = 1, text = "" } = req.query;
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
+
+        const permissions = await Permission.findAndCountAll({
+            where: text ? {
+                permission: {
+                    [Op.iLike]: `${text}%`
+                }
+            } : undefined,
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
+        });
+
+        const totalItems = permissions.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "All Permissions fetched successfully",
+            data: permissions.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
 
     } catch (error) {
         console.log(error);
