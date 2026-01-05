@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, Warehouse, WarehouseType, UserType } = req.dbModels;
+    const { User, Role, Permission, Warehouse, WarehouseType } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -26,11 +26,11 @@ const currentUser = asyncHandler(async (req, res) => {
                         }
                     ]
                 },
-                {
-                    model: UserType,
-                    as: "userType",
-                    attributes: ["type"]
-                },
+                // {
+                //     model: UserType,
+                //     as: "userType",
+                //     attributes: ["type"]
+                // },
                 {
                     model: Role,
                     as: "roles",

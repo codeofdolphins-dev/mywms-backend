@@ -29,12 +29,13 @@ const defineRootAssociations = (models) => {
         BillOfMaterial,
         Brand,
         Unit,
-        UserType,
+        // UserType,
         WarehouseType,
         RequisitionRule,
         SupplierBrand,
         BrandProducts,
-        CategoryProducts
+        CategoryProducts,
+        TenantBusinessFlowMaster
 
 
     } = models;
@@ -171,7 +172,6 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-
 
 
     // ********************************************One-To-Many*********************************
@@ -494,6 +494,20 @@ const defineRootAssociations = (models) => {
         as: "requisitionItemUnit"
     });
 
+    // TenantsName ↔ TenantBusinessFlowMaster
+    TenantBusinessFlowMaster.belongsTo(TenantsName, {
+        foreignKey: "tenant_id",
+        as: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    TenantsName.hasMany(TenantBusinessFlowMaster, {
+        foreignKey: "tenant_id",
+        as: "businessFlows",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************Many-To-One*********************************
 
@@ -512,32 +526,32 @@ const defineRootAssociations = (models) => {
     });
 
     // UserType ↔ RequisitionRule
-    UserType.hasMany(RequisitionRule, {
-        foreignKey: "module_id",
-        as: "moduleRules",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    RequisitionRule.belongsTo(UserType, {
-        foreignKey: "module_id",
-        as: "module",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // UserType.hasMany(RequisitionRule, {
+    //     foreignKey: "module_id",
+    //     as: "moduleRules",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // RequisitionRule.belongsTo(UserType, {
+    //     foreignKey: "module_id",
+    //     as: "module",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // UserType ↔ User
-    UserType.hasMany(User, {
-        foreignKey: "user_type_id",
-        as: "userList",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    User.belongsTo(UserType, {
-        foreignKey: "user_type_id",
-        as: "userType",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // UserType.hasMany(User, {
+    //     foreignKey: "user_type_id",
+    //     as: "userList",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // User.belongsTo(UserType, {
+    //     foreignKey: "user_type_id",
+    //     as: "userType",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // stockInward - stockInwardItems
     Inward.hasMany(InwardItem, {
@@ -869,7 +883,7 @@ const defineTenantAssociations = (models) => {
         Brand,
         Unit,
         WarehouseType,
-        UserType,
+        // UserType,
         RequisitionRule,
         SupplierBrand,
         BrandProducts,
@@ -922,18 +936,18 @@ const defineTenantAssociations = (models) => {
     });
 
     // UserType ↔ User
-    UserType.hasOne(User, {
-        foreignKey: "user_type_id",
-        as: "users",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    User.belongsTo(UserType, {
-        foreignKey: "user_type_id",
-        as: "userType",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // UserType.hasOne(User, {
+    //     foreignKey: "user_type_id",
+    //     as: "users",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // User.belongsTo(UserType, {
+    //     foreignKey: "user_type_id",
+    //     as: "userType",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // product ↔ qty
     Product.hasOne(Batch, {
@@ -1136,18 +1150,18 @@ const defineTenantAssociations = (models) => {
     });
 
     // Inward <-> Vendor
-    Inward.belongsTo(Vendor, {
-        foreignKey: "vendor_id",
-        as: "stockVendor",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Vendor.hasMany(Inward, {
-        foreignKey: "vendor_id",
-        as: "vendorInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // Inward.belongsTo(Vendor, {
+    //     foreignKey: "vendor_id",
+    //     as: "stockVendor",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // Vendor.hasMany(Inward, {
+    //     foreignKey: "vendor_id",
+    //     as: "vendorInwards",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // Requisition - PurchasOrder
     PurchasOrder.belongsTo(Requisition, {
@@ -1331,32 +1345,32 @@ const defineTenantAssociations = (models) => {
     });
 
     // UserType ↔ RequisitionRule
-    UserType.hasMany(RequisitionRule, {
-        foreignKey: "module_id",
-        as: "moduleRules",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    RequisitionRule.belongsTo(UserType, {
-        foreignKey: "module_id",
-        as: "module",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // UserType.hasMany(RequisitionRule, {
+    //     foreignKey: "module_id",
+    //     as: "moduleRules",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // RequisitionRule.belongsTo(UserType, {
+    //     foreignKey: "module_id",
+    //     as: "module",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // UserType ↔ User
-    UserType.hasMany(User, {
-        foreignKey: "user_type_id",
-        as: "userList",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    User.belongsTo(UserType, {
-        foreignKey: "user_type_id",
-        as: "userType",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // UserType.hasMany(User, {
+    //     foreignKey: "user_type_id",
+    //     as: "userList",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // User.belongsTo(UserType, {
+    //     foreignKey: "user_type_id",
+    //     as: "userType",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // stockInward - stockInwardItems
     Inward.hasMany(InwardItem, {

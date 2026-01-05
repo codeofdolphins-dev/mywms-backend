@@ -31,12 +31,15 @@ import OutwardItems from "./outwardItems.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import Unit from "./unit.model.js";
-import UserType from "./userType.model.js";
+// import UserType from "./userType.model.js";
 import WarehouseType from "./warehouseTypes.model.js";
 import RequisitionRule from "./requisitionRule.model.js";
 import SupplierBrand from "./supplierBrand.joinModel.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
 import BrandProducts from "./brandProduct.joinModel.js";
+import BusinessNodeType from "./BusinessNodeType.model.js";
+import TenantBusinessFlowMaster from "./main/TenantBusinessFlowMaster.model.js";
+import TenantBusinessFlow from "./TenantBusinessFlow.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -71,13 +74,15 @@ const defineRootModels = (rootSequelize) => {
     BillOfMaterial(rootSequelize);
     Brand(rootSequelize);
     Unit(rootSequelize);
-    UserType(rootSequelize);
+    // UserType(rootSequelize);
     RequisitionRule(rootSequelize);
     WarehouseType(rootSequelize);
     SupplierBankDetails(rootSequelize);
     SupplierBrand(rootSequelize);
     CategoryProducts(rootSequelize);
     BrandProducts(rootSequelize);
+    BusinessNodeType(rootSequelize);
+    TenantBusinessFlowMaster(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -101,7 +106,7 @@ const defineTenantModels = (sequelize) => {
     HSN(sequelize);
     Quotation(sequelize);
     QuotationItems(sequelize);
-    Vendor(sequelize);
+    // Vendor(sequelize);
     PurchasOrder(sequelize);    
     PurchaseOrderItems(sequelize);
     Invoice(sequelize);
@@ -113,12 +118,14 @@ const defineTenantModels = (sequelize) => {
     Brand(sequelize);
     Unit(sequelize);
     WarehouseType(sequelize);
-    UserType(sequelize);
+    // UserType(sequelize);
     SupplierBankDetails(sequelize);
     RequisitionRule(sequelize);
     SupplierBrand(sequelize);
     CategoryProducts(sequelize);
     BrandProducts(sequelize);
+    BusinessNodeType(sequelize);
+    TenantBusinessFlow(sequelize);
     
     return sequelize.models;
 }

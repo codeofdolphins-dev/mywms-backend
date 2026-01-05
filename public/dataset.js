@@ -1,4 +1,4 @@
-const states = [
+export const states = [
   { name: "Andhra Pradesh" },
   { name: "Arunachal Pradesh" },
   { name: "Assam" },
@@ -37,7 +37,7 @@ const states = [
   { name: "Puducherry" }
 ]
 
-const districts = [
+export const districts = [
   // Andhra Pradesh (state_id: 1)
   { name: "Anakapalli", state_id: 1 },
   { name: "Anantapur", state_id: 1 },
@@ -893,33 +893,89 @@ const districts = [
   { name: "Yanam", state_id: 35 }
 ];
 
-const roles = [
-  { role: "company/owner" },
+export const roles = [
+  { role: "system" },
   { role: "owner" },
+  { role: "company" },
   { role: "admin" },
   { role: "user" },
 ];
-const userType = [
-  { type: "System", level_code: null, hierarchy_level: null },
-  { type: "Company/Owner", level_code: null, hierarchy_level: null },
-  { type: "Supplier", level_code: null, hierarchy_level: null },
-  { type: "Mfg Bond Warehouse", level_code: "L-101", hierarchy_level: 101 },
-  { type: "Mother Warehouse (National level)", level_code: "L-102", hierarchy_level: 102 },
-  { type: "Central Warehouse", level_code: "L-103", hierarchy_level: 103 },
-  { type: "Regional Warehouse", level_code: "L-104", hierarchy_level: 104 },
-  { type: "State Warehouse", level_code: "L-105", hierarchy_level: 105 },
-  { type: "CFA / C&F Agent", level_code: "L-106", hierarchy_level: 106 },
-  { type: "3PL Warehouse", level_code: "L-107", hierarchy_level: 107 },
-  { type: "Storage Hub", level_code: "L-108", hierarchy_level: 108 },
-  { type: "Super Stockist", level_code: "L-109", hierarchy_level: 109 },
-  { type: "Dealer", level_code: "L-110", hierarchy_level: 110 },
-  { type: "Distributor", level_code: "L-111", hierarchy_level: 111 },
-  { type: "Sub-Distributor", level_code: "L-112", hierarchy_level: 112 },
-  { type: "Fullfilment Centre", level_code: "L-113", hierarchy_level: 113 },
-  { type: "Retail Warehouse / Backroom Storage", level_code: "L-114", hierarchy_level: 114 },
+
+export const businessNodeTypes = [
+  {
+    name: "Mfg Bond Warehouse",
+    code: "L-101",
+    category: "manufacturing",
+  },
+  {
+    name: "Mother Warehouse (National level)",
+    code: "L-102",
+    category: "warehouse",
+  },
+  {
+    name: "Central Warehouse",
+    code: "L-103",
+    category: "warehouse",
+  },
+  {
+    name: "Regional Warehouse",
+    code: "L-104",
+    category: "warehouse",
+  },
+  {
+    name: "State Warehouse",
+    code: "L-105",
+    category: "warehouse",
+  },
+  {
+    name: "CFA / C&F Agent",
+    code: "L-106",
+    category: "partner",
+  },
+  {
+    name: "3PL Warehouse",
+    code: "L-107",
+    category: "partner",
+  },
+  {
+    name: "Storage Hub",
+    code: "L-108",
+    category: "warehouse",
+  },
+  {
+    name: "Super Stockist",
+    code: "L-109",
+    category: "partner",
+  },
+  {
+    name: "Dealer",
+    code: "L-110",
+    category: "partner",
+  },
+  {
+    name: "Distributor",
+    code: "L-111",
+    category: "partner",
+  },
+  {
+    name: "Sub-Distributor",
+    code: "L-112",
+    category: "partner",
+  },
+  {
+    name: "Fulfilment Centre",
+    code: "L-113",
+    category: "warehouse",
+  },
+  {
+    name: "Retail Warehouse / Backroom Storage",
+    code: "L-114",
+    category: "retail",
+  },
 ];
 
-const permissions = [
+
+export const permissions = [
   // role
   { permission: "role:create" },
   { permission: "role:read" },
@@ -1064,7 +1120,7 @@ const permissions = [
 ]
 
 
-const warehouseTypeMaster = [
+export const warehouseTypeMaster = [
   { warehouse_type: "Mfg Bond Warehouse" },
   { warehouse_type: "Mother Warehouse (National level)" },
   { warehouse_type: "Central Warehouse" },
@@ -1073,6 +1129,3 @@ const warehouseTypeMaster = [
   { warehouse_type: "3PL Warehouse" },
   { warehouse_type: "Retail Warehouse / Backroom Storage" },
 ]
-
-
-export { districts, states, roles, permissions, warehouseTypeMaster, userType };

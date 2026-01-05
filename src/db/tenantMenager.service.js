@@ -11,6 +11,7 @@ import {
   defineTenantAssociations,
 } from "../models/association.js";
 import { permissions, roles } from "../../public/dataset.js";
+import { dataSeederTenant } from "../helper/seeder.js";
 
 let rootCache = null;
 
@@ -99,8 +100,9 @@ export async function generateDatabase(dbName) {
 
     await sequelize.sync();
     console.log("👷 💾 Start data seeding...");
-    await models.Permission.bulkCreate(permissions);
-    await models.Role.bulkCreate(roles);
+    await dataSeederTenant(models)
+    // await models.Permission.bulkCreate(permissions);
+    // await models.Role.bulkCreate(roles);
     console.log("👷 ✅ Data seeded Successfully.");
   } catch (error) {
     console.log("👷 ❌ error from service:");

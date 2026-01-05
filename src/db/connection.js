@@ -1,4 +1,4 @@
-import dataSeeder from "../helper/seeder.js";
+import { dataSeederRoot } from "../helper/seeder.js";
 import { rootDB } from "./tenantMenager.service.js";
 
 
@@ -10,7 +10,7 @@ const connectRootDB = async () => {
         const recordCount = await models.Role.count();
         if (recordCount === 0) {
             console.log("👑 💾 Start data seeding...");
-            await dataSeeder(models);
+            await dataSeederRoot(models);
             console.log("👑 ✅ Data seeded Successfully.");
         } else {
             console.log("👑 🛠️  Data already seeded. Skipping...");
@@ -23,7 +23,7 @@ const connectRootDB = async () => {
             await rootSequelize.sync({ alter: true });
 
             console.log("👑 💾 Start data seeding...");
-            await dataSeeder(models);
+            await dataSeederRoot(models);
             console.log("👑 ✅ Data seeded Successfully.");
 
         } else {

@@ -50,7 +50,7 @@ const register_company = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         };
 
-        const companyRole = await Role.findOne({ where: { role: "company/owner" }, transaction });
+        const companyRole = await Role.findOne({ where: { role: "company" }, transaction });
         if (!companyRole) {
             if (profile_image) await deleteImage(profile_image);
             await rootTransaction.rollback();
@@ -77,7 +77,7 @@ const register_company = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
-            user_type_id: "2", // company/owner user_type_id is 2
+            // user_type_id: "2", // company/owner user_type_id is 2
             phone_no: ph_no,
             company_name: c_name,
             ...(image_path && { profile_image: image_path }),
@@ -86,9 +86,13 @@ const register_company = asyncHandler(async (req, res) => {
         await user.addRole(companyRole, { transaction });
 
         if (dbName === "mywms") {
-            const tenantsName = await TenantsName.create({ tenant: dbName }, { transaction: rootTransaction });
+            const [ tenant, _ ] = await TenantsName.findOrCreate({
+                where: { tenant: dbName },
+                defaults: { tenant: dbName },
+                transaction: rootTransaction
+            });
             await Tenant.create({
-                tenant_id: tenantsName.id,
+                tenant_id: tenant.id,
                 email,
                 isOwner: true,
                 companyName: c_name
@@ -463,7 +467,7 @@ const login = asyncHandler(async (req, res) => {
 
         if (is_password_matched) {
             const roles = user.roles.map(role => role.role);
-            const isAdmin = ["admin", "company/owner"].some(role => roles.includes(role));
+            const isAdmin = ["system", "owner", "company", "admin"].some(role => roles.includes(role));
 
             const token = jwt.sign(
                 {
@@ -639,7 +643,6 @@ function generateOTP() {
 
 
 /**
- * 
  * @param {object} req request object
  * @param {object} user user object
  * @param {object} Warehouse models
@@ -651,7 +654,7 @@ function generateOTP() {
 async function registerWarehouse(req, user, Warehouse, WarehouseType, type, transaction) {
     try {
         const { gst_no = "", license_no = "", lat = "", long = "" } = req.body;
-        
+
         if (!type) throw new Error("Warehouse type is required!!!");
 
         const wareType = await WarehouseType.findOne({ where: { warehouse_type: type } });

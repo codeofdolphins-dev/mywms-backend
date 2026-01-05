@@ -1,16 +1,16 @@
-import { districts, permissions, roles, states, warehouseTypeMaster, userType } from "../../public/dataset.js";
+import { districts, permissions, roles, states, warehouseTypeMaster, businessNodeTypes } from "../../public/dataset.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-const dataSeeder = asyncHandler(async (models) => {
+export const dataSeederRoot = asyncHandler(async (models) => {
     try {
-        const { State, District, Role, Permission, WarehouseType, UserType } = models;
+        const { State, District, Role, Permission, WarehouseType, BusinessNodeType } = models;
 
         await State.bulkCreate(states);
         await District.bulkCreate(districts);
         await Role.bulkCreate(roles);
         await Permission.bulkCreate(permissions);
         await WarehouseType.bulkCreate(warehouseTypeMaster);
-        await UserType.bulkCreate(userType);
+        await BusinessNodeType.bulkCreate(businessNodeTypes);
 
     } catch (error) {
         console.log("error from seeder file");
@@ -18,4 +18,21 @@ const dataSeeder = asyncHandler(async (models) => {
     }
 })
 
-export default dataSeeder;
+export const dataSeederTenant = asyncHandler(async (models) => {
+    try {
+        // const { State, District, Role, Permission, WarehouseType, BusinessNodeType } = models;
+        const { Role, Permission, BusinessNodeType } = models;
+
+        // await State.bulkCreate(states);
+        // await District.bulkCreate(districts);
+        // await WarehouseType.bulkCreate(warehouseTypeMaster);
+        
+        await Role.bulkCreate(roles);
+        await Permission.bulkCreate(permissions);
+        await BusinessNodeType.bulkCreate(businessNodeTypes);
+
+    } catch (error) {
+        console.log("error from seeder file");
+        throw error        
+    }
+})

@@ -11,10 +11,10 @@ function User(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        user_type_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
+        // user_type_id: {
+        //     type: DataTypes.INTEGER,
+        //     allowNull: false,
+        // },
         first_name: {
             type: DataTypes.STRING,
             allowNull: true
@@ -65,13 +65,6 @@ function User(sequelize) {
             allowNull: true,
             defaultValue: {},
         }
-    }, {
-        indexes: [
-            {
-                unique: true,
-                fields: ["email", "user_type_id"]
-            }
-        ]
     });
 }
 export default User;

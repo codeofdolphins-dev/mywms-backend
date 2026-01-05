@@ -1,10 +1,29 @@
 import { Op } from "sequelize";
-import { deleteTenantDatabase, generateDatabase } from "../db/tenantMenager.service.js";
+import { deleteTenantDatabase, generateDatabase, getTenantConnection } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 
+
+const allBusinessNodes = asyncHandler(async (req, res) => {
+    const { BusinessNodeType } = req.dbModels;
+    try {
+        const businessNodeType = await BusinessNodeType.findAll();
+        if (!businessNodeType) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: businessNodeType
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
 
 const all_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
@@ -56,28 +75,50 @@ const all_company = asyncHandler(async (req, res) => {
 });
 
 const register = asyncHandler(async (req, res) => {
-    const { Tenant, TenantsName } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
+    const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
+    const rootTransaction = await req.dbObject.transaction();
+
+    // console.log(req.body.businessNodeSequence); return;
+
+    let tenantTransaction = null;
     try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ success: false, code: 400, message: "email must required!!!" });
+        const { email, businessNodeSequence = [] } = req.body;
+        if (!email || businessNodeSequence.length < 1) {
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "email must required!!!" });
+        }
 
         const dbName = `tenant_${email.split('@')[0].toLowerCase()}`;
         const tenant = await TenantsName.findOne({ where: { tenant: dbName } });
         if (tenant) {
+            await rootTransaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `email: ${email} is already registered!!!`, tenant_id: dbName });
         }
 
-        const tenantsName = await TenantsName.create({ tenant: dbName }, { transaction });
-        await Tenant.create({ tenant_id: tenantsName.id, email, isOwner: true }, { transaction });
-        await generateDatabase(dbName);
+        const tenantsName = await TenantsName.create({ tenant: dbName }, { transaction: rootTransaction });
+        await Tenant.create({ tenant_id: tenantsName.id, email, isOwner: true }, { transaction: rootTransaction });
+        await TenantBusinessFlowMaster.bulkCreate(
+            businessNodeSequence.map(item => ({
+                ...item,
+                tenant_id: tenantsName.id
+            })), { transaction: rootTransaction }
+        );
 
-        await transaction.commit();
+        await generateDatabase(dbName);
+        const { sequelize, models } = await getTenantConnection(dbName);
+        const { TenantBusinessFlow } = models;
+        tenantTransaction = await sequelize.transaction();
+
+        await TenantBusinessFlow.bulkCreate(businessNodeSequence, { transaction: tenantTransaction });
+
+        await tenantTransaction.commit();
+        await rootTransaction.commit();
 
         return res.status(200).json({ success: true, code: 200, message: "New Tenant is created successfully.", tenant_id: dbName });
 
     } catch (error) {
-        await transaction.rollback();
+        if(tenantTransaction) await tenantTransaction.rollback();
+        await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -168,4 +209,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { register, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, register, delete_company, all_company, updateCompanyDetails };
