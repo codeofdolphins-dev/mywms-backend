@@ -21,19 +21,23 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views/pages"));
 
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  .split(",")
-  .map(o => o.trim());
+// const allowedOrigins = process.env.CORS_ORIGIN
+//   .split(",")
+//   .map(o => o.trim());
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("CORS not allowed"));
+//     }
+//   },
+//   credentials: true
+// }));
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS not allowed"));
-    }
-  },
-  credentials: true
+  origin: process.env.CORS_ORIGIN,
+  credentials: false
 }));
 
 
