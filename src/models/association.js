@@ -898,10 +898,29 @@ const defineTenantAssociations = (models) => {
     Category.hasMany(Category, {
         as: "subcategories",
         foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
     });
     Category.belongsTo(Category, {
         as: "parent",
         foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User → User (self one-to-many)
+    User.hasMany(User, {
+        foreignKey: "owner_id",
+        as: "ownedUsers",   // an owner can have many users
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    User.belongsTo(User, {
+        foreignKey: "owner_id",
+        as: "owner",        // each user has one owner
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
     });
 
 

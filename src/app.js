@@ -20,10 +20,22 @@ const __dirname = path.dirname(__filename);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views/pages"));
 
+
+const allowedOrigins = process.env.CORS_ORIGIN
+  .split(",")
+  .map(o => o.trim());
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
   credentials: true
 }));
+
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
