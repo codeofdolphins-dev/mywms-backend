@@ -35,7 +35,8 @@ const defineRootAssociations = (models) => {
         SupplierBrand,
         BrandProducts,
         CategoryProducts,
-        TenantBusinessFlowMaster
+        TenantBusinessFlowMaster,
+        NodeUserOwner
 
 
     } = models;
@@ -52,21 +53,6 @@ const defineRootAssociations = (models) => {
     Category.belongsTo(Category, {
         as: "parent",
         foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    // User → User (self one-to-many)
-    User.hasMany(User, {
-        foreignKey: "owner_id",
-        as: "ownedUsers",   // an owner can have many users
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    User.belongsTo(User, {
-        foreignKey: "owner_id",
-        as: "owner",        // each user has one owner
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -169,6 +155,34 @@ const defineRootAssociations = (models) => {
     Inward.belongsTo(Invoice, {
         foreignKey: "invoice_id",
         as: "purchaseInvoice",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ NodeUserOwner
+    User.hasOne(NodeUserOwner, {
+        foreignKey: "user_id",
+        as: "",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    NodeUserOwner.belongsTo(User, {
+        foreignKey: "user_id",
+        as: "",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // User ↔ NodeUserOwner
+    User.hasOne(NodeUserOwner, {
+        foreignKey: "parent_id",
+        as: "",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    NodeUserOwner.belongsTo(User, {
+        foreignKey: "parent_id",
+        as: "",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -907,22 +921,6 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-
-    // User → User (self one-to-many)
-    User.hasMany(User, {
-        foreignKey: "owner_id",
-        as: "ownedUsers",   // an owner can have many users
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    User.belongsTo(User, {
-        foreignKey: "owner_id",
-        as: "owner",        // each user has one owner
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
 
     // ********************************************One-To-One*********************************
 

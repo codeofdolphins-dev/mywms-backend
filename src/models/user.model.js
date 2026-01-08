@@ -11,10 +11,6 @@ function User(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        // user_type_id: {
-        //     type: DataTypes.INTEGER,
-        //     allowNull: false,
-        // },
         first_name: {
             type: DataTypes.STRING,
             allowNull: true
@@ -45,14 +41,6 @@ function User(sequelize) {
             defaultValue: {},
         },
         accessToken: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        owner_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        owner_type: {
             type: DataTypes.STRING,
             allowNull: true
         },
