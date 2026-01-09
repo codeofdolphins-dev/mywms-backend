@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, Warehouse, WarehouseType } = req.dbModels;
+    const { User, Role, Permission, Warehouse, WarehouseType, NodeUserOwner, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -13,24 +13,9 @@ const currentUser = asyncHandler(async (req, res) => {
             },
             include: [
                 {
-                    model: User,
-                    as: "owner",
-                },
-                {
                     model: Warehouse,
                     as: "warehouseDetails",
-                    include: [
-                        {
-                            model: WarehouseType,
-                            as: "warehouseType"
-                        }
-                    ]
                 },
-                // {
-                //     model: UserType,
-                //     as: "userType",
-                //     attributes: ["type"]
-                // },
                 {
                     model: Role,
                     as: "roles",
@@ -44,12 +29,27 @@ const currentUser = asyncHandler(async (req, res) => {
                             through: { attributes: [] }
                         }
                     ]
-                }
+                },
+                {
+                    model: NodeUserOwner,
+                    as: "ownedNode",
+                    attributes: {
+                        exclude: ["user_id"]
+                    },
+                    include: [
+                        {
+                            model: TenantBusinessFlow,
+                            as: "businessFlow",
+                        }
+                    ]
+                },
             ]
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
         const plainUser = user.get({ plain: true });
+        const node_type_code = plainUser?.ownedNode?.businessFlow?.node_type_code || null;
+        const sequence = plainUser?.ownedNode?.businessFlow?.sequence || null;
 
         if (plainUser.warehouseDetails === null) {
             delete plainUser.warehouseDetails;
@@ -70,6 +70,12 @@ const currentUser = asyncHandler(async (req, res) => {
                         ? "all access"
                         : role.permissions?.map(p => p.permission) || []
         }));
+
+        if (node_type_code) {
+            const nodeDetails = await BusinessNodeType.findOne({ where: { code: node_type_code }, raw: true });
+            plainUser.nodeDetails = nodeDetails;
+            plainUser.sequence = sequence;
+        }
 
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
 

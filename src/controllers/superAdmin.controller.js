@@ -1,9 +1,11 @@
 import { Op } from "sequelize";
-import { deleteTenantDatabase, generateDatabase, getTenantConnection } from "../db/tenantMenager.service.js";
+import { deleteTenantDatabase, generateDatabase, getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js"
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
+import { deleteImage } from "../utils/handelImage.js";
+import { hashPassword } from "../utils/hashPassword.js";
 
 
 const allBusinessNodes = asyncHandler(async (req, res) => {
@@ -74,11 +76,9 @@ const all_company = asyncHandler(async (req, res) => {
     }
 });
 
-const register = asyncHandler(async (req, res) => {
+const registerNewTenant = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
     const rootTransaction = await req.dbObject.transaction();
-
-    // console.log(req.body.businessNodeSequence); return;
 
     let tenantTransaction = null;
     try {
@@ -117,7 +117,214 @@ const register = asyncHandler(async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: "New Tenant is created successfully.", tenant_id: dbName });
 
     } catch (error) {
-        if(tenantTransaction) await tenantTransaction.rollback();
+        if (tenantTransaction) await tenantTransaction.rollback();
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const registerBusinessNodeWarehouse = asyncHandler(async (req, res) => {
+    const { User, Warehouse, NodeUserOwner, TenantBusinessFlow, Role } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+
+    const dbName = req.headers["x-tenant-id"];
+    const profile_image = req?.file?.filename || null;
+    const loginUser = req.user;
+    try {
+        let { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
+
+        if ([email, password, full_name, ph_number, address, state_id, district_id, pincode, node, lat, long].some(item => item === "")) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        }
+        node = JSON.parse(node);
+
+        const isRegister = await User.findOne({ where: { email }, transaction });
+        if (isRegister) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `Warehouse with email: ${email} already exists!!!` });
+        }
+
+        const isExistsInTenant = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
+        if (isExistsInTenant) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} is already register in other place first delete from there or contact with Owner/System!!!` });
+        }
+        const role = await Role.findOne({ where: { role: "node-admin" }, transaction });
+        if (!role) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `Role "node-admin" not found. Make sure roles are seeded.` });
+        };
+
+        const encryptPassword = await hashPassword(password);
+
+        const user = await User.create({
+            email: email.toLowerCase().trim(),
+            password: encryptPassword,
+            name: { full_name },
+            phone_no: ph_number,
+            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
+            address: {
+                address,
+                state_id,
+                district_id,
+                pincode
+            },
+            company_name: loginUser.company_name,
+            meta: { desc }
+        }, { transaction });
+
+        const warehouse = await Warehouse.create({
+            user_id: user.id,
+            gst_no,
+            license_no,
+            lat: parseFloat(lat),
+            long: parseFloat(long),
+        }, { transaction });
+
+        await user.addRole(role, { transaction });
+
+        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
+
+        await NodeUserOwner.create({
+            user_id: user.id,
+            node_id: tenantBusinessFlow.id,
+            is_node_owner: true
+        }, { transaction })
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName }, transaction: rootTransaction });
+        await Tenant.create({
+            tenant_id: tenantsName.id,
+            email,
+            password,
+            companyName: loginUser.company_name,
+        }, { transaction: rootTransaction });
+
+        await transaction.commit();
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Node Register Successfully." });
+
+
+    } catch (error) {
+        if (tenantTransaction) await tenantTransaction.rollback();
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const registerBusinessNodePartner = asyncHandler(async (req, res) => {
+    const { User, NodeUserOwner, TenantBusinessFlow, Role } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+
+    const dbName = req.headers["x-tenant-id"];
+    const profile_image = req?.file?.filename || null;
+    const loginUser = req.user;
+
+    try {
+        let { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", desc = "", node = "" } = req.body;
+
+        if ([email, password, full_name, ph_number, address, state_id, district_id, pincode, node].some(item => item === "")) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+        }
+        node = JSON.parse(node);
+
+        const isRegister = await User.findOne({ where: { email }, transaction });
+        if (isRegister) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} already exists!!!` });
+        }
+
+        const isExistsInTenant = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
+        if (isExistsInTenant) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} is already register in other place first delete from there or contact with Owner/System!!!` });
+        }
+        const role = await Role.findOne({ where: { role: "node-admin" }, transaction });
+        if (!role) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: `Role "node-admin" not found. Make sure roles are seeded.` });
+        };
+
+        const encryptPassword = await hashPassword(password);
+
+        const user = await User.create({
+            email: email.toLowerCase().trim(),
+            password: encryptPassword,
+            name: {
+                full_name,
+                first_name: full_name.split(" ")[0],
+                last_name: full_name.split(" ")?.[1] || '',
+            },
+            phone_no: ph_number,
+            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
+            address: {
+                address,
+                state_id,
+                district_id,
+                pincode
+            },
+            company_name: loginUser.company_name,
+            meta: {
+                desc
+            }
+        }, { transaction });
+
+        await user.addRole(role, { transaction });
+
+        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
+
+        await NodeUserOwner.create({
+            user_id: user.id,
+            node_id: tenantBusinessFlow.id,
+            is_node_owner: true
+        }, { transaction })
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName }, transaction: rootTransaction });
+        await Tenant.create({
+            tenant_id: tenantsName.id,
+            email,
+            password,
+            companyName: loginUser.company_name,
+        }, { transaction: rootTransaction });
+
+        await transaction.commit();
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Node Register Successfully." });
+
+    } catch (error) {
+        if (profile_image) await deleteImage(profile_image, dbName);
+        await transaction.rollback();
         await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -209,4 +416,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { allBusinessNodes, register, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, registerNewTenant, registerBusinessNodeWarehouse, registerBusinessNodePartner, delete_company, all_company, updateCompanyDetails };

@@ -39,12 +39,12 @@ router.use("/user", userApi);
 router.use("/product", productApi);
 router.use("/brand", brandApi);
 router.use("/supplier", supplierApi);
+router.use("/super-admin", superAdminApi);
 
 router.use(defineUserScope, defineDbObject);
 
 router.use("/vehicle", vehicleApi);
 router.use("/driver", driverApi);
-router.use("/super-admin", superAdminApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);

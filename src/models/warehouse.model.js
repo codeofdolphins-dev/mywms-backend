@@ -7,10 +7,6 @@ function Warehouse(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        warehouse_type_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
         gst_no: {
             type: DataTypes.STRING,
             allowNull: true,

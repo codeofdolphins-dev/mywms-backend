@@ -898,6 +898,7 @@ export const roles = [
   { role: "owner" },
   { role: "company" },
   { role: "admin" },
+  { role: "node-admin" },
   { role: "user" },
 ];
 

@@ -11,17 +11,10 @@ function User(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        first_name: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        last_name: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        full_name: {
-            type: DataTypes.STRING,
-            allowNull: true
+        name: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {}
         },
         company_name: {
             type: DataTypes.STRING,

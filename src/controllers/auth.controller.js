@@ -77,7 +77,6 @@ const register_company = asyncHandler(async (req, res) => {
         const user = await User.create({
             email,
             password: encryptPassword,
-            // user_type_id: "2", // company/owner user_type_id is 2
             phone_no: ph_no,
             company_name: c_name,
             ...(image_path && { profile_image: image_path }),
@@ -86,7 +85,7 @@ const register_company = asyncHandler(async (req, res) => {
         await user.addRole(companyRole, { transaction });
 
         if (dbName === "mywms") {
-            const [ tenant, _ ] = await TenantsName.findOrCreate({
+            const [tenant, _] = await TenantsName.findOrCreate({
                 where: { tenant: dbName },
                 defaults: { tenant: dbName },
                 transaction: rootTransaction
@@ -394,9 +393,11 @@ const user_registration = asyncHandler(async (req, res) => {
             email: email.toLowerCase().trim(),
             password: encryptPassword,
             user_type_id: userType.id,
-            full_name,
-            first_name: full_name.split(" ")[0],
-            last_name: full_name.split(" ")?.[1] || '',
+            name: {
+                full_name,
+                first_name: full_name.split(" ")[0],
+                last_name: full_name.split(" ")?.[1] || '',
+            },
             phone_no: ph_number,
             ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
             address: {
