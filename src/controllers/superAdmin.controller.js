@@ -178,6 +178,7 @@ const registerBusinessNodeWarehouse = asyncHandler(async (req, res) => {
             password: encryptPassword,
             name: { full_name },
             phone_no: ph_number,
+            userType: node.name,
             ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
             address: {
                 address,
@@ -287,6 +288,7 @@ const registerBusinessNodePartner = asyncHandler(async (req, res) => {
                 last_name: full_name.split(" ")?.[1] || '',
             },
             phone_no: ph_number,
+            userType: node.name,
             ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
             address: {
                 address,

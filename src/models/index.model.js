@@ -37,7 +37,7 @@ import BrandProducts from "./brandProduct.joinModel.js";
 import BusinessNodeType from "./BusinessNodeType.model.js";
 import TenantBusinessFlowMaster from "./main/TenantBusinessFlowMaster.model.js";
 import TenantBusinessFlow from "./TenantBusinessFlow.model.js";
-import NodeUserOwner from "./nodeUserOwner.js";
+import BusinessNode from "./businessNode.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -79,7 +79,7 @@ const defineRootModels = (rootSequelize) => {
     BusinessNodeType(rootSequelize);
     TenantBusinessFlowMaster(rootSequelize);
     TenantBusinessFlow(rootSequelize);
-    NodeUserOwner(rootSequelize);
+    BusinessNode(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -119,7 +119,7 @@ const defineTenantModels = (sequelize) => {
     BrandProducts(sequelize);
     BusinessNodeType(sequelize);
     TenantBusinessFlow(sequelize);
-    NodeUserOwner(sequelize);
+    BusinessNode(sequelize);
     
     return sequelize.models;
 }

@@ -8,7 +8,8 @@ function BusinessNodeType(sequelize) {
         },
         code: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
         category: {
             type: DataTypes.STRING,

@@ -79,6 +79,7 @@ const register_company = asyncHandler(async (req, res) => {
             password: encryptPassword,
             phone_no: ph_no,
             company_name: c_name,
+            userType: "company",
             ...(image_path && { profile_image: image_path }),
         }, { transaction });
 
@@ -490,17 +491,6 @@ const login = asyncHandler(async (req, res) => {
 
             delete plainUser.password;
             plainUser.roles = roles;
-
-            // if (plainUser.companyDetails !== null) {
-            //     delete plainUser.individualDetails;
-            //     plainUser.c_name = plainUser.companyDetails.c_name;
-            //     delete plainUser.companyDetails;
-
-            // } else if (plainUser.individualDetails !== null) {
-            //     delete plainUser.companyDetails;
-            //     plainUser.full_name = plainUser.individualDetails.full_name;
-            //     delete plainUser.individualDetails;
-            // };
 
             return res.status(200).json({ success: true, code: 200, message: "Login Successfully", token: token, tenant: req.headers['x-tenant-id'] });
         }

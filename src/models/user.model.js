@@ -16,6 +16,10 @@ function User(sequelize) {
             allowNull: true,
             defaultValue: {}
         },
+        userType: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         company_name: {
             type: DataTypes.STRING,
             allowNull: true
