@@ -30,19 +30,19 @@ const currentUser = asyncHandler(async (req, res) => {
                         }
                     ]
                 },
-                {
-                    model: NodeUserOwner,
-                    as: "ownedNode",
-                    attributes: {
-                        exclude: ["user_id"]
-                    },
-                    include: [
-                        {
-                            model: TenantBusinessFlow,
-                            as: "businessFlow",
-                        }
-                    ]
-                },
+                // {
+                //     model: NodeUserOwner,
+                //     as: "ownedNode",
+                //     attributes: {
+                //         exclude: ["user_id"]
+                //     },
+                //     include: [
+                //         {
+                //             model: TenantBusinessFlow,
+                //             as: "businessFlow",
+                //         }
+                //     ]
+                // },
             ]
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });

@@ -15,17 +15,9 @@ const supplierList = asyncHandler(async (req, res) => {
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const userType = await UserType.findOne({
-            where: {
-                type: {
-                    [Op.iLike]: "supplier"
-                }
-            }
-        });
-
         const supplier = await User.findAndCountAll({
             where: {
-                user_type_id: userType.id,
+                userType: "supplier",
                 ...((id || text) ? {
                     [Op.or]: [
                         ...(id && Number.isInteger(Number(id))
@@ -121,7 +113,7 @@ const deleteSupplier = asyncHandler(async (req, res) => {
 
 // POST
 const registerSupplier = asyncHandler(async (req, res) => {
-    const { User, SupplierBankDetails, UserType } = req.dbModels;
+    const { User, SupplierBankDetails } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -132,11 +124,11 @@ const registerSupplier = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { email = "", password = "", full_name = "", phone_no = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "", user_type = "", desc = "" } = req.body;
+        const { email = "", password = "", full_name = "", phone_no = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", account_holder_name = "", bank_name = "", bank_branch = "", account_number = "", account_type = "", ifsc_code = "", desc = "" } = req.body;
         const loginUser = req.user;
 
 
-        if ([email, password, full_name, phone_no, address, state_id, district_id, pincode, account_holder_name, bank_branch, bank_name, account_number, account_type, ifsc_code, user_type].some(item => item === "")) {
+        if ([email, password, full_name, phone_no, address, state_id, district_id, pincode, account_holder_name, bank_branch, bank_name, account_number, account_type, ifsc_code].some(item => item === "")) {
             if (profile_image) deleteImage(profile_image, dbName);
             await rootTransaction.rollback();
             await transaction.rollback();
@@ -159,29 +151,17 @@ const registerSupplier = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Supplier: ${full_name} with account number: ${account_number} already exists!!!` });
         };
 
-        const userType = await UserType.findOne({
-            where: {
-                type: {
-                    [Op.iLike]: user_type
-                }
-            }
-        });
-        if (!userType) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await rootTransaction.rollback();
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
-        }
-
         const encryptPassword = await hashPassword(password);
 
         const user = await User.create({
             email: email.toLowerCase().trim(),
             password: encryptPassword,
-            user_type_id: userType.id,
-            full_name,
-            first_name: full_name.split(" ")[0],
-            last_name: full_name.split(" ")?.[1] || '',
+            userType: "supplier",
+            name: {
+                full_name,
+                first_name: full_name.split(" ")[0],
+                last_name: full_name.split(" ")?.[1] || '',
+            },
             phone_no,
             ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
             address: {
@@ -191,8 +171,6 @@ const registerSupplier = asyncHandler(async (req, res) => {
                 pincode
             },
             ...(company_name && { company_name }),
-            owner_id: loginUser.id,
-            owner_type: loginUser.userType?.type,
             meta: {
                 desc
             }

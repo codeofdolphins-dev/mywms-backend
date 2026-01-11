@@ -122,8 +122,8 @@ const createRawProduct = asyncHandler(async (req, res) => {
         }
 
         // convert string into array
-        brands = brands.split(",");
-        categories = categories.split(",");
+        brands = JSON.parse(brands);
+        categories = JSON.parse(categories);
 
         if ([name, hsn_code, barcode].some(item => item === "")) {
             await deleteImage(profile_image);

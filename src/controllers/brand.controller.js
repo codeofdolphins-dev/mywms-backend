@@ -30,7 +30,7 @@ const allBrand = asyncHandler(async (req, res) => {
                 {
                     model: User,
                     as: "suppliers",
-                    attributes: ["id", "full_name"],
+                    attributes: ["id", "name"],
                     through: { attributes: [] }
                 },
             ],
@@ -68,16 +68,21 @@ const createBrand = asyncHandler(async (req, res) => {
     const logo = req?.file?.filename || null;
 
     try {
-        const { name = "", description = "", website = "", origin_country = "", status = "", suppliers = [] } = req.body;
+        let { name = "", description = "", website = "", origin_country = "", status = "", suppliers = "" } = req.body;
         if (!name || suppliers.length < 1) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Name & supplier_id both are required!!!" });
         }
 
+        suppliers = JSON.parse(suppliers);
+
         const existingSuppliers = await User.findAll({
             where: {
-                id: suppliers
+                id: {
+                    [Op.in]: suppliers
+                },
+                userType: "supplier"
             }, transaction
         });
         if (existingSuppliers.length !== suppliers.length) {
