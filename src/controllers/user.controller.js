@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, Warehouse, WarehouseType, NodeUserOwner, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
+    const { User, Role, Permission, Warehouse, NodeUserOwner, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -48,34 +48,32 @@ const currentUser = asyncHandler(async (req, res) => {
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
         const plainUser = user.get({ plain: true });
-        const node_type_code = plainUser?.ownedNode?.businessFlow?.node_type_code || null;
-        const sequence = plainUser?.ownedNode?.businessFlow?.sequence || null;
+        // const node_type_code = plainUser?.ownedNode?.businessFlow?.node_type_code || null;
+        // const sequence = plainUser?.ownedNode?.businessFlow?.sequence || null;
 
-        if (plainUser.warehouseDetails === null) {
-            delete plainUser.warehouseDetails;
-        }
-        if (plainUser.supplier === null) {
-            delete plainUser.supplier;
-        }
-        if (plainUser.distributor === null) {
-            delete plainUser.distributor;
-        }
+        // if (plainUser.warehouseDetails === null) {
+        //     delete plainUser.warehouseDetails;
+        // }
+        // if (plainUser.supplier === null) {
+        //     delete plainUser.supplier;
+        // }
+        // if (plainUser.distributor === null) {
+        //     delete plainUser.distributor;
+        // }
 
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,
             permissions:
-                role.role === "company/owner"
+                ["owner", "company", "admin"].includes(role.role)
                     ? "all access"
-                    : role.role === "admin"
-                        ? "all access"
-                        : role.permissions?.map(p => p.permission) || []
+                    : role.permissions?.map(p => p.permission) || []
         }));
 
-        if (node_type_code) {
-            const nodeDetails = await BusinessNodeType.findOne({ where: { code: node_type_code }, raw: true });
-            plainUser.nodeDetails = nodeDetails;
-            plainUser.sequence = sequence;
-        }
+        // if (node_type_code) {
+        //     const nodeDetails = await BusinessNodeType.findOne({ where: { code: node_type_code }, raw: true });
+        //     plainUser.nodeDetails = nodeDetails;
+        //     plainUser.sequence = sequence;
+        // }
 
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
 

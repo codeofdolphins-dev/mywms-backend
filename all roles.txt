@@ -96,6 +96,9 @@ distributor ✅
 unit ✅
 :C-R-D-U
 
+packageType
+:C-R-D-U
+
 business-node
 : read
 

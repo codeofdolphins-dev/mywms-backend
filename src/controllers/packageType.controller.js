@@ -2,8 +2,8 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
-const allUnit = asyncHandler(async (req, res) => {
-    const { UnitType } = req.dbModels
+const allPackageType = asyncHandler(async (req, res) => {
+    const { PackageType } = req.dbModels
 
     try {
         let { page = 1, limit = 10, name = "", id = "", noLimt = false } = req.query;
@@ -11,7 +11,7 @@ const allUnit = asyncHandler(async (req, res) => {
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
-        const unitRecord = await UnitType.findAndCountAll({
+        const packageRecord = await PackageType.findAndCountAll({
             where: (name || id) ? {
                 [Op.or]: [
                     {
@@ -27,16 +27,16 @@ const allUnit = asyncHandler(async (req, res) => {
             ...(noLimt ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
-        if (!unitRecord) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+        if (!packageRecord) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const totalItems = unitRecord.count;
+        const totalItems = packageRecord.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: unitRecord.rows,
+            data: packageRecord.rows,
             ...(!noLimt && {
                 meta: {
                     totalItems,
@@ -48,21 +48,21 @@ const allUnit = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
+        return res.success(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
 // POST
-const createUnit = asyncHandler(async (req, res) => {
-    const { UnitType } = req.dbModels
+const createPackageType = asyncHandler(async (req, res) => {
+    const { PackageType } = req.dbModels
     try {
         const { name } = req.body;
         if (!name) return res.status(400).json({ success: false, code: 400, message: "Name required!!!" });
 
-        const isExists = await UnitType.findOne({ where: { name: { [Op.iLike]: name } } });
+        const isExists = await PackageType.findOne({ where: { name: { [Op.iLike]: name } } });
         if (isExists) return res.status(409).json({ success: false, code: 409, message: "Record already exists!!!" });
 
-        const isCreated = await UnitType.create({ name });
+        const isCreated = await PackageType.create({ name });
         if (!isCreated) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully." });
@@ -74,19 +74,19 @@ const createUnit = asyncHandler(async (req, res) => {
 });
 
 // UPDATE
-const updateUnit = asyncHandler(async (req, res) => {
-    const { UnitType } = req.dbModels
+const updatePackageType = asyncHandler(async (req, res) => {
+    const { PackageType } = req.dbModels
     try {
 
         const { id, name, isActive } = req.body;
 
-        const unitRecord = await UnitType.findByPk(parseInt(id, 10));
+        const packageRecord = await PackageType.findByPk(parseInt(id, 10));
         if (!unitRecord) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
+        if (name) packageRecord.unit = name;
+        if (isActive) packageRecord.isActive = isActive;
 
-        if (name) unitRecord.name = name;
-        if (isActive) unitRecord.isActive = isActive;
-        const isUpdate = await unitRecord.save();
+        const isUpdate = await packageRecord.save();
         if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Record updation failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully." });
@@ -98,17 +98,16 @@ const updateUnit = asyncHandler(async (req, res) => {
 });
 
 // DELETE
-const deleteUnit = asyncHandler(async (req, res) => {
-    const { UnitType } = req.dbModels
+const deletePackageType = asyncHandler(async (req, res) => {
+    const { PackageType } = req.dbModels
     try {
         const { id } = req.params;
-
         if (!id) return res.status(400).json({ success: false, code: 400, message: "id must required!!!" });
 
-        const isExists = await UnitType.findOne({ where: { id: parseInt(id, 10) } });
+        const isExists = await PackageType.findOne({ where: { id: parseInt(id, 10) } });
         if (!isExists) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
-        const isDeleted = await UnitType.destroy({ where: { id: parseInt(id, 10) } })
+        const isDeleted = await PackageType.destroy({ where: { id: parseInt(id, 10) } })
         if (!isDeleted) return res.status(500).json({ success: false, code: 500, message: "Record not deleted!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Record Deleted." });
@@ -120,4 +119,4 @@ const deleteUnit = asyncHandler(async (req, res) => {
 });
 
 
-export { allUnit, createUnit, deleteUnit, updateUnit };
+export { allPackageType, createPackageType, updatePackageType, deletePackageType };

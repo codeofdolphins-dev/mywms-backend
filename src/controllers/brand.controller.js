@@ -47,12 +47,14 @@ const allBrand = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: brand.rows,
-            meta: {
-                totalItems,
-                totalPages,
-                currentPage: page,
-                limit
-            }
+            ...(!noLimt && {
+                meta: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    limit
+                }
+            }),
         });
 
     } catch (error) {

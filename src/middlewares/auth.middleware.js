@@ -14,10 +14,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
             decodedToken?.id,
             {
                 include: [
-                    // {
-                    //     model: UserType,
-                    //     as: "userType"
-                    // },
                     {
                         model: Warehouse,
                         as: "warehouseDetails"  

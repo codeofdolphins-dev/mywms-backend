@@ -33,11 +33,15 @@ function Product(sequelize) {
         },
         package_type: {
             type: DataTypes.STRING,
-            allowNull: true
+            allowNull: false
         },
         measure: {
             type: DataTypes.STRING,
             allowNull: true,
+        },
+        unit_type: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
         unit: {
             type: DataTypes.STRING,
@@ -47,7 +51,7 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
-        selling_price: {
+        purchase_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
@@ -59,7 +63,7 @@ function Product(sequelize) {
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
-        isActive: {
+        is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },

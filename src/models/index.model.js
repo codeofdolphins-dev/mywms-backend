@@ -30,7 +30,7 @@ import Outward from "./outward.model.js";
 import OutwardItems from "./outwardItems.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
-import Unit from "./unit.model.js";
+import UnitType from "./unitType.model.js";
 import SupplierBrand from "./supplierBrand.joinModel.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
 import BrandProducts from "./brandProduct.joinModel.js";
@@ -38,6 +38,7 @@ import BusinessNodeType from "./BusinessNodeType.model.js";
 import TenantBusinessFlowMaster from "./main/TenantBusinessFlowMaster.model.js";
 import TenantBusinessFlow from "./TenantBusinessFlow.model.js";
 import BusinessNode from "./businessNode.model.js";
+import PackageType from "./packageType.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -71,7 +72,7 @@ const defineRootModels = (rootSequelize) => {
     OutwardItems(rootSequelize);
     BillOfMaterial(rootSequelize);
     Brand(rootSequelize);
-    Unit(rootSequelize);
+    UnitType(rootSequelize);
     SupplierBankDetails(rootSequelize);
     SupplierBrand(rootSequelize);
     CategoryProducts(rootSequelize);
@@ -80,6 +81,7 @@ const defineRootModels = (rootSequelize) => {
     TenantBusinessFlowMaster(rootSequelize);
     TenantBusinessFlow(rootSequelize);
     BusinessNode(rootSequelize);
+    PackageType(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -112,7 +114,7 @@ const defineTenantModels = (sequelize) => {
     OutwardItems(sequelize);
     BillOfMaterial(sequelize);
     Brand(sequelize);
-    Unit(sequelize);
+    UnitType(sequelize);
     SupplierBankDetails(sequelize);
     SupplierBrand(sequelize);
     CategoryProducts(sequelize);
@@ -120,6 +122,7 @@ const defineTenantModels = (sequelize) => {
     BusinessNodeType(sequelize);
     TenantBusinessFlow(sequelize);
     BusinessNode(sequelize);
+    PackageType(sequelize);
     
     return sequelize.models;
 }

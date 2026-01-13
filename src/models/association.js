@@ -28,14 +28,14 @@ const defineRootAssociations = (models) => {
         OutwardItems,
         BillOfMaterial,
         Brand,
-        Unit,
+        UnitType,
         SupplierBrand,
         BrandProducts,
         CategoryProducts,
         TenantBusinessFlowMaster,
         TenantBusinessFlow,
-        BusinessNodeType
-
+        BusinessNodeType,
+        PackageType
 
     } = models;
 
@@ -468,12 +468,12 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Unit ↔ RequisitionItem
-    RequisitionItem.belongsTo(Unit, {
+    // UnitType ↔ RequisitionItem
+    RequisitionItem.belongsTo(UnitType, {
         foreignKey: "uom_id",
         as: "unit"
     });
-    Unit.hasMany(RequisitionItem, {
+    UnitType.hasMany(RequisitionItem, {
         foreignKey: "uom_id",
         as: "requisitionItemUnit"
     });
@@ -658,6 +658,38 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // UnitType <-> Product
+    UnitType.hasMany(Product, {
+        foreignKey: "unit_type",
+        as: "unitProducts",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(UnitType, {
+        foreignKey: "unit_type",
+        as: "unitRef",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // PackageType <-> Product
+    PackageType.hasMany(Product, {
+        foreignKey: "package_type",
+        as: "productPackage",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(PackageType, {
+        foreignKey: "package_type",
+        as: "packageType",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************Many-To-Many*********************************
     // user - role
@@ -836,11 +868,12 @@ const defineTenantAssociations = (models) => {
         OutwardItems,
         BillOfMaterial,
         Brand,
-        Unit,
+        UnitType,
         SupplierBrand,
         BrandProducts,
         CategoryProducts,
-        TenantBusinessFlow
+        TenantBusinessFlow,
+        PackageType,
 
     } = models;
 
@@ -1272,12 +1305,12 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Unit ↔ RequisitionItem
-    RequisitionItem.belongsTo(Unit, {
+    // UnitType ↔ RequisitionItem
+    RequisitionItem.belongsTo(UnitType, {
         foreignKey: "uom_id",
         as: "unit"
     });
-    Unit.hasMany(RequisitionItem, {
+    UnitType.hasMany(RequisitionItem, {
         foreignKey: "uom_id",
         as: "requisitionItemUnit"
     });
@@ -1462,6 +1495,37 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    // UnitType <-> Product
+    UnitType.hasMany(Product, {
+        foreignKey: "unit_type",
+        as: "unitProducts",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(UnitType, {
+        foreignKey: "unit_type",
+        as: "unitRef",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // PackageType <-> Product
+    PackageType.hasMany(Product, {
+        foreignKey: "package_type",
+        as: "productPackage",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    Product.belongsTo(PackageType, {
+        foreignKey: "package_type",
+        as: "packageType",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
 
     // ********************************************Many-To-Many*********************************
     // user - role

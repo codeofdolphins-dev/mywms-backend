@@ -7,7 +7,7 @@ import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js"
 const allProductList = asyncHandler(async (req, res) => {
     const { Product, Category, HSN, Brand } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "", name = "", type = "" } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", name = "", type = "raw" } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -88,93 +88,87 @@ const allProductList = asyncHandler(async (req, res) => {
 const createRawProduct = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
-    const { Product, HSN, Category, BillOfMaterial, Brand } = req.dbModels;
+    const { Product, HSN, Category, BillOfMaterial, Brand, PackageType, UnitType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers['x-tenant-id'];
     let profile_image = null;
 
     try {
         let {
-            name = "",
-            categories = "",
-            brands = "",
-            hsn_code = "",
-            sku = "",
-            barcode = "",
-            gst_type = "",
-            product_type = "raw",
-            package_type = "",
-            measure = "",
-            unit = "",
-            description = "",
-            selling_price = "",
-            MRP = "",
-            reorder_level = "",
-            base64Image = null
+            name = "", categories = "", brands = "",
+            hsn_id = "", sku = "", barcode = "",
+            gst_type = "", product_type = "raw", package_type_id = "",
+            unit_type_id = "", measure = "", unit = "", MRP = "",
+            description = "", purchase_price = "", reorder_level = "",
         } = req.body;
 
-        // check image object exists or not
-        if (req?.file?.filename) {
-            profile_image = req?.file?.filename;
-            if (!req?.isfileSave) {
-                await moveFile(profile_image);
-            }
-        }
+        if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
+            await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
+        };
 
-        // convert string into array
+        // convert string
         brands = JSON.parse(brands);
         categories = JSON.parse(categories);
 
-        if ([name, hsn_code, barcode].some(item => item === "")) {
-            await deleteImage(profile_image);
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
-        }
-        if (brands.length < 1 || categories.length < 1) {
-            await deleteImage(profile_image);
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Select at least one brand or category!!!" });
-        }
-
         const isExists = await Product.findOne({ where: { barcode } })
         if (isExists) {
-            await deleteImage(profile_image);
+            await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `Product with barcode: ${barcode} already exists!!!` });
         }
 
-        const hsn = await HSN.findByPk(Number(hsn_code));
+        const hsn = await HSN.findByPk(Number(hsn_id));
         if (!hsn) {
-            await deleteImage(profile_image);
+            await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
         }
 
         const existingBrands = await Brand.findAll({
             where: {
-                id: brands
+                id: {
+                    [Op.in]: brands
+                }
             }
         });
         if (existingBrands.length !== brands.length) {
-            await deleteImage(profile_image);
+            await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Some Brands were not found!!!" });
         }
-        
+
         const existingCategories = await Category.findAll({
             where: {
-                id: categories
+                id: {
+                    [Op.in]: categories
+                }
             }
         });
         if (existingCategories.length !== categories.length) {
-            await deleteImage(profile_image);
+            await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Some Categorys were not found!!!" });
         }
+        
+        const packageType = await PackageType.findByPk(Number(package_type_id));
+        if (!packageType) {
+            await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Package Type not found!!!" });
+        }
+        
+        const unitType = await UnitType.findByPk(Number(unit_type_id));
+        if (!unitType) {
+            await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
+        }
 
-        if (product_type === "finished" && req?.file === undefined && base64Image) {
-            profile_image = await saveBase64Image(base64Image);
-        };
+        // if (product_type === "finished" && req?.file === undefined && base64Image) {
+        //     profile_image = await saveBase64Image(base64Image);
+        // };
 
         const product = await Product.create({
             name: name.trim(),
@@ -182,18 +176,20 @@ const createRawProduct = asyncHandler(async (req, res) => {
             sku,
             barcode,
             gst_type: gst_type !== "" ? gst_type.trim().toLowerCase() : undefined,
-            product_type: product_type !== "" ? product_type.toLowerCase().trim() : undefined,
-            package_type: package_type !== "" ? package_type.trim().toLowerCase() : undefined,
+            product_type: product_type.toLowerCase().trim(),
+            package_type: packageType.name,
+            unit_type: unitType.name,
             measure,
             unit,
             description,
-            selling_price: parseFloat(selling_price),
-            MRP: parseInt(MRP),
-            reorder_level,
+            purchase_price: parseFloat(purchase_price),
+            MRP: parseFloat(MRP),
+            reorder_level: Number(reorder_level),
             photo: profile_image ? `${dbName}/${profile_image}` : null
         }, { transaction });
+
         if (!product) {
-            await deleteImage(profile_image);
+            await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
         }
@@ -201,31 +197,32 @@ const createRawProduct = asyncHandler(async (req, res) => {
         await product.addProductBrands(existingBrands, { transaction });
         await product.addProductCategories(existingCategories, { transaction });
 
-        if (product_type === "finished" && req.body?.items.length > 0) {
-            const { items } = req.body;
+        // if (product_type === "finished" && req.body?.items.length > 0) {
+        //     const { items } = req.body;
 
-            for (const item of items) {
-                const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
-                if (!rawProduct) {
-                    await transaction.rollback();
-                    await deleteImage(profile_image, dbName);
-                    return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
-                }
+        //     for (const item of items) {
+        //         const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
+        //         if (!rawProduct) {
+        //             await transaction.rollback();
+        //             await deleteImage(profile_image, dbName);
+        //             return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
+        //         }
 
-                const BOM = await BillOfMaterial.create({
-                    finished_product_id: product.id,
-                    raw_product_id: rawProduct.id,
-                    quantity_required: parseInt(item.qty, 10),
-                    uom: item.uom
-                }, { transaction });
+        //         const BOM = await BillOfMaterial.create({
+        //             finished_product_id: product.id,
+        //             raw_product_id: rawProduct.id,
+        //             quantity_required: parseInt(item.qty, 10),
+        //             uom: item.uom
+        //         }, { transaction });
 
-                if (!BOM) {
-                    await transaction.rollback();
-                    await deleteImage(profile_image, dbName);
-                    return res.status(500).json({ success: false, code: 500, message: "Insertion failed for BOM!!! " });
-                }
-            }
-        }
+        //         if (!BOM) {
+        //             await transaction.rollback();
+        //             await deleteImage(profile_image, dbName);
+        //             return res.status(500).json({ success: false, code: 500, message: "Insertion failed for BOM!!! " });
+        //         }
+        //     }
+        // }
+
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Product added successfully." });
 
