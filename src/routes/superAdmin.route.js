@@ -8,12 +8,19 @@ import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 
+
+
+// private APIs
 router.route("/register-node-warehouse").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNodeWarehouse);
 router.route("/register-node-partner").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNodePartner);
 
+
 router.use(defineUserScope, defineDbObject, verifyJWT);
 
-router.route("/business-nodes").get(verifyPermission("system-node:read"), allBusinessNodes);
+// public API
+router.route("/business-nodes").get(allBusinessNodes);
+
+
 router.route("/list").get(verifyPermission("company:read"), all_company);    // optional ?page= &limit= &email= &id=
 
 router.route("/register-tenant").post(verifyPermission("company:create"), registerNewTenant);
