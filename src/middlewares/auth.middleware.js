@@ -10,17 +10,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
 
-        const user = await User.findByPk(
-            decodedToken?.id,
-            {
-                include: [
-                    {
-                        model: Warehouse,
-                        as: "warehouseDetails"  
-                    },
-                ]
-            }
-        );
+        const user = await User.findByPk(decodedToken?.id);
         if (!user || !user.accessToken || user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });       
 
         req.user = user;

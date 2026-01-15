@@ -31,7 +31,6 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
                 },
             ]
         });
-        console.log(tenant)
         if(!tenant) return res.status(404).json({ success: false, code: 404, message: `User with email: ${email} is not registered!!!` });
 
         const dbName = tenant.tenantsName.tenant;
