@@ -903,76 +903,20 @@ export const roles = [
 ];
 
 export const businessNodeTypes = [
-  {
-    name: "Mfg Bond Warehouse",
-    code: "L-101",
-    category: "manufacturing",
-  },
-  {
-    name: "Mother Warehouse (National level)",
-    code: "L-102",
-    category: "warehouse",
-  },
-  {
-    name: "Central Warehouse",
-    code: "L-103",
-    category: "warehouse",
-  },
-  {
-    name: "Regional Warehouse",
-    code: "L-104",
-    category: "warehouse",
-  },
-  {
-    name: "State Warehouse",
-    code: "L-105",
-    category: "warehouse",
-  },
-  {
-    name: "CFA / C&F Agent",
-    code: "L-106",
-    category: "partner",
-  },
-  {
-    name: "3PL Warehouse",
-    code: "L-107",
-    category: "partner",
-  },
-  {
-    name: "Storage Hub",
-    code: "L-108",
-    category: "warehouse",
-  },
-  {
-    name: "Super Stockist",
-    code: "L-109",
-    category: "partner",
-  },
-  {
-    name: "Dealer",
-    code: "L-110",
-    category: "partner",
-  },
-  {
-    name: "Distributor",
-    code: "L-111",
-    category: "partner",
-  },
-  {
-    name: "Sub-Distributor",
-    code: "L-112",
-    category: "partner",
-  },
-  {
-    name: "Fulfilment Centre",
-    code: "L-113",
-    category: "warehouse",
-  },
-  {
-    name: "Retail Warehouse / Backroom Storage",
-    code: "L-114",
-    category: "retail",
-  },
+  { name: "Mfg Bond Warehouse", code: "L-101", category: "manufacturing", },
+  { name: "Mother Warehouse (National level)", code: "L-102", category: "warehouse", },
+  { name: "Central Warehouse", code: "L-103", category: "warehouse", },
+  { name: "Regional Warehouse", code: "L-104", category: "warehouse", },
+  { name: "State Warehouse", code: "L-105", category: "warehouse", },
+  { name: "CFA / C&F Agent", code: "L-106", category: "partner", },
+  { name: "3PL Warehouse", code: "L-107", category: "partner", },
+  { name: "Storage Hub", code: "L-108", category: "warehouse", },
+  { name: "Super Stockist", code: "L-109", category: "partner", },
+  { name: "Dealer", code: "L-110", category: "partner", },
+  { name: "Distributor", code: "L-111", category: "partner", },
+  { name: "Sub-Distributor", code: "L-112", category: "partner", },
+  { name: "Fulfilment Centre", code: "L-113", category: "warehouse", },
+  { name: "Retail Warehouse / Backroom Storage", code: "L-114", category: "retail", },
 ];
 
 

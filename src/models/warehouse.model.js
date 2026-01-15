@@ -1,10 +1,17 @@
-// import { db_obj } from "../db/config.js";
 import { DataTypes } from "sequelize";
 
 function Warehouse(sequelize) {
     return sequelize.define("Warehouse", {
-        user_id : {
-            type: DataTypes.INTEGER,
+        name : {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        location : {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        type : {
+            type: DataTypes.STRING,
             allowNull: false
         },
         gst_no: {
@@ -22,7 +29,16 @@ function Warehouse(sequelize) {
         long: {
             type: DataTypes.DECIMAL,
             defaultValue: 0.00
-        }
+        },
+        address: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {},
+        },
+        image: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
     })
 }
 export default Warehouse;

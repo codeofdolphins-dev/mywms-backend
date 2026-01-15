@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, Warehouse, NodeUserOwner, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
+    const { User, Role, Permission, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -12,10 +12,6 @@ const currentUser = asyncHandler(async (req, res) => {
                 exclude: ["password", "accessToken"]
             },
             include: [
-                {
-                    model: Warehouse,
-                    as: "warehouseDetails",
-                },
                 {
                     model: Role,
                     as: "roles",

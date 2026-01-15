@@ -60,18 +60,18 @@ const defineRootAssociations = (models) => {
     // ********************************************One-To-One*********************************
 
     // User ↔ Warehouse
-    User.hasOne(Warehouse, {
-        foreignKey: "user_id",
-        as: "warehouseDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Warehouse.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "user",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // User.hasOne(Warehouse, {
+    //     foreignKey: "user_id",
+    //     as: "warehouseDetails",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // Warehouse.belongsTo(User, {
+    //     foreignKey: "user_id",
+    //     as: "user",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // User ↔ SupplierBankDetails
     User.hasOne(SupplierBankDetails, {
@@ -897,18 +897,18 @@ const defineTenantAssociations = (models) => {
     // ********************************************One-To-One*********************************
 
     // User ↔ Warehouse
-    User.hasOne(Warehouse, {
-        foreignKey: "user_id",
-        as: "warehouseDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    Warehouse.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "user",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
+    // User.hasOne(Warehouse, {
+    //     foreignKey: "user_id",
+    //     as: "warehouseDetails",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
+    // Warehouse.belongsTo(User, {
+    //     foreignKey: "user_id",
+    //     as: "user",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE"
+    // });
 
     // User ↔ SupplierBankDetails
     User.hasOne(SupplierBankDetails, {
@@ -1372,19 +1372,6 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-
-    // Warehouse.hasMany(User, {
-    //     foreignKey: "warehouse_id",
-    //     as: "employees", // plural because it's a hasMany relationship
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // User.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "workplace", // singular because each user belongs to one warehouse
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
 
     // user <-> requisition
     User.hasMany(Requisition, {
