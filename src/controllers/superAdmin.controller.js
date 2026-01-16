@@ -124,210 +124,86 @@ const registerNewTenant = asyncHandler(async (req, res) => {
     }
 });
 
-const registerBusinessNodeWarehouse = asyncHandler(async (req, res) => {
-    const { User, Warehouse, NodeUserOwner, TenantBusinessFlow, Role } = req.dbModels;
+const registerBusinessNode = asyncHandler(async (req, res) => {
+    const { BusinessNode, NodeDetails, TenantBusinessFlow } = req.dbModels;
     const transaction = await req.dbObject.transaction();
-
-
-    const { models, rootSequelize } = await rootDB();
-    const { Tenant, TenantsName } = models;
-    const rootTransaction = await rootSequelize.transaction();
-
 
     const dbName = req.headers["x-tenant-id"];
     const profile_image = req?.file?.filename || null;
-    const loginUser = req.user;
     try {
-        let { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
+        let { full_name = "", location = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
 
-        if ([email, password, full_name, ph_number, address, state_id, district_id, pincode, node, lat, long].some(item => item === "")) {
+        if ([full_name, location, address, state_id, district_id, pincode, node].some(item => item === "")) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
         }
         node = JSON.parse(node);
 
-        const isRegister = await User.findOne({ where: { email }, transaction });
-        if (isRegister) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `Warehouse with email: ${email} already exists!!!` });
+        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
+        if (!tenantBusinessFlow) {
+            throw new Error("Invalid business node type code!!!");
         }
 
-        const isExistsInTenant = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
-        if (isExistsInTenant) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} is already register in other place first delete from there or contact with Owner/System!!!` });
-        }
-        const role = await Role.findOne({ where: { role: "node-admin" }, transaction });
-        if (!role) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `Role "node-admin" not found. Make sure roles are seeded.` });
-        };
+        // // find parent business node if not root
+        // let parentNodeId = null;
+        // if (tenantBusinessFlow.sequence !== 1) {
+        //     const parentFlow = await TenantBusinessFlow.findOne({
+        //         where: {
+        //             sequence: tenantBusinessFlow.sequence - 1
+        //         },
+        //         transaction
+        //     });
+        //     if (!parentFlow) {
+        //         throw new Error("Parent flow not found!!!");
+        //     }
 
-        const encryptPassword = await hashPassword(password);
+        //     const parentBusinessNode = await BusinessNode.findOne({
+        //         where: {
+        //             node_type_code: parentFlow.node_type_code
+        //         },
+        //         transaction
+        //     });
+        //     console.log(parentBusinessNode);
+        //     throw new Error("Invalid business node type code!!!");
+        //     parentNodeId = parentBusinessNode.id;
+        // }
 
-        const user = await User.create({
-            email: email.toLowerCase().trim(),
-            password: encryptPassword,
-            name: { full_name },
-            phone_no: ph_number,
-            userType: node.name,
-            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
+        /** create business node */
+        const businessNode = await BusinessNode.create({
+            name: `${node.name} - ${location}`,
+            node_type_code: node.code,
+            sequence: tenantBusinessFlow.sequence,
+        }, { transaction });
+
+        /**create node details */
+        const nodeDetails = await NodeDetails.create({
+            name: full_name,
+            business_node_id: businessNode.id,
+            location,
             address: {
                 address,
                 state_id,
                 district_id,
-                pincode
+                pincode,
+                ...((lat && long) ? { lat, long } : {})
             },
-            company_name: loginUser.company_name,
-            meta: { desc }
-        }, { transaction });
-
-        const warehouse = await Warehouse.create({
-            user_id: user.id,
             gst_no,
             license_no,
-            lat: parseFloat(lat),
-            long: parseFloat(long),
+            ...(profile_image && { image: `${dbName}/${profile_image}` }),
+            desc
         }, { transaction });
-
-        await user.addRole(role, { transaction });
-
-        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
-
-        await NodeUserOwner.create({
-            user_id: user.id,
-            node_id: tenantBusinessFlow.id,
-            is_node_owner: true
-        }, { transaction })
-
-        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName }, transaction: rootTransaction });
-        await Tenant.create({
-            tenant_id: tenantsName.id,
-            email,
-            password,
-            companyName: loginUser.company_name,
-        }, { transaction: rootTransaction });
-
-        await transaction.commit();
-        await rootTransaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Node Register Successfully." });
-
-
-    } catch (error) {
-        if (tenantTransaction) await tenantTransaction.rollback();
-        await rootTransaction.rollback();
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-const registerBusinessNodePartner = asyncHandler(async (req, res) => {
-    const { User, NodeUserOwner, TenantBusinessFlow, Role } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-
-
-    const { models, rootSequelize } = await rootDB();
-    const { Tenant, TenantsName } = models;
-    const rootTransaction = await rootSequelize.transaction();
-
-
-    const dbName = req.headers["x-tenant-id"];
-    const profile_image = req?.file?.filename || null;
-    const loginUser = req.user;
-
-    try {
-        let { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", desc = "", node = "" } = req.body;
-
-        if ([email, password, full_name, ph_number, address, state_id, district_id, pincode, node].some(item => item === "")) {
+        if (!nodeDetails) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();
-            await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
-        node = JSON.parse(node);
-
-        const isRegister = await User.findOne({ where: { email }, transaction });
-        if (isRegister) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} already exists!!!` });
-        }
-
-        const isExistsInTenant = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
-        if (isExistsInTenant) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} is already register in other place first delete from there or contact with Owner/System!!!` });
-        }
-        const role = await Role.findOne({ where: { role: "node-admin" }, transaction });
-        if (!role) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            await rootTransaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `Role "node-admin" not found. Make sure roles are seeded.` });
-        };
-
-        const encryptPassword = await hashPassword(password);
-
-        const user = await User.create({
-            email: email.toLowerCase().trim(),
-            password: encryptPassword,
-            name: {
-                full_name,
-                first_name: full_name.split(" ")[0],
-                last_name: full_name.split(" ")?.[1] || '',
-            },
-            phone_no: ph_number,
-            userType: node.name,
-            ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
-            address: {
-                address,
-                state_id,
-                district_id,
-                pincode
-            },
-            company_name: loginUser.company_name,
-            meta: {
-                desc
-            }
-        }, { transaction });
-
-        await user.addRole(role, { transaction });
-
-        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
-
-        await NodeUserOwner.create({
-            user_id: user.id,
-            node_id: tenantBusinessFlow.id,
-            is_node_owner: true
-        }, { transaction })
-
-        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName }, transaction: rootTransaction });
-        await Tenant.create({
-            tenant_id: tenantsName.id,
-            email,
-            password,
-            companyName: loginUser.company_name,
-        }, { transaction: rootTransaction });
 
         await transaction.commit();
-        await rootTransaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Node Register Successfully." });
+        return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
 
     } catch (error) {
-        if (profile_image) await deleteImage(profile_image, dbName);
         await transaction.rollback();
-        await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -418,4 +294,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { allBusinessNodes, registerNewTenant, registerBusinessNodeWarehouse, registerBusinessNodePartner, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails };

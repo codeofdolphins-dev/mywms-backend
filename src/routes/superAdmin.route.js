@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { all_company, allBusinessNodes, delete_company, registerBusinessNodePartner, registerBusinessNodeWarehouse, registerNewTenant, updateCompanyDetails } from "../controllers/superAdmin.controller.js"
+import { all_company, allBusinessNodes, delete_company, registerBusinessNode, registerNewTenant, updateCompanyDetails } from "../controllers/superAdmin.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -11,8 +11,7 @@ const router = Router();
 
 
 // private APIs
-router.route("/register-node-warehouse").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNodeWarehouse);
-router.route("/register-node-partner").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNodePartner);
+router.route("/register-node").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNode);
 
 
 router.use(defineUserScope, defineDbObject, verifyJWT);

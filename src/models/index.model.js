@@ -1,7 +1,6 @@
 import Category from "./category.model.js";
 import Tenant from "./main/tenant.model.js"
 import District from "./main/district.model.js";
-import Driver from "./main/driver.model.js";
 import Permission from "./permission.model.js";
 import Product from "./product.model.js";
 import Role from "./role.model.js";
@@ -11,8 +10,6 @@ import Inward from "./inward.model.js";
 import InwardItem from "./inwardItem.model.js";
 import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
-import Vehicle from "./main/vehicle.model.js";
-import Warehouse from "./warehouse.model.js";
 import Batch from "./batch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
@@ -34,11 +31,13 @@ import UnitType from "./unitType.model.js";
 import SupplierBrand from "./supplierBrand.joinModel.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
 import BrandProducts from "./brandProduct.joinModel.js";
-import BusinessNodeType from "./BusinessNodeType.model.js";
 import TenantBusinessFlowMaster from "./main/TenantBusinessFlowMaster.model.js";
-import TenantBusinessFlow from "./TenantBusinessFlow.model.js";
-import BusinessNode from "./businessNode.model.js";
+import TenantBusinessFlow from "./businessModels/TenantBusinessFlow.model.js";
+import BusinessNode from "./businessModels/businessNode.model.js";
 import PackageType from "./packageType.model.js";
+import NodeUser from "./nodeUsers.join_Model.js";
+import NodeDetails from "./businessModels/nodeDetails.model.js";
+import BusinessNodeType from "./businessModels/BusinessNodeType.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -47,15 +46,12 @@ const defineRootModels = (rootSequelize) => {
     Category(rootSequelize);
     District(rootSequelize);
     State(rootSequelize);
-    Driver(rootSequelize);
     Permission(rootSequelize);
     Role(rootSequelize);
     RolePermissions(rootSequelize);
     Product(rootSequelize);
     InwardItem(rootSequelize);
     UserRoles(rootSequelize);
-    Vehicle(rootSequelize);
-    Warehouse(rootSequelize);
     Batch(rootSequelize);
     TenantsName(rootSequelize);
     Requisition(rootSequelize)
@@ -82,13 +78,14 @@ const defineRootModels = (rootSequelize) => {
     TenantBusinessFlow(rootSequelize);
     BusinessNode(rootSequelize);
     PackageType(rootSequelize);
+    NodeUser(rootSequelize);
+    NodeDetails(rootSequelize);
     
     return rootSequelize.models;
 }
 
 const defineTenantModels = (sequelize) => {
     Category(sequelize);
-    Driver(sequelize);
     Permission(sequelize);
     Product(sequelize);
     Role(sequelize);
@@ -97,8 +94,6 @@ const defineTenantModels = (sequelize) => {
     InwardItem(sequelize);
     User(sequelize);
     UserRoles(sequelize);
-    Vehicle(sequelize);
-    Warehouse(sequelize);
     Batch(sequelize);
     Requisition(sequelize),
     RequisitionItem(sequelize)
@@ -123,6 +118,8 @@ const defineTenantModels = (sequelize) => {
     TenantBusinessFlow(sequelize);
     BusinessNode(sequelize);
     PackageType(sequelize);
+    NodeUser(sequelize);
+    NodeDetails(sequelize);
     
     return sequelize.models;
 }
