@@ -104,3 +104,9 @@ business-node
 
 system-node
 :read
+
+registered-node
+:read
+
+user
+:create 

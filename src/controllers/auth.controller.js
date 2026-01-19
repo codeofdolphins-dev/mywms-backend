@@ -368,18 +368,18 @@ const user_registration = asyncHandler(async (req, res) => {
         }
 
         // const userType = await UserType.findByPk(parseInt(user_type_id, 10));
-        const userType = await UserType.findOne({
-            where: {
-                type: {
-                    [Op.iLike]: user_type
-                }
-            }
-        });
-        if (!userType) {
-            if (profile_image) await deleteImage(profile_image);
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
-        }
+        // const userType = await UserType.findOne({
+        //     where: {
+        //         type: {
+        //             [Op.iLike]: user_type
+        //         }
+        //     }
+        // });
+        // if (!userType) {
+        //     if (profile_image) await deleteImage(profile_image);
+        //     await transaction.rollback();
+        //     return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
+        // }
 
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
@@ -393,7 +393,7 @@ const user_registration = asyncHandler(async (req, res) => {
         const user = await User.create({
             email: email.toLowerCase().trim(),
             password: encryptPassword,
-            user_type_id: userType.id,
+            // user_type_id: userType.id,
             name: {
                 full_name,
                 first_name: full_name.split(" ")[0],
