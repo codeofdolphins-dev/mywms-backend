@@ -847,7 +847,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Product - Category
+    // BusinessNode - User
     BusinessNode.belongsToMany(User, {
         through: NodeUser,
         as: "businessNodeUser",
@@ -1669,7 +1669,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Product - Category
+    // BusinessNode - User
     BusinessNode.belongsToMany(User, {
         through: NodeUser,
         as: "businessNodeUser",

@@ -1,9 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, TenantBusinessFlow, BusinessNodeType } = req.dbModels;
+    const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
     try {
         const { id } = req.user;
 
@@ -26,36 +26,31 @@ const currentUser = asyncHandler(async (req, res) => {
                         }
                     ]
                 },
-                // {
-                //     model: NodeUserOwner,
-                //     as: "ownedNode",
-                //     attributes: {
-                //         exclude: ["user_id"]
-                //     },
-                //     include: [
-                //         {
-                //             model: TenantBusinessFlow,
-                //             as: "businessFlow",
-                //         }
-                //     ]
-                // },
+                {
+                    model: BusinessNode,
+                    as: "userBusinessNode",
+                    // attributes: {
+                    //     exclude: ["parent_node_id"]
+                    // },
+                    through: {
+                        attributes: ["userRole"]
+                    },
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails",
+                        },
+                        {
+                            model: BusinessNodeType,
+                            as: "type",
+                        },
+                    ]
+                },
             ]
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
         const plainUser = user.get({ plain: true });
-        // const node_type_code = plainUser?.ownedNode?.businessFlow?.node_type_code || null;
-        // const sequence = plainUser?.ownedNode?.businessFlow?.sequence || null;
-
-        // if (plainUser.warehouseDetails === null) {
-        //     delete plainUser.warehouseDetails;
-        // }
-        // if (plainUser.supplier === null) {
-        //     delete plainUser.supplier;
-        // }
-        // if (plainUser.distributor === null) {
-        //     delete plainUser.distributor;
-        // }
 
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,
@@ -65,12 +60,6 @@ const currentUser = asyncHandler(async (req, res) => {
                     : role.permissions?.map(p => p.permission) || []
         }));
 
-        // if (node_type_code) {
-        //     const nodeDetails = await BusinessNodeType.findOne({ where: { code: node_type_code }, raw: true });
-        //     plainUser.nodeDetails = nodeDetails;
-        //     plainUser.sequence = sequence;
-        // }
-
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
 
     } catch (error) {
@@ -79,41 +68,66 @@ const currentUser = asyncHandler(async (req, res) => {
     }
 });
 
-
-const allEmployeeList = asyncHandler(async (req, res) => {
-    const { User, IndividualDetails } = req.dbModels;
+const allUserList = asyncHandler(async (req, res) => {
+    const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", email = "", name = "" } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const logginUser = req.user;
-
         const user = await User.findAndCountAll({
             where: {
-                type: "user",
-                owner_type: logginUser.type,
-                ...(id || email ? {
+                is_owner: false,
+                ...(id && { id }),
+                ...(text ? {
                     [Op.or]: [
-                        ...(id ? [{ id: parseInt(id, 10) }] : []),
-                        ...(email ? [{ email }] : []),
+                        { email: { [Op.iLike]: `${text}%` } },
+                        Sequelize.where(
+                            Sequelize.json("name.full_name"),
+                            { [Op.iLike]: `${text}%` }
+                        ),
+                        { phone_no: { [Op.iLike]: `${text}%` } },
                     ]
-                } : undefined)
+                } : {}),
             },
             attributes: {
-                exclude: ["password", "accessToken", "owner_id"]
+                exclude: ["password", "accessToken", "is_owner"]
             },
             include: [
                 {
-                    model: IndividualDetails,
-                    as: "individualDetails",
-                    required: !!name,
-                    ...(name ? { where: { full_name: { [Op.iLike]: `%${name}%` } } } : {})
-                }
+                    model: Role,
+                    as: "roles",
+                    attributes: ["role"],
+                    through: { attributes: [] },
+                    include: [
+                        {
+                            model: Permission,
+                            as: "permissions",
+                            attributes: ["permission"],
+                            through: { attributes: [] }
+                        }
+                    ]
+                },
+                {
+                    model: BusinessNode,
+                    as: "userBusinessNode",
+                    through: {
+                        attributes: ["userRole"]
+                    },
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails",
+                        },
+                        {
+                            model: BusinessNodeType,
+                            as: "type",
+                        },
+                    ]
+                },
             ],
-            limit,
-            offset,
+            ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
@@ -139,6 +153,8 @@ const allEmployeeList = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 const warehouseEmployeeList = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;
@@ -260,4 +276,4 @@ const delete_employee = asyncHandler(async (req, res) => {
 });
 
 
-export { currentUser, allEmployeeList, updateEmployeeDetails, delete_employee };
+export { currentUser, allUserList, updateEmployeeDetails, delete_employee };

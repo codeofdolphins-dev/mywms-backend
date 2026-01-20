@@ -79,7 +79,7 @@ const register_company = asyncHandler(async (req, res) => {
             password: encryptPassword,
             phone_no: ph_no,
             company_name: c_name,
-            userType: "company",
+            is_owner: true,
             ...(image_path && { profile_image: image_path }),
         }, { transaction });
 
@@ -208,79 +208,6 @@ const register_company = asyncHandler(async (req, res) => {
 //     }
 // });
 
-/** supplier */
-// const register_supplier = asyncHandler(async (req, res) => {
-//     const dbObject = req.dbObject;
-//     const transaction = await dbObject.transaction();
-//     const { Supplier, Role, User } = req.dbModels;
-
-//     const profile_image = req?.file?.filename || null;
-
-//     try {
-//         const { email = "", password = "", full_name = "", company_name = "", phone = "", desc = "" } = req.body;
-//         const dbName = req.headers["x-tenant-id"];
-
-//         if ([email, password, full_name, phone, company_name].some(field => field === "")) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             // await rootTransaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-//         };
-
-//         const userRole = await Role.findOne({ where: { role: "supplier" } }, { transaction });
-//         if (!userRole) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             // await rootTransaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: "Role 'supplier' not found. Make sure roles are seeded." });
-//         }
-
-//         const isRegister = await User.findOne({ where: { email, type: "supplier" } }, { transaction });
-//         if (isRegister) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             // await rootTransaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: `Supplier with email: ${email} already exists!!!` });
-//         }
-
-//         const encryptPassword = await hashPassword(password);
-
-//         const user = await User.create({
-//             email,
-//             password: encryptPassword,
-//             type: "supplier",
-//         }, { transaction });
-
-//         const supplier = await Supplier.create({
-//             user_id: user.id,
-//             company_name,
-//             contact_person: full_name,
-//             desc
-//         }, { transaction });
-
-//         await user.addRole(userRole, { transaction });
-//         // await Tenant.create({ tenant_id: tenantsName.id, email }, { transaction: rootTransaction });
-
-//         if (!supplier) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             // await rootTransaction.rollback();
-//             return res.status(200).json({ success: true, code: 200, message: "Supplier Registration failed!!!" });
-//         }
-
-//         await transaction.commit();
-//         // await rootTransaction.commit();
-//         return res.status(200).json({ success: true, code: 200, message: "Supplier Register Successfully." });
-
-//     } catch (error) {
-//         if (profile_image) await deleteImage(profile_image);
-//         await transaction.rollback();
-//         // await rootTransaction.rollback();
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
-
 /** distributor */
 // const register_distributor = asyncHandler(async (req, res) => {
 //     const dbObject = req.dbObject;
@@ -366,20 +293,6 @@ const user_registration = asyncHandler(async (req, res) => {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
-
-        // const userType = await UserType.findByPk(parseInt(user_type_id, 10));
-        // const userType = await UserType.findOne({
-        //     where: {
-        //         type: {
-        //             [Op.iLike]: user_type
-        //         }
-        //     }
-        // });
-        // if (!userType) {
-        //     if (profile_image) await deleteImage(profile_image);
-        //     await transaction.rollback();
-        //     return res.status(400).json({ success: false, code: 400, message: "User type not found. Make sure user type are seeded." });
-        // }
 
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {

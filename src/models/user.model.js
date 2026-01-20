@@ -45,6 +45,10 @@ function User(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
+        is_owner: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
         meta: {
             type: DataTypes.JSONB,
             allowNull: true,

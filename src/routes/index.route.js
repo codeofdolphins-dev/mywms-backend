@@ -41,6 +41,7 @@ router.use("/product", productApi);
 router.use("/brand", brandApi);
 router.use("/supplier", supplierApi);
 router.use("/super-admin", superAdminApi);
+router.use("/business", businessApi);
 
 router.use(defineUserScope, defineDbObject);
 
@@ -62,7 +63,6 @@ router.use("/bom", bomApi);
 router.use("/unit", unitApi);
 router.use("/package-type", packageTypeApi);
 router.use("/user-types", userTypesApi);
-router.use("/business", businessApi);
 
 
 export default router;
