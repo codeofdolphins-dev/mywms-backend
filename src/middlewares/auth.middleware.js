@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-    const { User, Warehouse } = req.dbModels;
+    const { User } = req.dbModels;
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
         if (!token) return res.status(401).json({ success: false, code: 401, message: "Unauthorized request" });
