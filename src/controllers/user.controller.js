@@ -139,7 +139,7 @@ const allUserList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: user.rows,
+            data: id ? user.rows[0] : user.rows,
             meta: {
                 totalItems,
                 totalPages,
