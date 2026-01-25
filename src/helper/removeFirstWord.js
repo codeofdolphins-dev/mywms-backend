@@ -1,3 +1,8 @@
+/**
+ * 
+ * @param {string} sentence string
+ * @returns string
+ */
 export function removeFirstWord(sentence) {
     // Trim leading/trailing whitespace and split the string into an array of words
     const words = sentence.trim().split(' ');

@@ -259,10 +259,10 @@ const updateUser = asyncHandler(async (req, res) => {
             user.profile_image = `${dbName}/${profile_image}`;
         }
         if (password) user.password = await hashPassword(password);
-        
-        
-        const tenant = await Tenant.findOne({ where: user.email });
-        if(password) tenant.password = password;
+
+
+        const tenant = await Tenant.findOne({ where: { email: user.email } });
+        if (password) tenant.password = password;
 
 
         /** last save all updates */

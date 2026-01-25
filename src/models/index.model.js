@@ -21,7 +21,7 @@ import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItems from "./purchaseOrderItems.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
-import SupplierBankDetails from "./supplierBankDetails.model.js";
+import Supplier from "./Supplier.model.js";
 import Inventory from "./inventory.model.js";
 import Outward from "./outward.model.js";
 import OutwardItems from "./outwardItems.model.js";
@@ -69,7 +69,7 @@ const defineRootModels = (rootSequelize) => {
     BillOfMaterial(rootSequelize);
     Brand(rootSequelize);
     UnitType(rootSequelize);
-    SupplierBankDetails(rootSequelize);
+    Supplier(rootSequelize);
     SupplierBrand(rootSequelize);
     CategoryProducts(rootSequelize);
     BrandProducts(rootSequelize);
@@ -110,7 +110,7 @@ const defineTenantModels = (sequelize) => {
     BillOfMaterial(sequelize);
     Brand(sequelize);
     UnitType(sequelize);
-    SupplierBankDetails(sequelize);
+    Supplier(sequelize);
     SupplierBrand(sequelize);
     CategoryProducts(sequelize);
     BrandProducts(sequelize);

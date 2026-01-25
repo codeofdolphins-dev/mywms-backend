@@ -10,9 +10,9 @@ const router = Router();
 
 router.route("/register-company").post(upload.single("image"), defineUserScope, defineDbObject, register_company);
 
-router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), updateUser);
+router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registeredUserWithNodes);
 
-router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), registeredUserWithNodes);
+router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), updateUser);
 
 
 router.use(upload.none(), defineUserScope, defineDbObject);

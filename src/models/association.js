@@ -21,7 +21,7 @@ const defineRootAssociations = (models) => {
         PurchaseOrderItems,
         Invoice,
         InvoiceItems,
-        SupplierBankDetails,
+        Supplier,
         Inventory,
         Outward,
         OutwardItems,
@@ -75,20 +75,6 @@ const defineRootAssociations = (models) => {
 
 
     // ********************************************One-To-One*********************************
-
-    // User ↔ SupplierBankDetails
-    User.hasOne(SupplierBankDetails, {
-        foreignKey: "user_id",
-        as: "supplierBankDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    SupplierBankDetails.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "accOwner",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
 
     // product ↔ qty
     Product.hasOne(Batch, {
@@ -146,7 +132,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Invoice ↔ Inward
+    // invoice ↔ inward
     Invoice.hasOne(Inward, {
         foreignKey: "invoice_id",
         as: "stockInward",
@@ -160,7 +146,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // BusinessNode ↔ NodeDetails
+    // businessNode ↔ nodeDetails
     BusinessNode.hasOne(NodeDetails, {
         foreignKey: "business_node_id",
         as: "nodeDetails",
@@ -205,7 +191,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Quotation ↔ QuotationItems
+    // quotation ↔ quotationItems
     Quotation.hasMany(QuotationItems, {
         foreignKey: "quotation_id",
         as: "quotationItem",
@@ -219,7 +205,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // PurchasOrder(PO) <-> User
+    // purchasOrder(po) <-> user
     PurchasOrder.belongsTo(User, {
         foreignKey: "created_by",
         as: "POcreatedBy",
@@ -233,7 +219,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // PurchasOrder(PO) <-> User
+    // purchasOrder(po) <-> user
     PurchasOrder.belongsTo(User, {
         foreignKey: "approved_by",
         as: "POapprovedBy",
@@ -247,7 +233,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // PurchaseOrderItems(POD) <-> PurchasOrder(PO)
+    // purchaseOrderItems(poi) <-> purchasOrder(po)
     PurchaseOrderItems.belongsTo(PurchasOrder, {
         foreignKey: "po_id",
         as: "purchasOrder",
@@ -261,7 +247,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Inward <-> PurchasOrder(PO)
+    // inward <-> purchasOrder(po)
     Inward.belongsTo(PurchasOrder, {
         foreignKey: "po_id",
         as: "poReference",
@@ -275,7 +261,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Invoice <-> PurchasOrder(PO)
+    // invoice <-> purchasOrder(po)
     Invoice.belongsTo(PurchasOrder, {
         foreignKey: "po_id",
         as: "invoicePurchasOrder",
@@ -289,7 +275,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // InvoiceItems <-> Invoice
+    // invoiceItems <-> invoice
     InvoiceItems.belongsTo(Invoice, {
         foreignKey: "invoice_id",
         as: "invoice",
@@ -303,7 +289,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // InvoiceItems <-> Product
+    // invoiceItems <-> product
     InvoiceItems.belongsTo(Product, {
         foreignKey: "product_id",
         as: "InvoiceItemProduct",
@@ -317,21 +303,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // // InwardItem <-> PurchaseOrderItems
-    // InwardItem.belongsTo(PurchaseOrderItems, {
-    //     foreignKey: "po_item_id",
-    //     as: "poItemRef",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // PurchaseOrderItems.hasMany(InwardItem, {
-    //     foreignKey: "po_item_id",
-    //     as: "inwardedItems",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Requisition - PurchasOrder
+    // requisition - purchasOrder
     PurchasOrder.belongsTo(Requisition, {
         foreignKey: "pr_id",
         as: "requisitions",
@@ -345,7 +317,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // InwardItem - Product
+    // inwardItem - product
     InwardItem.belongsTo(Product, {
         foreignKey: "product_id",
         as: "stockInwardProduct",
@@ -359,7 +331,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Inventory - Product
+    // inventory - product
     Inventory.belongsTo(Product, {
         foreignKey: "product_id",
         as: "productInventory",
@@ -373,21 +345,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Inventory - Warehouse
-    // Inventory.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInventory",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Inventory, {
-    //     foreignKey: "warehouse_id",
-    //     as: "inventoryWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Inventory - Inward
+    // inventory - inward
     Inventory.belongsTo(Inward, {
         foreignKey: "last_inward_id",
         as: "inwardInventory",
@@ -401,21 +359,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Inward - Warehouse
-    // Inward.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Inward, {
-    //     foreignKey: "warehouse_id",
-    //     as: "inwardsWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Inventory - Outward
+    // inventory - outward
     Inventory.belongsTo(Outward, {
         foreignKey: "last_outward_id",
         as: "outwardInventory",
@@ -429,7 +373,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // OutwardItems <-> Outward
+    // outwardItems <-> outward
     OutwardItems.belongsTo(Outward, {
         foreignKey: "outward_id",
         as: "outward",
@@ -443,35 +387,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Outward <-> From_Warehouse
-    // Outward.belongsTo(Warehouse, {
-    //     foreignKey: "host_warehouse_id",
-    //     as: "hostWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Outward, {
-    //     foreignKey: "host_warehouse_id",
-    //     as: "hostWarehouseOutward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Outward <-> target_Warehouse
-    // Outward.belongsTo(Warehouse, {
-    //     foreignKey: "target_warehouse_id",
-    //     as: "targetWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Outward, {
-    //     foreignKey: "target_warehouse_id",
-    //     as: "targetWarehouseOutward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Outward <-> user
+    // outward <-> user
     Outward.belongsTo(User, {
         foreignKey: "outward_by",
         as: "outwardBy",
@@ -485,7 +401,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // UnitType ↔ RequisitionItem
+    // unitType ↔ requisitionItem
     RequisitionItem.belongsTo(UnitType, {
         foreignKey: "uom_id",
         as: "unit"
@@ -495,7 +411,7 @@ const defineRootAssociations = (models) => {
         as: "requisitionItemUnit"
     });
 
-    // TenantsName ↔ TenantBusinessFlowMaster
+    // tenantsName ↔ tenantBusinessFlowMaster
     TenantBusinessFlowMaster.belongsTo(TenantsName, {
         foreignKey: "tenant_id",
         as: "tenant",
@@ -511,34 +427,6 @@ const defineRootAssociations = (models) => {
 
     // ********************************************Many-To-One*********************************
 
-    // UserType ↔ RequisitionRule
-    // UserType.hasMany(RequisitionRule, {
-    //     foreignKey: "module_id",
-    //     as: "moduleRules",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // RequisitionRule.belongsTo(UserType, {
-    //     foreignKey: "module_id",
-    //     as: "module",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // UserType ↔ User
-    // UserType.hasMany(User, {
-    //     foreignKey: "user_type_id",
-    //     as: "userList",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // User.belongsTo(UserType, {
-    //     foreignKey: "user_type_id",
-    //     as: "userType",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
     // stockInward - stockInwardItems
     Inward.hasMany(InwardItem, {
         foreignKey: 'stock_inward_id',
@@ -553,7 +441,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // User - stock inward
+    // user - stock inward
     User.hasMany(Inward, {
         foreignKey: "inward_by",
         as: "stockInwards",
@@ -577,7 +465,7 @@ const defineRootAssociations = (models) => {
         as: "createdBy",
     });
 
-    // Product <-> QuotationItems
+    // product <-> quotationItems
     Product.hasMany(QuotationItems, {
         foreignKey: "product_id",
         as: "quotationItems",
@@ -591,21 +479,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Warehouse <-> Invoice
-    // Warehouse.hasMany(Invoice, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInvoices",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Invoice.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "invoiceWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Product <-> PurchaseOrderItems
+    // product <-> purchaseOrderItems
     Product.hasMany(PurchaseOrderItems, {
         foreignKey: "product_id",
         as: "inwardProduct",
@@ -619,7 +493,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Product <-> OutwardItems
+    // product <-> outwardItems
     Product.hasMany(OutwardItems, {
         foreignKey: "product_id",
         as: "productOutwardItems",
@@ -633,7 +507,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Batch <-> OutwardItems
+    // batch <-> outwardItems
     Batch.hasMany(OutwardItems, {
         foreignKey: "batch_id",
         as: "batchOutwardItems",
@@ -647,7 +521,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Product <-> BillOfMaterial
+    // product <-> billOfMaterial
     Product.hasMany(BillOfMaterial, {
         foreignKey: "finished_product_id",
         as: "bomItems",
@@ -661,7 +535,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Product <-> BillOfMaterial
+    // product <-> billOfMaterial
     Product.hasMany(BillOfMaterial, {
         foreignKey: "raw_product_id",
         as: "usedInBoms",
@@ -675,7 +549,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // UnitType <-> Product
+    // unitType <-> product
     UnitType.hasMany(Product, {
         foreignKey: "unit_type",
         as: "unitProducts",
@@ -691,7 +565,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // PackageType <-> Product
+    // packageType <-> product
     PackageType.hasMany(Product, {
         foreignKey: "package_type",
         as: "productPackage",
@@ -707,7 +581,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // BusinessNodeType <-> BusinessNode
+    // businessNodeType <-> businessNode
     BusinessNodeType.hasMany(BusinessNode, {
         foreignKey: "node_type_code",
         as: "nodes",
@@ -773,32 +647,32 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // User - Brand
-    User.belongsToMany(Brand, {
+    // supplier - brand
+    Supplier.belongsToMany(Brand, {
         through: {
             model: SupplierBrand,
             unique: false
         },
         as: "brands",
-        foreignKey: 'supplierId',
-        otherKey: 'brandId',
+        foreignKey: 'supplier_id',
+        otherKey: 'brand_id',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    Brand.belongsToMany(User, {
+    Brand.belongsToMany(Supplier, {
         through: {
             model: SupplierBrand,
             unique: false
         },
         as: "suppliers",
-        foreignKey: 'brandId',
-        otherKey: 'supplierId',
+        foreignKey: 'brand_id',
+        otherKey: 'supplier_id',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
 
 
-    // Product - Brand
+    // product - brand
     Product.belongsToMany(Brand, {
         through: {
             model: BrandProducts,
@@ -823,7 +697,7 @@ const defineRootAssociations = (models) => {
     });
 
 
-    // Product - Category
+    // product - category
     Product.belongsToMany(Category, {
         through: {
             model: CategoryProducts,
@@ -847,7 +721,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // BusinessNode - User
+    // businessNode - user
     BusinessNode.belongsToMany(User, {
         through: NodeUser,
         as: "businessNodeUser",
@@ -888,7 +762,7 @@ const defineTenantAssociations = (models) => {
         PurchaseOrderItems,
         Invoice,
         InvoiceItems,
-        SupplierBankDetails,
+        Supplier,
         Inventory,
         Outward,
         OutwardItems,
@@ -940,20 +814,6 @@ const defineTenantAssociations = (models) => {
     });
 
     // ********************************************One-To-One*********************************
-
-    // User ↔ SupplierBankDetails
-    User.hasOne(SupplierBankDetails, {
-        foreignKey: "user_id",
-        as: "supplierBankDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    SupplierBankDetails.belongsTo(User, {
-        foreignKey: "user_id",
-        as: "accOwner",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
 
     // product ↔ qty
     Product.hasOne(Batch, {
@@ -1596,31 +1456,31 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // User - Brand
-    User.belongsToMany(Brand, {
+    // supplier - brand
+    Supplier.belongsToMany(Brand, {
         through: {
             model: SupplierBrand,
             unique: false
         },
         as: "brands",
-        foreignKey: 'supplierId',
-        otherKey: 'brandId',
+        foreignKey: 'supplier_id',
+        otherKey: 'brand_id',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-    Brand.belongsToMany(User, {
+    Brand.belongsToMany(Supplier, {
         through: {
             model: SupplierBrand,
             unique: false
         },
         as: "suppliers",
-        foreignKey: 'brandId',
-        otherKey: 'supplierId',
+        foreignKey: 'brand_id',
+        otherKey: 'supplier_id',
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
 
-    // Product - Brand
+    // product - brand
     Product.belongsToMany(Brand, {
         through: {
             model: BrandProducts,
@@ -1645,7 +1505,7 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    // Product - Category
+    // product - category
     Product.belongsToMany(Category, {
         through: {
             model: CategoryProducts,
@@ -1669,7 +1529,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // BusinessNode - User
+    // businessNode - user
     BusinessNode.belongsToMany(User, {
         through: NodeUser,
         as: "businessNodeUser",

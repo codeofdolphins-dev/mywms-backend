@@ -7,11 +7,11 @@ function SupplierBrand(sequelize) {
             autoIncrement: true,
             primaryKey: true
         },
-        supplierId: {
+        supplier_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        brandId: {
+        brand_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         }
