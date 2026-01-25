@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
 
 const allBrand = asyncHandler(async (req, res) => {
-    const { Brand, User } = req.dbModels;
+    const { Brand, Supplier } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, text = "", id = "", noLimt = false } = req.query;
@@ -28,7 +28,7 @@ const allBrand = asyncHandler(async (req, res) => {
             } : undefined,
             include: [
                 {
-                    model: User,
+                    model: Supplier,
                     as: "suppliers",
                     attributes: ["id", "name"],
                     through: { attributes: [] }
@@ -64,7 +64,8 @@ const allBrand = asyncHandler(async (req, res) => {
 });
 
 const createBrand = asyncHandler(async (req, res) => {
-    const { Brand, User } = req.dbModels;
+    // console.log(req.body); return
+    const { Brand, Supplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers['x-tenant-id'];
     const logo = req?.file?.filename || null;
@@ -79,12 +80,11 @@ const createBrand = asyncHandler(async (req, res) => {
 
         suppliers = JSON.parse(suppliers);
 
-        const existingSuppliers = await User.findAll({
+        const existingSuppliers = await Supplier.findAll({
             where: {
                 id: {
                     [Op.in]: suppliers
                 },
-                userType: "supplier"
             }, transaction
         });
         if (existingSuppliers.length !== suppliers.length) {
@@ -102,16 +102,13 @@ const createBrand = asyncHandler(async (req, res) => {
             origin_country,
             status,
         }, { transaction });
-        if (!brand) {
-            await deleteImage(logo, dbName);
-            await transaction.rollback();
-            return res.status(501).json({ success: false, code: 501, message: "Record not created!!!" });
-        };
+        if (!brand) throw new Error("Record not created!!!");
+
         // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(brand)));
         await brand.addSuppliers(existingSuppliers, { transaction });
 
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Record created." });
+        return res.status(200).json({ success: true, code: 200, message: "Record created" });
 
     } catch (error) {
         await transaction.rollback();
