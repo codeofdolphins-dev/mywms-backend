@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { rootDB } from "../db/tenantMenager.service.js";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
-import { Op } from "sequelize";
 import { hashPassword } from "../utils/hashPassword.js";
 import { removeFirstWord } from "../helper/removeFirstWord.js";
 

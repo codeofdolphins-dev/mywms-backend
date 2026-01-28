@@ -7,23 +7,36 @@ import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js"
 const allProductList = asyncHandler(async (req, res) => {
     const { Product, Category, HSN, Brand, PackageType, UnitType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "", name = "", type = "raw", noLimit = false } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "raw", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
-        const updateQuery = {};
-        if (barcode) updateQuery.barcode = barcode;
-        if (id) updateQuery.id = parseInt(id, 10);
-        if (type) updateQuery.product_type = type;
-        if (name) updateQuery.name = {
-            [Op.iLike]: `${name}%`
-        };
-
-        // console.log(updateQuery); return        
-
         const product = await Product.findAndCountAll({
-            where: updateQuery ? updateQuery : undefined,
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(barcode && { barcode: Number(barcode) }),
+                ...(text && {
+                    [Op.or]: [
+                        {
+                            name: {
+                                [Op.iLike]: `${text}%`
+                            }
+                        },
+                        {
+                            barcode: {
+                                [Op.eq]: text
+                            }
+                        },
+                        {
+                            sku: {
+                                [Op.iLike]: `${sku}%`
+                            }
+                        },
+                    ]
+                }),
+                product_type: type,
+            },
             include: [
                 {
                     model: HSN,
