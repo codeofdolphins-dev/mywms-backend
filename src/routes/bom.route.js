@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { addItem, allBOMList, createBOM, deleteBOM, removeItem, updateBOM } from "../controllers/BOM.controller.js";
+import { addItem, allBOMList, createBOM, deleteBOM, removeItem, updateBOM } from "../controllers/bom.controller.js";
 
 const router = Router();
 
