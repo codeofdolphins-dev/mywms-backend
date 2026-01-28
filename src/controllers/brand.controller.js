@@ -72,19 +72,16 @@ const createBrand = asyncHandler(async (req, res) => {
 
     try {
         let { name = "", description = "", website = "", origin_country = "", status = "", suppliers = "" } = req.body;
-        if (!name || suppliers.length < 1) {
+        if (!name || !suppliers) {
             await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Name & supplier_id both are required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Name & supplier both are required!!!" });
         }
-
         suppliers = JSON.parse(suppliers);
 
         const existingSuppliers = await Supplier.findAll({
             where: {
-                id: {
-                    [Op.in]: suppliers
-                },
+                id: { [Op.in]: suppliers },
             }, transaction
         });
         if (existingSuppliers.length !== suppliers.length) {
@@ -119,18 +116,20 @@ const createBrand = asyncHandler(async (req, res) => {
 });
 
 const updateBrand = asyncHandler(async (req, res) => {
-    const { Brand, User } = req.dbModels;
+    const { Brand, Supplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     const dbName = req.headers["x-tenant-id"];
     const logo = req?.file?.filename || null;
 
     try {
-        const { id = "", name = "", description = "", website = "", origin_country = "", status = "", suppliers = [] } = req.body;
+        let { id = "", name = "", description = "", website = "", origin_country = "", status = "", suppliers = "" } = req.body;
         if (!id) {
             if (logo) await deleteImage(logo, dbName);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Id or Barcode required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Id required!!!" });
         }
+
+        suppliers = JSON.parse(suppliers);
 
         const brand = await Brand.findOne({ where: { id: parseInt(id, 10) } });
         if (!brand) {
@@ -151,10 +150,10 @@ const updateBrand = asyncHandler(async (req, res) => {
         if (website) brand.website = website;
         if (origin_country) brand.origin_country = origin_country;
         if (status) brand.status = status;
-        if (suppliers.length) {
-            const newSuppliers = await User.findAll({
+        if (suppliers.length > 0) {
+            const newSuppliers = await Supplier.findAll({
                 where: {
-                    id: suppliers
+                    id: { [Op.in]: suppliers }
                 }, transaction
             });
             if (newSuppliers.length !== suppliers.length) {
@@ -162,15 +161,10 @@ const updateBrand = asyncHandler(async (req, res) => {
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Some Suppliers were not found!!!" });
             }
-
             brand.setSuppliers(newSuppliers, { transaction });
         }
         const isUpdate = await brand.save({ transaction });
-        if (!isUpdate) {
-            if (logo) await deleteImage(logo, dbName);
-            await transaction.rollback();
-            return res.status(501).json({ success: false, code: 501, message: "Updation failed!!!" });
-        }
+        if (!isUpdate) throw new Error("Updation failed!!!");
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully" });
@@ -197,10 +191,7 @@ const deleteBrand = asyncHandler(async (req, res) => {
         }
 
         const isDeleted = await Brand.destroy({ where: { id } }, { transaction });
-        if (!isDeleted) {
-            await transaction.rollback();
-            return res.status(501).json({ success: false, code: 501, message: "Deletion failed!!!" });
-        }
+        if (!isDeleted) throw new Error("Deletion failed!!!");
 
         if (brand.logo) await deleteImage(brand.logo);
         await transaction.commit();
