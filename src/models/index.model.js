@@ -21,7 +21,7 @@ import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItems from "./purchaseOrderItems.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
-import Supplier from "./Supplier.model.js";
+import Supplier from "./supplier.model.js";
 import Inventory from "./inventory.model.js";
 import Outward from "./outward.model.js";
 import OutwardItems from "./outwardItems.model.js";
@@ -37,7 +37,7 @@ import BusinessNode from "./businessModels/businessNode.model.js";
 import PackageType from "./packageType.model.js";
 import NodeUser from "./nodeUsers.join_Model.js";
 import NodeDetails from "./businessModels/nodeDetails.model.js";
-import BusinessNodeType from "./businessModels/BusinessNodeType.model.js";
+import BusinessNodeType from "./businessModels/businessNodeType.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
