@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
@@ -43,7 +44,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                         {
                             model: Unit,
                             as: "unit"
-                        },                        
+                        },
                     ]
                 },
             ],
@@ -67,6 +68,28 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                 currentPage: page,
                 limit
             }
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const getCreateRequisitionContext = asyncHandler(async (req, res) => {
+
+    const models = req.dbModels;
+    
+    try {
+        const { userBusinessNode } = req.user;
+
+        const allowNode = await getAllowedBusinessNodes(userBusinessNode?.[0]?.id, models);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: allowNode
         });
 
     } catch (error) {
@@ -254,4 +277,4 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
     }
 });
 
-export { createRequisition, deleteRequisition, allRequisitionList, updateRequisition, updateRequisitionItems };
+export { createRequisition, deleteRequisition, allRequisitionList, updateRequisition, updateRequisitionItems, getCreateRequisitionContext };

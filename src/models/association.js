@@ -401,16 +401,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // unitType ↔ requisitionItem
-    RequisitionItem.belongsTo(UnitType, {
-        foreignKey: "uom_id",
-        as: "unit"
-    });
-    UnitType.hasMany(RequisitionItem, {
-        foreignKey: "uom_id",
-        as: "requisitionItemUnit"
-    });
-
     // tenantsName ↔ tenantBusinessFlowMaster
     TenantBusinessFlowMaster.belongsTo(TenantsName, {
         foreignKey: "tenant_id",
@@ -421,6 +411,34 @@ const defineRootAssociations = (models) => {
     TenantsName.hasMany(TenantBusinessFlowMaster, {
         foreignKey: "tenant_id",
         as: "businessFlows",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // requisition <-> businessNode ==> BUYER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyerRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // requisition <-> businessNode ==> SUPPLIER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "supplier_business_node_id",
+        as: "supplier",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "supplier_business_node_id",
+        as: "supplierRequisitions",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -1070,20 +1088,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Inventory - Warehouse
-    // Inventory.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInventory",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Inventory, {
-    //     foreignKey: "warehouse_id",
-    //     as: "inventoryWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
     // Inventory - Inward
     Inventory.belongsTo(Inward, {
         foreignKey: "last_inward_id",
@@ -1097,20 +1101,6 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
-
-    // Inward - Warehouse
-    // Inward.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Inward, {
-    //     foreignKey: "warehouse_id",
-    //     as: "inwardsWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
 
     // Inventory - Outward
     Inventory.belongsTo(Outward, {
@@ -1140,34 +1130,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // Outward <-> From_Warehouse
-    // Outward.belongsTo(Warehouse, {
-    //     foreignKey: "host_warehouse_id",
-    //     as: "hostWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Outward, {
-    //     foreignKey: "host_warehouse_id",
-    //     as: "hostWarehouseOutward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Outward <-> target_Warehouse
-    // Outward.belongsTo(Warehouse, {
-    //     foreignKey: "target_warehouse_id",
-    //     as: "targetWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Warehouse.hasMany(Outward, {
-    //     foreignKey: "target_warehouse_id",
-    //     as: "targetWarehouseOutward",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
     // Outward <-> user
     Outward.belongsTo(User, {
         foreignKey: "outward_by",
@@ -1182,45 +1144,36 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
-    // UnitType ↔ RequisitionItem
-    RequisitionItem.belongsTo(UnitType, {
-        foreignKey: "uom_id",
-        as: "unit"
+    // requisition <-> businessNode ==> BUYER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
     });
-    UnitType.hasMany(RequisitionItem, {
-        foreignKey: "uom_id",
-        as: "requisitionItemUnit"
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyerRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
     });
+
+    // requisition <-> businessNode ==> SUPPLIER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "supplier_business_node_id",
+        as: "supplier",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "supplier_business_node_id",
+        as: "supplierRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
 
     // ********************************************Many-To-One*********************************
-
-    // UserType ↔ RequisitionRule
-    // UserType.hasMany(RequisitionRule, {
-    //     foreignKey: "module_id",
-    //     as: "moduleRules",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // RequisitionRule.belongsTo(UserType, {
-    //     foreignKey: "module_id",
-    //     as: "module",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // UserType ↔ User
-    // UserType.hasMany(User, {
-    //     foreignKey: "user_type_id",
-    //     as: "userList",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // User.belongsTo(UserType, {
-    //     foreignKey: "user_type_id",
-    //     as: "userType",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
 
     // stockInward - stockInwardItems
     Inward.hasMany(InwardItem, {

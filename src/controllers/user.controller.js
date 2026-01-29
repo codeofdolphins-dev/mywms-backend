@@ -29,9 +29,9 @@ const currentUser = asyncHandler(async (req, res) => {
                 {
                     model: BusinessNode,
                     as: "userBusinessNode",
-                    // attributes: {
-                    //     exclude: ["parent_node_id"]
-                    // },
+                    attributes: {
+                        exclude: ["parent_node_id"]
+                    },
                     through: {
                         attributes: ["userRole"]
                     },

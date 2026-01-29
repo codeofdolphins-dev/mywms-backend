@@ -15,16 +15,16 @@ function RequisitionItem(sequelize) {
       allowNull: true
     },
     quantity: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
-    uom_id: {
-      type: DataTypes.INTEGER,   // Unit of measure (pcs, kg, box, etc.)
-      allowNull: false,
+    approved_quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     unit_price_estimate: {
       type: DataTypes.DECIMAL(12, 2),
-      allowNull: false
+      allowNull: true
     },
   });
 }
