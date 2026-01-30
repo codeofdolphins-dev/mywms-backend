@@ -6,7 +6,7 @@ import { Op } from "sequelize";
  * @param {object} BusinessNode DB models
  * @returns object
  */
-export const getAllowedBusinessNodes = async (userBusinessNodeId, models) => {
+export const getAllowedBusinessNodes = async (userBusinessNodeId, models, removeSelf = true) => {
 
     const { BusinessNode, NodeDetails } = models;
 
@@ -25,7 +25,7 @@ export const getAllowedBusinessNodes = async (userBusinessNodeId, models) => {
         return BusinessNode.findAll({
             where: {
                 sequence: sequences,
-                id: { [Op.ne]: Number(userBusinessNodeId) }
+                ...(removeSelf && { id: { [Op.ne]: Number(userBusinessNodeId) } })
             },
             include: [
                 {

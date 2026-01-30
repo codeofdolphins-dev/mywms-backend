@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/all-list").get(verifyPermission("requisition:read"), allRequisitionList); // optional ?id= &page= &limit=
+router.route("/list").get(verifyPermission("requisition:read"), allRequisitionList); // optional ?id= &page= &limit=
 router.route("/allow-node").get(getCreateRequisitionContext);
 
 router.route("/create").post(verifyPermission("requisition:create"), createRequisition);

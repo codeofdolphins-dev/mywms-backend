@@ -4,7 +4,7 @@ function Requisition(sequelize) {
     return sequelize.define("Requisition", {
         requisition_no: {
             type: DataTypes.STRING,
-            allowNull: false
+            unique: true
         },
         buyer_business_node_id: {
             type: DataTypes.INTEGER,
@@ -22,11 +22,6 @@ function Requisition(sequelize) {
             type: DataTypes.TEXT,
             allowNull: true
         },
-        total: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 0.00
-        },
         required_by_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,
@@ -38,7 +33,7 @@ function Requisition(sequelize) {
         },
         status: {
             type: DataTypes.ENUM("draft", "submitted", "pending", "approved", "rejected", "cancelled"),
-            defaultValue: "draft"
+            defaultValue: "submitted"
         },
         priority: {
             type: DataTypes.ENUM("low", "normal", "high"),

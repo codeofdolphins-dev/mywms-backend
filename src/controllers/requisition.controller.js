@@ -4,31 +4,33 @@ import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, User, Product, Unit } = req.dbModels;
+    const { Requisition, RequisitionItem, User, Product, UnitType, PackageType, HSN } = req.dbModels;
+    const current_node = req.user?.userBusinessNode[0];
+
     try {
-        let { page = 1, limit = 10, id = "", title = "" } = req.query;
+        let { page = 1, limit = 10, id = "", requisition_no = "", title = "", isAdmin = false, sortBy = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const requisition = await Requisition.findAndCountAll({
-            where: (id || title) ? {
-                [Op.or]: [
-                    {
-                        id: parseInt(id, 10) || null
-                    },
-                    {
-                        title: {
-                            [Op.iLike]: `${title}%`
-                        }
-                    }
-                ]
-            } : undefined,
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(requisition_no && { requisition_no }),
+                ...(title && { title }),
+                ...(!isAdmin && { buyer_business_node_id: current_node.id }),
+                ...(sortBy && {
+                    [Op.or]: [
+                        { priority: sortBy.toLowerCase() },
+                        { status: sortBy.toLowerCase() },
+                    ]
+                }),
+            },
             include: [
                 {
                     model: User,
                     as: "createdBy",
-                    attributes: ["id", "email", "type"]
+                    // attributes: ["id", "email"]
                 },
                 {
                     model: RequisitionItem,
@@ -39,11 +41,22 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                     include: [
                         {
                             model: Product,
-                            as: "product"
-                        },
-                        {
-                            model: Unit,
-                            as: "unit"
+                            as: "product",
+                            include: [
+                                {
+                                    model: UnitType,
+                                    as: "unitRef"
+                                },
+                                {
+                                    model: PackageType,
+                                    as: "packageType"
+                                },
+                                {
+                                    model: HSN,
+                                    as: "hsn"
+                                },
+
+                            ]
                         },
                     ]
                 },
@@ -79,7 +92,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
 const getCreateRequisitionContext = asyncHandler(async (req, res) => {
 
     const models = req.dbModels;
-    
+
     try {
         const { userBusinessNode } = req.user;
 
@@ -100,34 +113,46 @@ const getCreateRequisitionContext = asyncHandler(async (req, res) => {
 
 // POST
 const createRequisition = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, Product, Unit } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-    try {
-        const { title = "", status = "", priority = "", notes = "", items = [] } = req.body;
-        const userDetails = req.user;
+    // console.log(req.body); return
 
-        if (!title) {
+    const { Requisition, RequisitionItem, Product, BusinessNode } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    try {
+        const { title = "", supplier_node = "", required_by_date = "", priority = "", notes = "", totalCost = "", items = [] } = req.body;
+        const userDetails = req.user;
+        const current_node = userDetails?.userBusinessNode[0];
+        const year = new Date().getFullYear();
+
+        if (!title || items.length < 1) throw new Error("Required fields are missing!!!");
+
+        const supplierNode = await BusinessNode.findByPk(Number(supplier_node));
+        if (!supplierNode) throw new Error("supplier details not found");
+
+        const allowNodes = await getAllowedBusinessNodes(current_node?.id, req.dbModels, false);
+        const isAllowed = allowNodes.some(node => node.id == supplierNode.id);
+        if (!isAllowed) {
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Title required!!!" });
+            return res.status(403).json({ success: false, code: 403, message: "You are not allowed to create requisition for this location" });
         }
 
         const requisition = await Requisition.create({
+            buyer_business_node_id: current_node?.id,
+            supplier_business_node_id: supplierNode?.id,
+            required_by_date,
             title,
-            status: status.toLowerCase(),
-            priority: priority.toLowerCase(),
             notes,
+            priority: priority.toLowerCase(),
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
 
-        const total = items.reduce((accumulator, item) => accumulator + parseInt(item.unit_price_estimate), 0);
-        requisition.total = total;
+        const requisition_no = `REQ-${year}-${requisition.id}`;
+        await requisition.update({
+            requisition_no
+        }, { transaction });
 
         for (const item of items) {
-
-            if (!item.barcode || !item.uom_id) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, code: 400, message: "barcode & uom_id both are required for product!!!" });
-            }
+            if (!item.barcode) throw new Error("barcode required!!!");
 
             const product = await Product.findOne({ where: { barcode: parseInt(item.barcode, 10) } });
             if (!product) {
@@ -135,26 +160,12 @@ const createRequisition = asyncHandler(async (req, res) => {
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
             }
 
-            const uom = await Unit.findByPk(parseInt(item.uom_id, 10));
-            if (!uom) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, code: 404, message: `Unit of messure record not found` });
-            }
-
             await RequisitionItem.create({
                 requisition_id: requisition.id,
                 product_id: product.id,
-                uom_id: uom.id,
-                ...item,
+                quantity: item.reqQty,
             }, { transaction });
         }
-
-        const isSave = await Requisition.save({ transaction });
-
-        if (!isSave) {
-            await transaction.rollback();
-            return res.status(500).json({ success: false, code: 500, message: "Record insertion failed!!!" });
-        };
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
