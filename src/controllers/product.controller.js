@@ -46,14 +46,15 @@ const allProductList = asyncHandler(async (req, res) => {
                     model: Category,
                     as: "productCategories",
                     through: { attributes: [] },
-                    // attributes: ["name"]
+                    required: false,
                     where: {
                         parent_id: null
                     },
                     include: [
                         {
                             model: Category,
-                            as: "subcategories"
+                            as: "subcategories",
+                            required: false
                         }
                     ]
                 },
@@ -203,10 +204,10 @@ const createRawProduct = asyncHandler(async (req, res) => {
             package_type: packageType.name,
             unit_type: unitType.name,
             measure,
-            unit,
+            // unit,
             description,
-            purchase_price: parseFloat(purchase_price),
-            MRP: parseFloat(MRP),
+            // purchase_price: parseFloat(purchase_price),
+            // MRP: parseFloat(MRP),
             reorder_level: Number(reorder_level),
             ...(photo ? { photo: `${dbName}/${photo}` } : null)
         }, { transaction });
@@ -381,11 +382,11 @@ const updateProduct = asyncHandler(async (req, res) => {
             product.unit_type = unitType.name;
         }
 
-        if (unit) product.unit = unit;
+        // if (unit) product.unit = unit;
         if (measure) product.measure = measure;
         if (description) product.description = description;
-        if (purchase_price) product.purchase_price = purchase_price;
-        if (MRP) product.MRP = parseFloat(MRP);
+        // if (purchase_price) product.purchase_price = purchase_price;
+        // if (MRP) product.MRP = parseFloat(MRP);
         if (reorder_level) product.reorder_level = Number(reorder_level);
         if (is_active) product.is_active = is_active;
 

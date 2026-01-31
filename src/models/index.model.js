@@ -38,6 +38,7 @@ import PackageType from "./packageType.model.js";
 import NodeUser from "./nodeUsers.join_Model.js";
 import NodeDetails from "./businessModels/nodeDetails.model.js";
 import BusinessNodeType from "./businessModels/businessNodeType.model.js";
+import RequisitionSupplier from "./requisitionSupplier.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -80,6 +81,7 @@ const defineRootModels = (rootSequelize) => {
     PackageType(rootSequelize);
     NodeUser(rootSequelize);
     NodeDetails(rootSequelize);
+    RequisitionSupplier(rootSequelize);
     
     return rootSequelize.models;
 }
@@ -120,6 +122,7 @@ const defineTenantModels = (sequelize) => {
     PackageType(sequelize);
     NodeUser(sequelize);
     NodeDetails(sequelize);
+    RequisitionSupplier(sequelize);
     
     return sequelize.models;
 }

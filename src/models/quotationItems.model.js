@@ -6,12 +6,16 @@ function QuotationItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        product_id: {
+        requisition_item_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        quantity: {
-            type: DataTypes.DECIMAL,
+        req_qty: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        approve_qty: {
+            type: DataTypes.INTEGER,
             allowNull: false
         },
         unit_price: {

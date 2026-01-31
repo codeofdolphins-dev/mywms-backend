@@ -10,10 +10,6 @@ function Requisition(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        supplier_business_node_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
         title: {
             type: DataTypes.STRING,
             allowNull: false
@@ -25,15 +21,14 @@ function Requisition(sequelize) {
         required_by_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,
-            defaultValue: 0.00
         },
         created_by: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
         status: {
-            type: DataTypes.ENUM("draft", "submitted", "pending", "approved", "rejected", "cancelled"),
-            defaultValue: "submitted"
+            type: DataTypes.ENUM("pending", "quoted", "cancelled", "closed"),
+            defaultValue: "pending"
         },
         priority: {
             type: DataTypes.ENUM("low", "normal", "high"),

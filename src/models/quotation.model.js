@@ -2,11 +2,11 @@ import { DataTypes } from "sequelize";
 
 function Quotation(sequelize) {
     return sequelize.define("Quotation", {
-        pr_id: {
+        pr_id: {        // pr(Purchase Request) == requisition
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        vendor_id: {
+        supplier_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -18,10 +18,10 @@ function Quotation(sequelize) {
             type: DataTypes.TEXT,
             allowNull: true
         },
-        total: {
-            type: DataTypes.DECIMAL(10, 2),
-            defaultValue: 0.00
-        }
+        created_by: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
     });
 }
 export default Quotation;
