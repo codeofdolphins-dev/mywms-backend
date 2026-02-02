@@ -103,13 +103,13 @@ const defineRootAssociations = (models) => {
     // product ↔ requisitionItem
     Product.hasOne(RequisitionItem, {
         foreignKey: "product_id",
-        as: "requisitionItem", // Product → RequisitionItem
+        as: "requisitionItem",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     RequisitionItem.belongsTo(Product, {
         foreignKey: "product_id",
-        as: "product", // RequisitionItem → Product
+        as: "product",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -592,6 +592,34 @@ const defineRootAssociations = (models) => {
         foreignKey: "node_type_code",
         as: "type",
         targetKey: "code",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // brand <-> requisitionItem
+    Brand.hasMany(RequisitionItem, {
+        foreignKey: "brand_id",
+        as: "brandRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // category <-> requisitionItem
+    Category.hasMany(RequisitionItem, {
+        foreignKey: "category_id",
+        as: "categoryRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Category, {
+        foreignKey: "category_id",
+        as: "category",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -1333,6 +1361,34 @@ const defineTenantAssociations = (models) => {
         foreignKey: "node_type_code",
         as: "type",
         targetKey: "code",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // brand <-> requisitionItem
+    Brand.hasMany(RequisitionItem, {
+        foreignKey: "brand_id",
+        as: "brandRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // category <-> requisitionItem
+    Category.hasMany(RequisitionItem, {
+        foreignKey: "category_id",
+        as: "categoryRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Category, {
+        foreignKey: "category_id",
+        as: "category",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

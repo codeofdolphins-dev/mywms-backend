@@ -298,11 +298,7 @@ const createRequisition = asyncHandler(async (req, res) => {
             });
             if (!product) {
                 await transaction.rollback();
-                return res.status(404).json({
-                    success: false,
-                    code: 404,
-                    message: `Product with barcode: ${item.barcode} not found`,
-                });
+                return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
             }
 
             await RequisitionItem.create(

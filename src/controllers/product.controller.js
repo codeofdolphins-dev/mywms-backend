@@ -5,7 +5,7 @@ import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js"
 
 // GET
 const allProductList = asyncHandler(async (req, res) => {
-    const { Product, Category, HSN, Brand, PackageType, UnitType } = req.dbModels;
+    const { Product, Category, HSN, Brand, PackageType, UnitType, CategoryProducts } = req.dbModels;
     try {
         let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "raw", noLimit = false } = req.query;
         page = parseInt(page, 10);
@@ -42,22 +42,22 @@ const allProductList = asyncHandler(async (req, res) => {
                     model: HSN,
                     as: "hsn"
                 },
-                {
-                    model: Category,
-                    as: "productCategories",
-                    through: { attributes: [] },
-                    required: false,
-                    where: {
-                        parent_id: null
-                    },
-                    include: [
-                        {
-                            model: Category,
-                            as: "subcategories",
-                            required: false
-                        }
-                    ]
-                },
+                // {
+                //     model: Category,
+                //     as: "productCategories",
+                //     through: { attributes: [] },
+                //     required: false,
+                //     where: {
+                //         parent_id: null
+                //     },
+                //     include: [
+                //         {
+                //             model: Category,
+                //             as: "subcategories",
+                //             required: false
+                //         }
+                //     ]
+                // },
                 {
                     model: Brand,
                     as: "productBrands",
@@ -78,6 +78,7 @@ const allProductList = asyncHandler(async (req, res) => {
             ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
+        await helper(req.dbModels, product);
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
         const totalItems = product.count;
@@ -439,3 +440,96 @@ const updateProductBatch = asyncHandler(async (req, res) => {
 });
 
 export { allProductList, createRawProduct, deleteProduct, updateProduct, updateProductBatch };
+
+
+
+
+async function helper(models, product) {
+    const { CategoryProducts, Category } = models;
+
+    if (product.rows && product.rows.length > 0) {
+        const productIds = product.rows.map(p => p.id);
+
+        // Get all CategoryProducts entries for these products
+        const categoryProducts = await CategoryProducts.findAll({
+            where: {
+                product_id: {
+                    [Op.in]: productIds
+                }
+            },
+            raw: true
+        });
+
+        if (categoryProducts.length > 0) {
+            const categoryIds = [...new Set(categoryProducts.map(cp => cp.category_id))];
+
+            // Get all categories (both parent and child)
+            const allCategories = await Category.findAll({
+                where: {
+                    id: {
+                        [Op.in]: categoryIds
+                    }
+                },
+                raw: true
+            });
+
+            // Organize categories
+            const parentCategories = allCategories.filter(cat => cat.parent_id === null);
+            const childCategories = allCategories.filter(cat => cat.parent_id !== null);
+
+            // Group categoryProducts by product_id
+            const categoriesByProduct = {};
+            categoryProducts.forEach(cp => {
+                if (!categoriesByProduct[cp.product_id]) {
+                    categoriesByProduct[cp.product_id] = [];
+                }
+                categoriesByProduct[cp.product_id].push(cp.category_id);
+            });
+
+            // Organize child categories by parent_id
+            const childCategoriesByParent = {};
+            childCategories.forEach(child => {
+                if (!childCategoriesByParent[child.parent_id]) {
+                    childCategoriesByParent[child.parent_id] = [];
+                }
+                childCategoriesByParent[child.parent_id].push(child);
+            });
+
+            // Attach categories to each product
+            product.rows.forEach(prod => {
+                const productCategoryIds = categoriesByProduct[prod.id] || [];
+
+                // ADDED: Store all selected category IDs for this product
+                prod.dataValues.selectedCategoryIds = [...productCategoryIds];
+
+                // Get parent categories for this product
+                const productParentCategories = parentCategories.filter(cat =>
+                    productCategoryIds.includes(cat.id)
+                );
+
+                // For each parent category, add its subcategories
+                const productCategoriesWithSubs = productParentCategories.map(parentCat => {
+                    const parentObj = { ...parentCat };
+
+                    // Get subcategories that are also linked to this product
+                    const subcategoriesForParent = childCategoriesByParent[parentCat.id] || [];
+                    const linkedSubcategories = subcategoriesForParent.filter(subcat =>
+                        productCategoryIds.includes(subcat.id)
+                    );
+
+                    parentObj.subcategories = linkedSubcategories;
+                    return parentObj;
+                });
+
+                // Attach to product
+                prod.dataValues.productCategories = productCategoriesWithSubs;
+            });
+        } else {
+            // Handle case where no category products exist
+            product.rows.forEach(prod => {
+                prod.dataValues.selectedCategoryIds = [];
+                prod.dataValues.productCategories = [];
+            });
+        }
+    }
+}
