@@ -6,7 +6,7 @@ function Requisition(sequelize) {
             type: DataTypes.STRING,
             unique: true
         },
-        buyer_business_node_id: {
+        buyer_business_node_id: {        // Location A (requester)
             type: DataTypes.INTEGER,
             allowNull: false
         },

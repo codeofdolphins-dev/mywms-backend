@@ -5,104 +5,20 @@ import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
     const {
-        Requisition,
-        RequisitionItem,
-        User,
-        Product,
-        UnitType,
-        PackageType,
-        HSN,
-        Category,
-        Brand,
+        Requisition, RequisitionItem, User, Product, UnitType,
+        PackageType, Category, Brand
     } = req.dbModels;
     const current_node = req.user?.userBusinessNode[0];
 
     try {
         let {
-            page = 1,
-            limit = 10,
-            id = "",
-            requisition_no = "",
-            title = "",
-            isAdmin = false,
-            sortBy = "",
+            page = 1, limit = 10,
+            id = "", requisition_no = "",
+            title = "", isAdmin = false, sortBy = ""
         } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
-
-        // const requisition = await Requisition.findAndCountAll({
-        //     where: {
-        //         ...(id && { id: Number(id) }),
-        //         ...(requisition_no && { requisition_no }),
-        //         ...(title && { title }),
-        //         ...(!isAdmin && { buyer_business_node_id: current_node.id }),
-        //         ...(sortBy && {
-        //             [Op.or]: [
-        //                 { priority: sortBy.toLowerCase() },
-        //                 { status: sortBy.toLowerCase() },
-        //             ],
-        //         }),
-        //     },
-        //     include: [
-        //         {
-        //             model: User,
-        //             as: "createdBy",
-        //             // attributes: ["id", "email"]
-        //         },
-        //         {
-        //             model: RequisitionItem,
-        //             as: "items",
-        //             attributes: {
-        //                 exclude: ["requisition_id"],
-        //             },
-        //             include: [
-        //                 {
-        //                     model: Product,
-        //                     as: "product",
-        //                     include: [
-        //                         {
-        //                             model: Brand,
-        //                             as: "productBrands",
-        //                             through: { attributes: [] },
-        //                             // attributes: ["name"]
-        //                         },
-        //                         {
-        //                             model: Category,
-        //                             as: "productCategories",
-        //                             through: { attributes: [] },
-        //                             // attributes: ["name"]
-        //                             where: {
-        //                                 parent_id: null
-        //                             },
-        //                             include: [
-        //                                 {
-        //                                     model: Category,
-        //                                     as: "subcategories"
-        //                                 }
-        //                             ]
-        //                         },
-        //                         {
-        //                             model: UnitType,
-        //                             as: "unitRef",
-        //                         },
-        //                         {
-        //                             model: PackageType,
-        //                             as: "packageType",
-        //                         },
-        //                         {
-        //                             model: HSN,
-        //                             as: "hsn",
-        //                         },
-        //                     ],
-        //                 },
-        //             ],
-        //         },
-        //     ],
-        //     limit,
-        //     offset,
-        //     order: [["createdAt", "ASC"]],
-        // });
 
         const requisition = await Requisition.findAndCountAll({
             where: {
@@ -128,35 +44,13 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                     attributes: {
                         exclude: ["requisition_id"],
                     },
-                    required: false, // Add this
+                    required: false,
                     include: [
                         {
                             model: Product,
                             as: "product",
-                            required: false, // Add this
+                            required: false,
                             include: [
-                                {
-                                    model: Brand,
-                                    as: "productBrands",
-                                    through: { attributes: [] },
-                                    required: false,
-                                },
-                                {
-                                    model: Category,
-                                    as: "productCategories",
-                                    through: { attributes: [] },
-                                    required: false, // This is critical
-                                    where: {
-                                        parent_id: null
-                                    },
-                                    include: [
-                                        {
-                                            model: Category,
-                                            as: "subcategories",
-                                            required: false
-                                        }
-                                    ]
-                                },
                                 {
                                     model: UnitType,
                                     as: "unitRef",
@@ -167,12 +61,19 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                                     as: "packageType",
                                     required: false,
                                 },
-                                {
-                                    model: HSN,
-                                    as: "hsn",
-                                    required: false,
-                                },
                             ],
+                        },
+                        {
+                            model: Brand,
+                            as: "brand",
+                        },
+                        {
+                            model: Category,
+                            as: "category"
+                        },
+                        {
+                            model: Category,
+                            as: "subCategory"
                         },
                     ],
                 },
@@ -208,6 +109,197 @@ const allRequisitionList = asyncHandler(async (req, res) => {
         return res
             .status(500)
             .json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const allReceiveRequisitionList = asyncHandler(async (req, res) => {
+    const {
+        BusinessNode, Requisition, NodeDetails,
+        RequisitionItem, User, Product,
+        UnitType, PackageType, Category, Brand
+    } = req.dbModels;
+
+    // const current_node = req.user?.userBusinessNode[0];
+    const current_node = 2;
+
+    try {
+        let {
+            page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = ""
+        } = req.query;
+
+        limit = Number(limit);
+        const offset = (Number(page) - 1) * limit;
+
+        // const result = await BusinessNode.findAndCountAll({
+        //     where: {
+        //         id: current_node.id,
+        //     },
+        //     distinct: true,
+        //     subQuery: false,
+        //     include: [
+        //         {
+        //             model: Requisition,
+        //             as: "supplierRequisitions",
+        //             through: { attributes: [] }, // hide join table
+        //             where: {
+        //                 ...(id && { id: Number(id) }),
+        //                 ...(requisition_no && { requisition_no }),
+        //                 ...(title && { title }),
+        //                 ...(sortBy && {
+        //                     [Op.or]: [
+        //                         { priority: sortBy.toLowerCase() },
+        //                         { status: sortBy.toLowerCase() },
+        //                     ],
+        //                 }),
+        //             },
+        //             limit,
+        //             offset,
+        //             order: [["createdAt", "ASC"]],
+        //             include: [
+        //                 { model: User, as: "createdBy" },
+        //                 {
+        //                     model: RequisitionItem,
+        //                     as: "items",
+        //                     include: [
+        //                         {
+        //                             model: Product,
+        //                             as: "product",
+        //                             include: [
+        //                                 { model: UnitType, as: "unitRef" },
+        //                                 { model: PackageType, as: "packageType" },
+        //                             ],
+        //                         },
+        //                         { model: Brand, as: "brand" },
+        //                         { model: Category, as: "category" },
+        //                         { model: Category, as: "subCategory" },
+        //                     ],
+        //                 },
+        //             ],
+        //         },
+        //     ],
+        // });
+
+        const { count, rows } = await Requisition.findAndCountAll({
+            distinct: true,
+            subQuery: false,
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "supplierBusinessNodes",
+                    required: true,
+                    where: {
+                        id: current_node,
+                    },
+                    through: { attributes: [] },
+                },
+            ],
+
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(requisition_no && { requisition_no }),
+                ...(title && { title }),
+                ...(sortBy && {
+                    [Op.or]: [
+                        { priority: sortBy.toLowerCase() },
+                        { status: sortBy.toLowerCase() },
+                    ],
+                }),
+            },
+
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+        });
+
+        console.log(rows)
+
+        // No data guard
+        if (!rows.length) {
+            return res.status(200).json({
+                success: true,
+                code: 200,
+                message: "Fetched Successfully.",
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    pageSize: limit,
+                    totalPages: 0,
+                },
+            });
+        }
+
+        const requisitionIds = rows.map(r => r.id);
+
+        // STEP 2: Load full requisition graph
+        const requisitions = await Requisition.findAll({
+            where: {
+                id: requisitionIds,
+            },
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "buyer",
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails",
+                        }
+                    ]
+                },
+                {
+                    model: User,
+                    as: "createdBy",
+                    attributes: ["name", "email", "company_name", "phone_no", "profile_image"]
+                },
+                {
+                    model: RequisitionItem,
+                    as: "items",
+                    required: false,
+                    include: [
+                        {
+                            model: Product,
+                            as: "product",
+                            include: [
+                                { model: UnitType, as: "unitRef" },
+                                { model: PackageType, as: "packageType" },
+                            ],
+                        },
+                        { model: Brand, as: "brand" },
+                        { model: Category, as: "category" },
+                        { model: Category, as: "subCategory" },
+                    ],
+                },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+
+
+        if (!requisitions)
+            return res.status(500).json({
+                success: false,
+                code: 500,
+                message: "Fetched failed!!!",
+            });
+
+        const totalItems = count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: requisitions,
+            meta: {
+                totalItems,
+                currentPage: page,
+                totalPages,
+                limit,
+            },
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -291,7 +383,7 @@ const createRequisition = asyncHandler(async (req, res) => {
         );
 
         for (const item of items) {
-            if (!item.barcode) throw new Error("barcode required!!!");
+            if (!item.barcode || !item.brand || !item.category) throw new Error("required field are missing!!!");
 
             const product = await Product.findOne({
                 where: { barcode: parseInt(item.barcode, 10) },
@@ -305,9 +397,12 @@ const createRequisition = asyncHandler(async (req, res) => {
                 {
                     requisition_id: requisition.id,
                     product_id: product.id,
+                    brand_id: item.brand.id,
+                    category_id: item.category.id,
+                    sub_category_id: item.subCategory.id,
                     qty: item.reqQty,
                 },
-                { transaction },
+                { transaction }
             );
         }
 
@@ -514,4 +609,5 @@ export {
     updateRequisition,
     updateRequisitionItems,
     getCreateRequisitionContext,
+    allReceiveRequisitionList
 };

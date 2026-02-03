@@ -624,6 +624,15 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisitionItem -> category
+    RequisitionItem.belongsTo(Category, {
+        foreignKey: "sub_category_id",
+        as: "subCategory",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
     // ********************************************Many-To-Many*********************************
     // user - role
     User.belongsToMany(Role, {
@@ -1391,6 +1400,14 @@ const defineTenantAssociations = (models) => {
         as: "category",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
+    });
+
+    // requisitionItem -> category
+    RequisitionItem.belongsTo(Category, {
+        foreignKey: "sub_category_id",
+        as: "subCategory",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
     });
 
     // ********************************************Many-To-Many*********************************

@@ -10,26 +10,30 @@ function QuotationItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        req_qty: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        approve_qty: {
+        offered_qty: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
         unit_price: {
-            type: DataTypes.DECIMAL,
-            defaultValue: 0.00
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false
         },
-        total_price: {
+        discount: {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0.00
         },
+        tax_percent: {
+            type: DataTypes.DECIMAL(5, 2),
+            defaultValue: 0.00
+        },
+        total_price: {
+            type: DataTypes.DECIMAL(12, 2),
+            allowNull: false
+        },
         note: {
-            type: DataTypes.TEXT,
-            allowNull: true
+            type: DataTypes.TEXT
         }
     });
+
 }
 export default QuotationItems;

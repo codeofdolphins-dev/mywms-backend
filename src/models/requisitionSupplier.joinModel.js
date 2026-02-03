@@ -6,7 +6,7 @@ function RequisitionSupplier(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        supplier_business_node_id: {
+        supplier_business_node_id: {       // Location B (supplier role)
             type: DataTypes.INTEGER,
             allowNull: false,
         },
