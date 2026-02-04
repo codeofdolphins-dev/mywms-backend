@@ -172,16 +172,16 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // requisition(PR) <-> Quotation
+    // requisition(PR) <-> quotation
     Quotation.belongsTo(Requisition, {
-        foreignKey: "pr_id",
+        foreignKey: "requisition_id",
         as: "quotationRequisition",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Requisition.hasMany(Quotation, {
-        foreignKey: "pr_id",
-        as: "vendorQuotations",
+        foreignKey: "requisition_id",
+        as: "requisitionQuotation",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -950,16 +950,16 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // requisition(PR) <-> Quotation
+    // requisition(PR) <-> quotation
     Quotation.belongsTo(Requisition, {
-        foreignKey: "pr_id",
+        foreignKey: "requisition_id",
         as: "quotationRequisition",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Requisition.hasMany(Quotation, {
-        foreignKey: "pr_id",
-        as: "vendorQuotations",
+        foreignKey: "requisition_id",
+        as: "requisitionQuotation",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
