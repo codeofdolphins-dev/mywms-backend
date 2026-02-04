@@ -23,8 +23,12 @@ function RequisitionItem(sequelize) {
             allowNull: true,
         },
         qty: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.INTEGER,
             allowNull: false,
+        },
+        priceLimit: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
         },
         remarks: {
             type: DataTypes.TEXT,

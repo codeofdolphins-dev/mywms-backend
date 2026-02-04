@@ -18,6 +18,10 @@ function Requisition(sequelize) {
             type: DataTypes.TEXT,
             allowNull: true
         },
+        grandTotal: {
+            type: DataTypes.DECIMAL,
+            allowNull: true
+        },
         required_by_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,

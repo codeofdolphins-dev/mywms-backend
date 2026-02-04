@@ -211,8 +211,6 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
             order: [["createdAt", "DESC"]],
         });
 
-        console.log(rows)
-
         // No data guard
         if (!rows.length) {
             return res.status(200).json({
@@ -336,21 +334,28 @@ const createRequisition = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { title = "", supplier_node = "", required_by_date = "", priority = "", notes = "", items = [], } = req.body;
+        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = userDetails?.userBusinessNode[0];
         const year = new Date().getFullYear();
 
-        if (!title || items.length < 1) throw new Error("Required fields are missing!!!");
+        if (!title || items?.length < 1 || supplier_node?.length < 1) throw new Error("Required fields are missing!!!");
 
         // fetch all supplier nodes
-        const supplierNode = await BusinessNode.findByPk(supplier_node);
-        if (!supplierNode) throw new Error("supplier record not found");
+        const supplierNode = await BusinessNode.findAll({
+            where: {
+                id: supplier_node
+            }
+        });
+        if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
+        // console.log(supplierNode); return
 
         const allowNodes = await getAllowedBusinessNodes(current_node?.id, req.dbModels, false);
 
-        const isAllowed = allowNodes.some(node => node.id == supplierNode.id);
-
+        // check if at least one supplier node is allowed
+        const isAllowed = supplierNode.some(supplier =>
+            allowNodes.some(allowed => allowed.id === supplier.id)
+        );
         if (!isAllowed) {
             await transaction.rollback();
             return res.status(403).json({ success: false, code: 403, message: "You are not allowed to create requisition" });
@@ -361,6 +366,7 @@ const createRequisition = asyncHandler(async (req, res) => {
             required_by_date,
             title,
             notes,
+            grandTotal: total,
             priority: priority.toLowerCase(),
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
@@ -372,8 +378,8 @@ const createRequisition = asyncHandler(async (req, res) => {
         }, { transaction });
 
         /** push all supplier id into join table (requisitionSupplier) */
-        await requisition.addSupplierBusinessNode(
-            supplierNode.id,
+        await requisition.addSupplierBusinessNodes(
+            supplierNode.map(node => node.id),
             {
                 through: {
                     status: "sent",
@@ -401,6 +407,7 @@ const createRequisition = asyncHandler(async (req, res) => {
                     category_id: item.category.id,
                     sub_category_id: item.subCategory.id,
                     qty: item.reqQty,
+                    priceLimit: item.priceLimit
                 },
                 { transaction }
             );

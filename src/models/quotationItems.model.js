@@ -10,17 +10,9 @@ function QuotationItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        offered_qty: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
         unit_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false
-        },
-        discount: {
-            type: DataTypes.DECIMAL(10, 2),
-            defaultValue: 0.00
         },
         tax_percent: {
             type: DataTypes.DECIMAL(5, 2),
