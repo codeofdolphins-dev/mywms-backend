@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function QuotationItems(sequelize) {
-    return sequelize.define("QuotationItems", {
+function QuotationItem(sequelize) {
+    return sequelize.define("QuotationItem", {
         quotation_id: {
             type: DataTypes.INTEGER,
             allowNull: false
@@ -10,7 +10,7 @@ function QuotationItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        unit_price: {
+        offer_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false
         },
@@ -23,9 +23,10 @@ function QuotationItems(sequelize) {
             allowNull: false
         },
         note: {
-            type: DataTypes.TEXT
+            type: DataTypes.TEXT,
+            allowNull: true
         }
     });
 
 }
-export default QuotationItems;
+export default QuotationItem;

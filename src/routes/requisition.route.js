@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { allReceiveRequisitionList, allRequisitionList, createRequisition, deleteRequisition, getCreateRequisitionContext, updateRequisition, updateRequisitionItems } from "../controllers/requisition.controller.js";
+import { allReceiveQuotationList, allRequisitionList, createRequisition, deleteRequisition, getCreateRequisitionContext, updateRequisition, updateRequisitionItems } from "../controllers/requisition.controller.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -7,8 +7,9 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/list").get(verifyPermission("requisition:read"), allRequisitionList); // optional ?id= &page= &limit=
-router.route("/receive-list").get(verifyPermission("receive-requisition:read"), allReceiveRequisitionList); // optional ?id= &page= &limit=
+router.route("/list").get(verifyPermission("requisition:read"), allRequisitionList);
+router.route("/receive-quotation-list").get(verifyPermission("receive-requisition:read"), allReceiveQuotationList);
+
 router.route("/allow-node").get(getCreateRequisitionContext);
 
 router.route("/create").post(verifyPermission("requisition:create"), createRequisition);

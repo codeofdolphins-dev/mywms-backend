@@ -1,11 +1,13 @@
 import { dataSeederRoot } from "../helper/seeder.js";
-import { rootDB } from "./tenantMenager.service.js";
+import { getTenantConnection, rootDB } from "./tenantMenager.service.js";
 
 
 const connectRootDB = async () => {
     const { rootSequelize, models } = await rootDB();
+    // const { sequelize: tenant } = await getTenantConnection("tenant_tenant");
+    // await tenant.sync({ alter: true });
     try {
-        // await rootSequelize.sync({ alter: true });
+        // await rootSequelize.sync({ force: true });
 
         const recordCount = await models.Role.count();
         if (recordCount === 0) {

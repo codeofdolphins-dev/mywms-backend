@@ -2,6 +2,10 @@ import { DataTypes } from "sequelize";
 
 function Quotation(sequelize) {
     return sequelize.define("Quotation", {
+        quotation_no: {
+            type: DataTypes.STRING,
+            unique: true
+        },
         requisition_id: {   // rename from pr_id
             type: DataTypes.INTEGER,
             allowNull: false
@@ -30,6 +34,10 @@ function Quotation(sequelize) {
         },
         revision_no: {
             type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        grandTotal: {
+            type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0
         },
         note: {
