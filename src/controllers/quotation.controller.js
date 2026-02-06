@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allQuotation = asyncHandler(async (req, res) => {
-    const { Quotation, QuotationItem, BusinessNode, NodeDetails } = req.dbModels;
+    const { Quotation, QuotationItem, BusinessNode, NodeDetails, RequisitionItem } = req.dbModels;
     const current_node = req.user?.userBusinessNode[0];
 
     try {
@@ -23,6 +23,12 @@ const allQuotation = asyncHandler(async (req, res) => {
                 {
                     model: QuotationItem,
                     as: "quotationItem",
+                    include: [
+                        {
+                            model: RequisitionItem,
+                            as: "sourceRequisitionItem"
+                        }
+                    ]
                 },
                 {
                     model: BusinessNode,
@@ -64,125 +70,136 @@ const allQuotation = asyncHandler(async (req, res) => {
 });
 
 
-/** GET all receive requisition list  */
-const allReceiveRequisitionList = asyncHandler(async (req, res) => {
-    const {
-        BusinessNode, Requisition, NodeDetails,
-        RequisitionItem, User, Product,
-        UnitType, PackageType, Category, Brand
-    } = req.dbModels;
-
-    const current_node = req.user?.userBusinessNode[0];
+/** GET all receive quotation list based on no */
+const allReceiveQuotationList = asyncHandler(async (req, res) => {
+    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, Brand, Category } = req.dbModels;
 
     try {
-        let {
-            page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = ""
-        } = req.query;
+        let { page = 1, limit = 10, reqNo } = req.query;
+        if (!reqNo) throw new Error("Requisition no required!!!");
 
-        limit = Number(limit);
-        const offset = (Number(page) - 1) * limit;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
 
-        const { count, rows } = await Requisition.findAndCountAll({
-            distinct: true,
-            subQuery: false,
+        const requisition = await Requisition.findOne({
+            where: { requisition_no: reqNo },
             include: [
                 {
                     model: BusinessNode,
                     as: "supplierBusinessNode",
-                    required: true,
-                    where: {
-                        id: current_node.id,
+                    attributes: ["id", "name", "node_type_code"],
+                    through: {
+                        attributes: ["status", "createdAt"],
                     },
-                    through: { attributes: [] },
-                },
-            ],
-
-            where: {
-                ...(id && { id: Number(id) }),
-                ...(requisition_no && { requisition_no }),
-                ...(title && { title }),
-                ...(sortBy && {
-                    [Op.or]: [
-                        { priority: sortBy.toLowerCase() },
-                        { status: sortBy.toLowerCase() },
-                    ],
-                }),
-            },
-
-            limit,
-            offset,
-            order: [["createdAt", "DESC"]],
-        });
-
-        // No data guard
-        if (!rows.length) {
-            return res.status(200).json({
-                success: true,
-                code: 200,
-                message: "Fetched Successfully.",
-                data: [],
-                meta: {
-                    total: 0,
-                    page,
-                    pageSize: limit,
-                    totalPages: 0,
-                },
-            });
-        }
-
-        const requisitionIds = rows.map(r => r.id);
-
-        // STEP 2: Load full requisition graph
-        const requisitions = await Requisition.findAll({
-            where: {
-                id: requisitionIds,
-            },
-            include: [
-                {
-                    model: BusinessNode,
-                    as: "buyer",
                     include: [
                         {
                             model: NodeDetails,
                             as: "nodeDetails",
-                        }
-                    ]
-                },
-                {
-                    model: User,
-                    as: "createdBy",
-                    attributes: ["name", "email", "company_name", "phone_no", "profile_image"]
+                            attributes: ["name", "location", "image"]
+                        },
+                    ],
                 },
                 {
                     model: RequisitionItem,
                     as: "items",
-                    required: false,
+                },
+            ],
+        });
+
+        const { count, rows: quotations } = await Quotation.findAndCountAll({
+            where: {
+                requisition_id: requisition.id,
+            },
+            include: [
+                {
+                    model: QuotationItem,
+                    as: "quotationItem",
+                    attributes: {
+                        exclude: ["quotation_id", "createdAt", "updatedAt"]
+                    },
                     include: [
                         {
-                            model: Product,
-                            as: "product",
+                            model: RequisitionItem,
+                            as: "sourceRequisitionItem",
+                            attributes: {
+                                exclude: ["requisition_id", "createdAt", "updatedAt"]
+                            },
                             include: [
-                                { model: UnitType, as: "unitRef" },
-                                { model: PackageType, as: "packageType" },
-                            ],
+                                {
+                                    model: Product,
+                                    as: "product",
+                                    attributes: ["name", "barcode"]
+
+                                },
+                                {
+                                    model: Brand,
+                                    as: "brand",
+                                    attributes: ["name"]
+                                },
+                                {
+                                    model: Category,
+                                    as: "category",
+                                    attributes: ["name"]
+                                },
+                                {
+                                    model: Category,
+                                    as: "subCategory",
+                                    attributes: ["name"]
+                                },
+                            ]
                         },
-                        { model: Brand, as: "brand" },
-                        { model: Category, as: "category" },
-                        { model: Category, as: "subCategory" },
                     ],
                 },
             ],
-            order: [["createdAt", "DESC"]],
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
 
+        const supplierMap = {};
+        requisition.supplierBusinessNode.forEach((supplier) => {
+            supplier = supplier.toJSON();
+            const status = supplier.RequisitionSupplier.status;
+            delete supplier.RequisitionSupplier;
 
-        if (!requisitions)
-            return res.status(500).json({
-                success: false,
-                code: 500,
-                message: "Fetched failed!!!",
-            });
+            supplierMap[supplier.id] = {
+                ...supplier,
+                status,
+                quotation: null,
+            };
+        });
 
+        quotations.forEach((quotation) => {
+            const supplierId = quotation.from_business_node_id;
+
+            if (!supplierMap[supplierId]) return;
+
+            const item = quotation.quotationItem || [];
+
+            supplierMap[supplierId].quotation = {
+                id: quotation.id,
+                status: quotation.status,
+                valid_till: quotation.valid_till,
+                revision_no: quotation.revision_no,
+                grandTotal: quotation.grandTotal,
+                note: quotation.note,
+                createdAt: quotation.createdAt,
+
+                item: item ? item : null,
+            };
+        });
+
+        const refineRequisition = requisition.toJSON();
+        delete refineRequisition.supplierBusinessNode;
+        delete refineRequisition.items;
+
+        const response = {
+            requisition: refineRequisition,
+            suppliers: Object.values(supplierMap),
+        };
+
+        /** define pagination calculation */
         const totalItems = count;
         const totalPages = Math.ceil(totalItems / limit);
 
@@ -190,14 +207,15 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: requisitions,
+            data: response,
             meta: {
                 totalItems,
-                currentPage: page,
                 totalPages,
-                limit,
-            },
+                currentPage: page,
+                limit
+            }
         });
+
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -240,7 +258,6 @@ const createQuotation = asyncHandler(async (req, res) => {
                 supplier_business_node_id: current_node.id
             }
         });
-        console.log(requisitionSupplier);
         if (!requisitionSupplier) throw new Error("This requisition is not assigned to your location");
 
         const quotation = await Quotation.create({
@@ -274,6 +291,7 @@ const createQuotation = asyncHandler(async (req, res) => {
                 requisition_item_id: requisitionItem.id,
                 offer_price: item.offerPrice,
                 total_price: item.total,
+                tax_percent: item.tax,
                 ...(item.note && { note: item.note })
             }, { transaction });
         }
@@ -382,4 +400,4 @@ const deleteQuotation = asyncHandler(async (req, res) => {
     }
 });
 
-export { allQuotation, allReceiveRequisitionList, createQuotation, updateQuotationItems, updateQuotationDetails, deleteQuotation };
+export { allQuotation, allReceiveQuotationList, createQuotation, updateQuotationItems, updateQuotationDetails, deleteQuotation };

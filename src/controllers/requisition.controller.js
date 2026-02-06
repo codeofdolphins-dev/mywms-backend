@@ -105,101 +105,167 @@ const allRequisitionList = asyncHandler(async (req, res) => {
     }
 });
 
-/** GET all receive quotation list based on no */
-const allReceiveQuotationList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem } = req.dbModels;
+/** GET all receive requisition list  */
+const allReceiveRequisitionList = asyncHandler(async (req, res) => {
+    const {
+        BusinessNode, Requisition, NodeDetails,
+        RequisitionItem, User, Product,
+        UnitType, PackageType, Category, Brand
+    } = req.dbModels;
+
+    const current_node = req.user?.userBusinessNode[0];
 
     try {
-        let { reqNo } = req.query;
-        if (!reqNo) throw new Error("Requisition no required!!!");
+        let { page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = "" } = req.query;
 
-        const requisition = await Requisition.findOne({
-            where: { requisition_no: reqNo },
+        limit = Number(limit);
+        const offset = (Number(page) - 1) * limit;
+
+        const { count, rows } = await Requisition.findAndCountAll({
+            distinct: true,
+            subQuery: false,
             include: [
                 {
                     model: BusinessNode,
                     as: "supplierBusinessNode",
-                    attributes: ["id", "name", "node_type_code"],
+                    required: true,
+                    where: {
+                        id: current_node.id,
+                    },
+                    through: {
+                        attributes: ["status", "createdAt"]
+                    },
+                },
+            ],
+
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(requisition_no && { requisition_no }),
+                ...(title && { title }),
+                ...(sortBy && {
+                    [Op.or]: [
+                        { priority: sortBy.toLowerCase() },
+                        { status: sortBy.toLowerCase() },
+                    ],
+                }),
+            },
+
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+        });
+
+        // No data guard
+        if (!rows.length) {
+            return res.status(200).json({
+                success: true,
+                code: 200,
+                message: "Fetched Successfully.",
+                data: [],
+                meta: {
+                    total: 0,
+                    page,
+                    pageSize: limit,
+                    totalPages: 0,
+                },
+            });
+        }
+
+        const requisitionIds = rows.map(r => r.id);
+
+        // STEP 2: Load full requisition graph
+        const requisitions = await Requisition.findAll({
+            where: {
+                id: requisitionIds,
+            },
+            attributes: {
+                exclude: ["status"]
+            },
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "supplierBusinessNode",
+                    required: true,
+                    where: {
+                        id: current_node.id,
+                    },
+                    attributes: ["id"],
                     through: {
                         attributes: ["status", "createdAt"],
                     },
+                },
+                {
+                    model: BusinessNode,
+                    as: "buyer",
                     include: [
                         {
                             model: NodeDetails,
                             as: "nodeDetails",
-                            attributes: ["name", "location", "image"]
-                        },
-                    ],
+                        }
+                    ]
                 },
                 {
                     model: RequisitionItem,
                     as: "items",
-                },
-            ],
-        });
-
-        const quotations = await Quotation.findAll({
-            where: {
-                requisition_id: requisition.id,
-            },
-            include: [
-                {
-                    model: QuotationItem,
-                    as: "quotationItem",
+                    required: false,
                     include: [
                         {
-                            model: RequisitionItem,
-                            as: "sourceRequisitionItem",
+                            model: Product,
+                            as: "product",
+                            include: [
+                                { model: UnitType, as: "unitRef" },
+                                { model: PackageType, as: "packageType" },
+                            ],
                         },
+                        { model: Brand, as: "brand" },
+                        { model: Category, as: "category" },
+                        { model: Category, as: "subCategory" },
                     ],
                 },
             ],
+            order: [["createdAt", "DESC"]],
         });
 
-        const supplierMap = {};
 
-        requisition.supplierBusinessNode.forEach((supplier) => {
-            supplierMap[supplier.id] = {
-                ...supplier.toJSON(),
-                quotation: null,
+        if (!requisitions)
+            return res.status(500).json({
+                success: false,
+                code: 500,
+                message: "Fetched failed!!!",
+            });
+
+        const totalItems = count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const formattedRequisitions = requisitions.map(req => {
+            const plain = req.toJSON();
+
+            // Extract status safely
+            const supplierStatus =
+                plain.supplierBusinessNode?.[0]?.RequisitionSupplier?.status || null;
+
+            // Remove supplierBusinessNode
+            delete plain.supplierBusinessNode;
+
+            return {
+                ...plain,
+                status: supplierStatus,
             };
         });
 
 
-        quotations.forEach((quotation) => {
-            const supplierId = quotation.from_business_node_id;
-
-            if (!supplierMap[supplierId]) return;
-
-            // ⚠️ alias is `quotationItem`, NOT quotationItems
-            const item = quotation.quotationItem?.[0] || null;
-
-            supplierMap[supplierId].quotation = {
-                id: quotation.id,
-                status: quotation.status,
-                valid_till: quotation.valid_till,
-                revision_no: quotation.revision_no,
-                grandTotal: quotation.grandTotal,
-                note: quotation.note,
-                createdAt: quotation.createdAt,
-
-                item: item ? item : null,
-            };
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: formattedRequisitions,
+            meta: {
+                totalItems,
+                currentPage: page,
+                totalPages,
+                limit,
+            },
         });
-
-
-        const response = {
-            requisition,
-            // requisitionItems: requisition.items,
-
-            suppliers: Object.values(supplierMap),
-        };
-
-
-
-
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: response });
-
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -522,5 +588,5 @@ export {
     updateRequisition,
     updateRequisitionItems,
     getCreateRequisitionContext,
-    allReceiveQuotationList
+    allReceiveRequisitionList
 };

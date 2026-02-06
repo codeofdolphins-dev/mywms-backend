@@ -50,7 +50,7 @@ router.use("/requisition", requisitionApi);
 router.use("/hsn", hsnApi);
 router.use("/category", categoryApi);
 router.use("/quotation", quotationApi);
-router.use("/purchaseOrder", purchaseOrderApi);
+router.use("/purchase-order", purchaseOrderApi);
 router.use("/invoice", invoiceApi);
 router.use("/outward", outwardApi);
 router.use("/bom", bomApi);

@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
@@ -61,11 +62,56 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
 
 // POST
 const createPurchasOrder = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItems, Product, Requisition } = req.dbModels;
+    const { Requisition, Quotation, PurchasOrder, PurchaseOrderItems, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { pr_id = "", status = "", priority = "", expected_delivery_date = "", note = "", items = [] } = req.body;
+        const { pr_id = "", status = "", priority = "", expected_delivery_date = "", note = "", items = [], quotationId = "" } = req.body;
         const userDetails = req.user;
+
+        const quotation = await Quotation.findByPk(Number(quotationId));
+        if(!quotation) throw new Error("Quotation record not found!!!");
+
+        const requisitionId = quotation.requisition_id;
+        const businessNodeId = quotation.from_business_node_id;
+
+        await Quotation.update(
+            { status: "rejected" },
+            {
+                where: {
+                    requisition_id: requisitionId,
+                    id: { [Op.ne]: quotation.id }
+                },
+                transaction
+            }
+        );
+        quotation.status = "accepted";
+        quotation.save({ transaction });
+
+        await RequisitionSupplier.update(
+            { status: "rejected" },
+            {
+                where: {
+                    requisition_id: requisitionId,
+                    supplier_business_node_id: { [Op.ne]: businessNodeId }
+                }
+            }, transaction
+        );
+        await RequisitionSupplier.update(
+            { status: "accepted" },
+            {
+                where: {
+                    requisition_id: requisitionId,
+                    supplier_business_node_id: businessNodeId
+                }
+            }, transaction
+        );
+
+        await transaction.commit();
+
+
+        return res.status(200).json({ success: true, code: 200, message: "Purchase Order Created." });
+
+
         if (!pr_id) {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Requisition id must required!!!" });
@@ -120,7 +166,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: "Purchase Order Created." });
 
     } catch (error) {
-        if (transaction) await transaction.rollback();
+        await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
