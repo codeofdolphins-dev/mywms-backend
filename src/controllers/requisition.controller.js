@@ -1,4 +1,4 @@
-import { Op, Sequelize } from "sequelize";
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 
@@ -109,7 +109,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
 const allReceiveRequisitionList = asyncHandler(async (req, res) => {
     const {
         BusinessNode, Requisition, NodeDetails,
-        RequisitionItem, User, Product,
+        RequisitionItem, Product,
         UnitType, PackageType, Category, Brand
     } = req.dbModels;
 
@@ -149,7 +149,6 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
                     ],
                 }),
             },
-
             limit,
             offset,
             order: [["createdAt", "DESC"]],
@@ -299,7 +298,6 @@ const getCreateRequisitionContext = asyncHandler(async (req, res) => {
 
 // POST
 const createRequisition = asyncHandler(async (req, res) => {
-
     const { Requisition, RequisitionItem, Product, BusinessNode } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
@@ -308,7 +306,7 @@ const createRequisition = asyncHandler(async (req, res) => {
         const userDetails = req.user;
         const current_node = userDetails?.userBusinessNode[0];
         const year = new Date().getFullYear();
-        const monthName = new Date().toLocaleString('default', { month: 'long' });
+        const monthName = new Date().toLocaleString('default', { month: 'short' });
 
 
         if (!title || items?.length < 1 || supplier_node?.length < 1) throw new Error("Required fields are missing!!!");
@@ -320,7 +318,6 @@ const createRequisition = asyncHandler(async (req, res) => {
             }
         });
         if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
-        // console.log(supplierNode); return
 
         const allowNodes = await getAllowedBusinessNodes(current_node?.id, req.dbModels, false);
 
@@ -410,23 +407,12 @@ const deleteRequisition = asyncHandler(async (req, res) => {
         const isDeleted = await Requisition.destroy({
             where: { id: parseInt(id, 10) },
         });
-        if (!isDeleted)
-            return res.status(503).json({
-                success: false,
-                code: 503,
-                message: "Deletion failed!!!",
-            });
+        if (!isDeleted) return res.status(503).json({success: false, code: 503, message: "Deletion failed!!!" });
 
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Delete Successfully.",
-        });
+        return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
     } catch (error) {
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 

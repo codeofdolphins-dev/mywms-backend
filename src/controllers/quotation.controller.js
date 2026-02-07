@@ -7,7 +7,7 @@ const allQuotation = asyncHandler(async (req, res) => {
     const current_node = req.user?.userBusinessNode[0];
 
     try {
-        let { page = 1, limit = 10, id = "", quotation_no = "", sortBy = "" } = req.query;
+        let { page = 1, limit = 10, id = "", quotation_no = "", sortBy = "", requisitionId = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -17,6 +17,7 @@ const allQuotation = asyncHandler(async (req, res) => {
                 ...(id && { id: Number(id) }),
                 ...(quotation_no && { quotation_no: quotation_no }),
                 ...(sortBy && { status: sortBy.toLowerCase() }),
+                ...(requisitionId && { requisition_id: Number(requisitionId) }),
                 from_business_node_id: current_node.id
             },
             include: [
@@ -24,13 +25,13 @@ const allQuotation = asyncHandler(async (req, res) => {
                     model: QuotationItem,
                     as: "quotationItem",
                     include: [
-                        {
+                        ...(requisitionId && {
                             model: RequisitionItem,
                             as: "sourceRequisitionItem"
-                        }
+                        })
                     ]
                 },
-                {
+                ...(requisitionId && {
                     model: BusinessNode,
                     as: "toBusinessNode",
                     include: [
@@ -39,7 +40,7 @@ const allQuotation = asyncHandler(async (req, res) => {
                             as: "nodeDetails",
                         }
                     ]
-                },
+                })
             ],
             limit,
             offset,
@@ -75,7 +76,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, Brand, Category } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, reqNo } = req.query;
+        let { page = 1, limit = 10, reqNo = "", quotationId = "", } = req.query;
         if (!reqNo) throw new Error("Requisition no required!!!");
 
         page = parseInt(page);
@@ -115,9 +116,14 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                 {
                     model: QuotationItem,
                     as: "quotationItem",
+                    separate: true,
+                    ...(quotationId && { where: { quotation_id: Number(quotationId) } }),
                     attributes: {
                         exclude: ["quotation_id", "createdAt", "updatedAt"]
                     },
+                    limit,
+                    offset,
+                    order: [["createdAt", "ASC"]],
                     include: [
                         {
                             model: RequisitionItem,
@@ -152,9 +158,6 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                     ],
                 },
             ],
-            limit,
-            offset,
-            order: [["createdAt", "ASC"]],
         });
 
         const supplierMap = {};
@@ -169,6 +172,26 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                 quotation: null,
             };
         });
+
+
+        /** define pagination calculation */
+        const totalItems = await QuotationItem.count({
+            where: {
+                ...(quotationId && { quotation_id: Number(quotationId) })
+            },
+            include: [
+                {
+                    model: Quotation,
+                    as: "quotationDetails",
+                    where: {
+                        requisition_id: requisition.id
+                    }
+                }
+            ]
+        });
+        const totalPages = Math.ceil(totalItems / limit);
+
+
 
         quotations.forEach((quotation) => {
             const supplierId = quotation.from_business_node_id;
@@ -187,6 +210,12 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                 createdAt: quotation.createdAt,
 
                 item: item ? item : null,
+                meta: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    limit
+                }
             };
         });
 
@@ -199,21 +228,12 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
             suppliers: Object.values(supplierMap),
         };
 
-        /** define pagination calculation */
-        const totalItems = count;
-        const totalPages = Math.ceil(totalItems / limit);
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
             data: response,
-            meta: {
-                totalItems,
-                totalPages,
-                currentPage: page,
-                limit
-            }
         });
 
     } catch (error) {
@@ -229,9 +249,9 @@ const createQuotation = asyncHandler(async (req, res) => {
     try {
         const { reqNo = "", validTill = "", note = "", grandTotal = "", items = [] } = req.body;
         const year = new Date().getFullYear();
-        const monthName = new Date().toLocaleString('default', { month: 'long' });
+        const monthName = new Date().toLocaleString('default', { month: 'short' });
 
-        if (!reqNo) throw new Error("Requisition No missing!!!");
+        if (!reqNo) throw new Error("Requisition no required!!!");
         if (items.length == 0) throw new Error("Empty items not allow!!!");
 
         const userDetails = req.user;
@@ -239,7 +259,7 @@ const createQuotation = asyncHandler(async (req, res) => {
 
 
         const requisition = await Requisition.findOne({ where: { requisition_no: reqNo } });
-        if (!requisition) throw new Error("No Requisition found!!!");
+        if (!requisition) throw new Error("Requisition not found!!!");
 
         const existingQuotation = await Quotation.findOne({
             where: {
@@ -297,6 +317,7 @@ const createQuotation = asyncHandler(async (req, res) => {
         }
 
         await requisitionSupplier.update({ status: "quoted" }, { transaction });
+        await requisition.update({ status: "quoted" }, { transaction });
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Quotation created." });

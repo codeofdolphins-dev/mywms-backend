@@ -1,5 +1,4 @@
 import { DataTypes } from "sequelize";
-// import { db_obj } from "../db/config.js";
 
 function RolePermissions(sequelize) {
     return sequelize.define('RolePermissions', {

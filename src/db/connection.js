@@ -1,11 +1,9 @@
 import { dataSeederRoot } from "../helper/seeder.js";
-import { getTenantConnection, rootDB } from "./tenantMenager.service.js";
+import { rootDB } from "./tenantMenager.service.js";
 
 
 const connectRootDB = async () => {
     const { rootSequelize, models } = await rootDB();
-    // const { sequelize: tenant } = await getTenantConnection("tenant_tenant");
-    // await tenant.sync({ alter: true });
     try {
         // await rootSequelize.sync({ force: true });
 
