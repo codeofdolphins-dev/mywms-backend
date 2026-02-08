@@ -18,7 +18,7 @@ const defineRootAssociations = (models) => {
         Quotation,
         QuotationItem,
         PurchasOrder,
-        PurchaseOrderItems,
+        PurchaseOrderItem,
         Invoice,
         InvoiceItems,
         Supplier,
@@ -170,6 +170,20 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisitionItem ↔ PurchaseOrderItem
+    RequisitionItem.hasOne(PurchaseOrderItem, {
+        foreignKey: "requisition_item_id",
+        as: "linkedPurchaseOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.belongsTo(RequisitionItem, {
+        foreignKey: "requisition_item_id",
+        as: "poi_sourceRequisitionItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // ********************************************One-To-Many*********************************
 
     // requisition <-> requisitionItem
@@ -214,6 +228,26 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+
+
+
+
+
+    /************* PURCHASE ORDER (PO) ********************/
+    // purchaseOrderItem(POD) <-> purchasOrder(PO)
+    PurchaseOrderItem.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(PurchaseOrderItem, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrderItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // purchasOrder(po) <-> user
     PurchasOrder.belongsTo(User, {
         foreignKey: "created_by",
@@ -228,48 +262,84 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // purchasOrder(po) <-> user
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "approved_by",
-        as: "POapprovedBy",
+    // requisition - purchasOrder
+    PurchasOrder.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "requisitions",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "approved_by",
-        as: "POsApprover",
+    Requisition.hasMany(PurchasOrder, {
+        foreignKey: "requisition_id",
+        as: "purchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchasOrder - quotation
+    PurchasOrder.belongsTo(Quotation, {
+        foreignKey: "quotation_id",
+        as: "linkedQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Quotation.hasMany(PurchasOrder, {
+        foreignKey: "quotation_id",
+        as: "linkedPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchasOrder - businessNode
+    PurchasOrder.belongsTo(BusinessNode, {
+        foreignKey: "form_business_node_id",
+        as: "poFormBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(PurchasOrder, {
+        foreignKey: "form_business_node_id",
+        as: "fromPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchasOrder - businessNode
+    PurchasOrder.belongsTo(BusinessNode, {
+        foreignKey: "to_business_node_id",
+        as: "poToBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(PurchasOrder, {
+        foreignKey: "to_business_node_id",
+        as: "toPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // purchaseOrderItem - Product
+    PurchaseOrderItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "poiProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(PurchaseOrderItem, {
+        foreignKey: "product_id",
+        as: "productPOItem",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
 
-    // inward <-> purchasOrder(po)
-    Inward.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "poReference",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Inward, {
-        foreignKey: "po_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
-    // invoice <-> purchasOrder(po)
-    Invoice.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "invoicePurchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Invoice, {
-        foreignKey: "po_id",
-        as: "purchasOrderInvoices",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
+
+
+
+
+
+
 
     // invoiceItems <-> invoice
     InvoiceItems.belongsTo(Invoice, {
@@ -295,20 +365,6 @@ const defineRootAssociations = (models) => {
     Product.hasMany(InvoiceItems, {
         foreignKey: "product_id",
         as: "productInvoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition - purchasOrder
-    PurchasOrder.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "requisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(PurchasOrder, {
-        foreignKey: "pr_id",
-        as: "purchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -467,6 +523,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
 
     // ********************************************Many-To-One*********************************
 
@@ -826,7 +883,7 @@ const defineTenantAssociations = (models) => {
         Quotation,
         QuotationItem,
         PurchasOrder,
-        PurchaseOrderItems,
+        PurchaseOrderItem,
         Invoice,
         InvoiceItems,
         Supplier,
@@ -965,6 +1022,20 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisitionItem ↔ purchaseOrderItem
+    RequisitionItem.hasOne(PurchaseOrderItem, {
+        foreignKey: "requisition_item_id",
+        as: "linkedPurchaseOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.belongsTo(RequisitionItem, {
+        foreignKey: "requisition_item_id",
+        as: "poi_sourceRequisitionItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // ********************************************One-To-Many*********************************
 
     // requisition <-> requisitionItem
@@ -1009,6 +1080,29 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+
+
+
+
+
+
+
+
+    /************* PURCHASE ORDER (PO) ********************/
+    // purchaseOrderItem(POD) <-> purchasOrder(PO)
+    PurchaseOrderItem.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(PurchaseOrderItem, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrderItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // purchasOrder(PO) <-> user
     PurchasOrder.belongsTo(User, {
         foreignKey: "created_by",
@@ -1023,61 +1117,82 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // purchasOrder(PO) <-> user
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "approved_by",
-        as: "POapprovedBy",
+    // Requisition - PurchasOrder
+    PurchasOrder.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "requisitions",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "approved_by",
-        as: "POsApprover",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // PurchaseOrderItems(POD) <-> PurchasOrder(PO)
-    PurchaseOrderItems.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "purchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(PurchaseOrderItems, {
-        foreignKey: "po_id",
-        as: "purchasOrderDetails",
+    Requisition.hasMany(PurchasOrder, {
+        foreignKey: "requisition_id",
+        as: "purchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
-    // Inward <-> PurchasOrder(PO)
-    Inward.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "poReference",
+    // purchasOrder - quotation
+    PurchasOrder.belongsTo(Quotation, {
+        foreignKey: "quotation_id",
+        as: "linkedQuotation",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    PurchasOrder.hasMany(Inward, {
-        foreignKey: "po_id",
-        as: "stockInward",
+    Quotation.hasMany(PurchasOrder, {
+        foreignKey: "quotation_id",
+        as: "linkedPurchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
-    // Invoice <-> PurchasOrder(PO)
-    Invoice.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "invoicePurchasOrder",
+    // purchasOrder - businessNode
+    PurchasOrder.belongsTo(BusinessNode, {
+        foreignKey: "form_business_node_id",
+        as: "poFormBusinessNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    PurchasOrder.hasMany(Invoice, {
-        foreignKey: "po_id",
-        as: "purchasOrderInvoices",
+    BusinessNode.hasMany(PurchasOrder, {
+        foreignKey: "form_business_node_id",
+        as: "fromPurchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+    // purchasOrder - businessNode
+    PurchasOrder.belongsTo(BusinessNode, {
+        foreignKey: "to_business_node_id",
+        as: "poToBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(PurchasOrder, {
+        foreignKey: "to_business_node_id",
+        as: "toPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchaseOrderItem - Product
+    PurchaseOrderItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "poiProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(PurchaseOrderItem, {
+        foreignKey: "product_id",
+        as: "productPOItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+
+
+
+
 
     // InvoiceItems <-> Invoice
     InvoiceItems.belongsTo(Invoice, {
@@ -1103,20 +1218,6 @@ const defineTenantAssociations = (models) => {
     Product.hasMany(InvoiceItems, {
         foreignKey: "product_id",
         as: "productInvoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Requisition - PurchasOrder
-    PurchasOrder.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "requisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(PurchasOrder, {
-        foreignKey: "pr_id",
-        as: "purchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

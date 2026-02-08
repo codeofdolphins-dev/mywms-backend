@@ -21,11 +21,6 @@ function Product(sequelize) {
             allowNull: false,
             unique: true,
         },
-        gst_type: {
-            type: DataTypes.ENUM("include", "exclude"),
-            defaultValue: "exclude",
-            allowNull: false
-        },
         product_type: {
             type: DataTypes.ENUM("raw", "finished"),
             defaultValue: "raw",
@@ -43,21 +38,9 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        unit: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
         description: {
             type: DataTypes.STRING,
             allowNull: true
-        },
-        purchase_price: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-        },
-        MRP: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
         },
         reorder_level: {
             type: DataTypes.INTEGER,

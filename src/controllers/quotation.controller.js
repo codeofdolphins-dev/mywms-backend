@@ -25,13 +25,13 @@ const allQuotation = asyncHandler(async (req, res) => {
                     model: QuotationItem,
                     as: "quotationItem",
                     include: [
-                        ...(requisitionId && {
+                        {
                             model: RequisitionItem,
                             as: "sourceRequisitionItem"
-                        })
+                        }
                     ]
                 },
-                ...(requisitionId && {
+                {
                     model: BusinessNode,
                     as: "toBusinessNode",
                     include: [
@@ -40,7 +40,7 @@ const allQuotation = asyncHandler(async (req, res) => {
                             as: "nodeDetails",
                         }
                     ]
-                })
+                }
             ],
             limit,
             offset,

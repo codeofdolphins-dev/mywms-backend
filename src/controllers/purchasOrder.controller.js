@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allPurchasOrderList = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItems, User, Product } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem, User, Product } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "" } = req.query;
         page = parseInt(page);
@@ -19,7 +19,7 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
                     attributes: ["id", "email"]
                 },
                 {
-                    model: PurchaseOrderItems,
+                    model: PurchaseOrderItem,
                     as: "purchasOrderDetails",
                     attributes: {
                         exclude: ["po_id"]
@@ -62,7 +62,7 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
 
 // POST
 const createPurchasOrder = asyncHandler(async (req, res) => {
-    const { Requisition, Quotation, PurchasOrder, PurchaseOrderItems, RequisitionSupplier } = req.dbModels;
+    const { Requisition, Quotation, PurchasOrder, PurchaseOrderItem, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
         const { pr_id = "", status = "", priority = "", expected_delivery_date = "", note = "", items = [], quotationId = "" } = req.body;
@@ -148,7 +148,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
             const line_total = parseInt(item.quantity_ordered, 10) * parseInt(item.unit_price, 10);
             total += line_total;
 
-            await PurchaseOrderItems.create({
+            await PurchaseOrderItem.create({
                 po_id: purchasOrder.id,
                 product_id: product.id,
                 quantity_ordered: parseInt(item.quantity_ordered, 10),
@@ -224,15 +224,15 @@ const updatePurchasOrder = asyncHandler(async (req, res) => {
 });
 
 const updatePurchasOrderItem = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItems } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem } = req.dbModels;
     try {
         const { id = "", quantity_ordered = "", unit_price = "", note = "" } = req.body;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
 
-        const purchaseOrderItems = await PurchaseOrderItems.findByPk(id);
-        if (!purchaseOrderItems) return res.status(404).json({ success: false, code: 404, message: "Item Not found!!!" });
+        const PurchaseOrderItem = await PurchaseOrderItem.findByPk(id);
+        if (!PurchaseOrderItem) return res.status(404).json({ success: false, code: 404, message: "Item Not found!!!" });
 
-        const purchasOrder = await PurchasOrder.findByPk(purchaseOrderItems.po_id);
+        const purchasOrder = await PurchasOrder.findByPk(PurchaseOrderItem.po_id);
 
         let updateDetails = {};
         if (note) updateDetails.note = note;
@@ -243,20 +243,20 @@ const updatePurchasOrderItem = asyncHandler(async (req, res) => {
             updateDetails.unit_price = unit_price;
 
         } else if (unit_price) {
-            updateDetails.line_total = purchaseOrderItems.quantity_ordered * unit_price;
+            updateDetails.line_total = PurchaseOrderItem.quantity_ordered * unit_price;
             updateDetails.unit_price = unit_price;
 
         } else if (quantity_ordered) {
-            updateDetails.line_total = quantity_ordered * purchaseOrderItems.unit_price;
+            updateDetails.line_total = quantity_ordered * PurchaseOrderItem.unit_price;
             updateDetails.quantity_ordered = quantity_ordered;
         }
 
-        await PurchaseOrderItems.update(
+        await PurchaseOrderItem.update(
             updateDetails,
             { where: { id } }
         );
 
-        const total_amount = purchasOrder.total_amount - purchaseOrderItems.line_total + updateDetails.line_total
+        const total_amount = purchasOrder.total_amount - PurchaseOrderItem.line_total + updateDetails.line_total
         const isUpdate = await PurchasOrder.update(
             { total_amount },
             { where: { id: purchasOrder.id } }

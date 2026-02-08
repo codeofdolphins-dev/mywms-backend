@@ -240,8 +240,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
             const plain = req.toJSON();
 
             // Extract status safely
-            const supplierStatus =
-                plain.supplierBusinessNode?.[0]?.RequisitionSupplier?.status || null;
+            const supplierStatus = plain.supplierBusinessNode?.[0]?.RequisitionSupplier?.status || null;
 
             // Remove supplierBusinessNode
             delete plain.supplierBusinessNode;

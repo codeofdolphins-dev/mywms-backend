@@ -18,7 +18,7 @@ import HSN from "./hsn_master.model.js";
 import Quotation from "./quotation.model.js";
 import QuotationItem from "./quotationItem.model.js";
 import PurchasOrder from "./purchasOrder.model.js";
-import PurchaseOrderItems from "./purchaseOrderItems.model.js";
+import PurchaseOrderItem from "./PurchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
 import Supplier from "./supplier.model.js";
@@ -61,7 +61,7 @@ const defineRootModels = (rootSequelize) => {
     Quotation(rootSequelize);
     QuotationItem(rootSequelize);
     PurchasOrder(rootSequelize);
-    PurchaseOrderItems(rootSequelize);
+    PurchaseOrderItem(rootSequelize);
     Invoice(rootSequelize);
     InvoiceItems(rootSequelize);
     Inventory(rootSequelize);
@@ -103,7 +103,7 @@ const defineTenantModels = (sequelize) => {
     Quotation(sequelize);
     QuotationItem(sequelize);
     PurchasOrder(sequelize);    
-    PurchaseOrderItems(sequelize);
+    PurchaseOrderItem(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
     Inventory(sequelize);

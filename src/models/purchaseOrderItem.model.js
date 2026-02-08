@@ -1,8 +1,12 @@
 import { DataTypes } from "sequelize";
 
-function PurchaseOrderItems(sequelize) {
-    return sequelize.define("PurchaseOrderItems", {
-        po_id: {
+function PurchaseOrderItem(sequelize) {
+    return sequelize.define("PurchaseOrderItem", {
+        purchase_order_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        requisition_item_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -10,11 +14,7 @@ function PurchaseOrderItems(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        note: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        quantity_ordered: {
+        qty: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
@@ -23,6 +23,10 @@ function PurchaseOrderItems(sequelize) {
             type: DataTypes.DECIMAL,
             allowNull: false
         },
+        tax_percent: {
+            type: DataTypes.DECIMAL,
+            allowNull: true
+        },
         line_total: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
@@ -30,4 +34,4 @@ function PurchaseOrderItems(sequelize) {
         }
     });
 }
-export default PurchaseOrderItems;
+export default PurchaseOrderItem;

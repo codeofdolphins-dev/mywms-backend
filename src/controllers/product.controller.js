@@ -116,9 +116,8 @@ const createRawProduct = asyncHandler(async (req, res) => {
         let {
             name = "", categories = "", brands = "",
             hsn_id = "", sku = "", barcode = "",
-            gst_type = "", package_type_id = "",
-            unit_type_id = "", measure = "", unit = "", MRP = "",
-            description = "", purchase_price = "", reorder_level = "",
+            package_type_id = "", unit_type_id = "", measure = "",
+            description = "", reorder_level = "",
         } = req.body;
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
@@ -201,14 +200,10 @@ const createRawProduct = asyncHandler(async (req, res) => {
             hsn_id: hsn.id,
             sku,
             barcode,
-            gst_type: gst_type !== "" ? gst_type.trim().toLowerCase() : undefined,
             package_type: packageType.name,
             unit_type: unitType.name,
             measure,
-            // unit,
             description,
-            // purchase_price: parseFloat(purchase_price),
-            // MRP: parseFloat(MRP),
             reorder_level: Number(reorder_level),
             ...(photo ? { photo: `${dbName}/${photo}` } : null)
         }, { transaction });
