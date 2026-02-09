@@ -135,43 +135,21 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
     const profile_image = req?.file?.filename || null;
     try {
-        let { full_name = "", location = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
+        let { full_name = "", location = "", address = "", state = "", district = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
 
-        if ([full_name, location, address, state_id, district_id, pincode, node].some(item => item === "")) {
+        if ([full_name, location, address, state, district, pincode, node].some(item => item === "")) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
         }
         node = JSON.parse(node);
+        state = JSON.parse(state);
+        district = JSON.parse(district);
 
         const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
         if (!tenantBusinessFlow) {
             throw new Error("Invalid business node type code!!!");
-        }
-
-        // // find parent business node if not root
-        // let parentNodeId = null;
-        // if (tenantBusinessFlow.sequence !== 1) {
-        //     const parentFlow = await TenantBusinessFlow.findOne({
-        //         where: {
-        //             sequence: tenantBusinessFlow.sequence - 1
-        //         },
-        //         transaction
-        //     });
-        //     if (!parentFlow) {
-        //         throw new Error("Parent flow not found!!!");
-        //     }
-
-        //     const parentBusinessNode = await BusinessNode.findOne({
-        //         where: {
-        //             node_type_code: parentFlow.node_type_code
-        //         },
-        //         transaction
-        //     });
-        //     console.log(parentBusinessNode);
-        //     throw new Error("Invalid business node type code!!!");
-        //     parentNodeId = parentBusinessNode.id;
-        // }
+        };
 
         /** create business node */
         const businessNode = await BusinessNode.create({
@@ -187,8 +165,8 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
             location,
             address: {
                 address,
-                state_id,
-                district_id,
+                state: state.name,
+                district: district.name,
                 pincode,
                 ...((lat && long) ? { lat, long } : {})
             },
@@ -300,6 +278,7 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
 
 
 // UPDATE
+
 const updateCompanyDetails = asyncHandler(async (req, res) => {
     const { User, CompanyDetails } = req.dbModels;
     try {
