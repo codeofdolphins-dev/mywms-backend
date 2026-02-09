@@ -73,11 +73,11 @@ const allQuotation = asyncHandler(async (req, res) => {
 
 /** GET all receive quotation list based on no */
 const allReceiveQuotationList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, Brand, Category } = req.dbModels;
+    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, Brand, Category, PurchasOrder } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, reqNo = "", quotationId = "", } = req.query;
-        if (!reqNo) throw new Error("Requisition no required!!!");
+        if (!reqNo) throw new Error("Requisition no missing!!!");
 
         page = parseInt(page);
         limit = parseInt(limit);
@@ -157,6 +157,11 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                         },
                     ],
                 },
+                {
+                    model: PurchasOrder,
+                    as: "linkedPurchaseOrders",
+                    attributes: ["po_no"]
+                }
             ],
         });
 
@@ -208,6 +213,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                 grandTotal: quotation.grandTotal,
                 note: quotation.note,
                 createdAt: quotation.createdAt,
+                purchaseOrder_no: quotation.linkedPurchaseOrders.po_no,
 
                 item: item ? item : null,
                 meta: {
@@ -241,6 +247,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 // POST
 const createQuotation = asyncHandler(async (req, res) => {

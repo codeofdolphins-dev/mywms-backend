@@ -8,7 +8,8 @@ function Quotation(sequelize) {
         },
         requisition_id: {   // rename from pr_id
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
         from_business_node_id: { // Location B (supplier role)
             type: DataTypes.INTEGER,

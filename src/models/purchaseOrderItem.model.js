@@ -10,10 +10,6 @@ function PurchaseOrderItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        product_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
         qty: {
             type: DataTypes.INTEGER,
             allowNull: false,

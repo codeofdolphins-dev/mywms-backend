@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/all").get(verifyPermission("purchaseOrder:read"), allPurchasOrderList); // optional ?id= &page= &limit=
+router.route("/list").get(verifyPermission("purchaseOrder:read"), allPurchasOrderList); // optional ?id= &page= &limit=
 
 router.route("/create").post(verifyPermission("purchaseOrder:create"), createPurchasOrder);
 router.route("/delete/:id").delete(verifyPermission("purchaseOrder:delete"), deletePurchasOrder);

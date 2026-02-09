@@ -4,11 +4,12 @@ function PurchasOrder(sequelize) {
     return sequelize.define("PurchasOrder", {
         po_no: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         quotation_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            unique: true
         },
         requisition_id: {
             type: DataTypes.INTEGER,

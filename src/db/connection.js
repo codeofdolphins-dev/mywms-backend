@@ -5,7 +5,7 @@ import { rootDB } from "./tenantMenager.service.js";
 const connectRootDB = async () => {
     const { rootSequelize, models } = await rootDB();
     try {
-        await rootSequelize.sync({ force: true });
+        // await rootSequelize.sync({ force: true });
 
         const recordCount = await models.Role.count();
         if (recordCount === 0) {
