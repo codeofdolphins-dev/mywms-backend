@@ -23,8 +23,12 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
             ]
         });
         if (!user || !user.accessToken || user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });
+        
+        const data = user.toJSON();
+        const activeNode = data?.userBusinessNode?.length === 1 ? data?.userBusinessNode?.[0]?.id : null;
 
         req.user = user;
+        req.activeNode = activeNode;
         req.isAdmin = decodedToken?.isAdmin ? decodedToken.isAdmin : false;
         req.role = decodedToken.role;
 

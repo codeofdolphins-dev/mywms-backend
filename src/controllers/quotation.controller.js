@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // GET
 const allQuotation = asyncHandler(async (req, res) => {
     const { Quotation, QuotationItem, BusinessNode, NodeDetails, RequisitionItem } = req.dbModels;
-    const current_node = req.user?.userBusinessNode[0];
+    const current_node = req.activeNode;
 
     try {
         let { page = 1, limit = 10, id = "", quotation_no = "", sortBy = "", requisitionId = "" } = req.query;
@@ -18,7 +18,7 @@ const allQuotation = asyncHandler(async (req, res) => {
                 ...(quotation_no && { quotation_no: quotation_no }),
                 ...(sortBy && { status: sortBy.toLowerCase() }),
                 ...(requisitionId && { requisition_id: Number(requisitionId) }),
-                from_business_node_id: current_node.id
+                from_business_node_id: current_node
             },
             include: [
                 {
@@ -262,7 +262,7 @@ const createQuotation = asyncHandler(async (req, res) => {
         if (items.length == 0) throw new Error("Empty items not allow!!!");
 
         const userDetails = req.user;
-        const current_node = userDetails?.userBusinessNode[0];
+        const current_node = req.activeNode;
 
 
         const requisition = await Requisition.findOne({ where: { requisition_no: reqNo } });
@@ -271,7 +271,7 @@ const createQuotation = asyncHandler(async (req, res) => {
         const existingQuotation = await Quotation.findOne({
             where: {
                 requisition_id: requisition.id,
-                from_business_node_id: current_node.id
+                from_business_node_id: current_node
             }
         });
         if (existingQuotation) {
@@ -282,14 +282,14 @@ const createQuotation = asyncHandler(async (req, res) => {
         const requisitionSupplier = await RequisitionSupplier.findOne({
             where: {
                 requisition_id: requisition.id,
-                supplier_business_node_id: current_node.id
+                supplier_business_node_id: current_node
             }
         });
         if (!requisitionSupplier) throw new Error("This requisition is not assigned to your location");
 
         const quotation = await Quotation.create({
             requisition_id: requisition.id,
-            from_business_node_id: current_node.id,
+            from_business_node_id: current_node,
             to_business_node_id: requisition.buyer_business_node_id,
             valid_till: new Date(validTill),
             created_by: userDetails.id,

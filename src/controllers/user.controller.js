@@ -50,7 +50,10 @@ const currentUser = asyncHandler(async (req, res) => {
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
-        const plainUser = user.get({ plain: true });
+        const plainUser = user.toJSON();
+
+        // set active node
+        plainUser.activeNode = req.activeNode;
 
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,

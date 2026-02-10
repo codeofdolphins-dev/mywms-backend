@@ -5,7 +5,7 @@ import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, User, Product, UnitType, PackageType, Category, Brand } = req.dbModels;
-    const current_node = req.user?.userBusinessNode[0];
+    const current_node = req.activeNode;
 
     try {
         let { page = 1, limit = 10, id = "", requisition_no = "", title = "", isAdmin = false, sortBy = "" } = req.query;
@@ -18,7 +18,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                 ...(id && { id: Number(id) }),
                 ...(requisition_no && { requisition_no }),
                 ...(title && { title }),
-                ...(!isAdmin && { buyer_business_node_id: current_node.id }),
+                ...(!isAdmin && { buyer_business_node_id: current_node }),
                 ...(sortBy && {
                     [Op.or]: [
                         { priority: sortBy.toLowerCase() },
@@ -113,7 +113,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
         UnitType, PackageType, Category, Brand
     } = req.dbModels;
 
-    const current_node = req.user?.userBusinessNode[0];
+    const current_node = req.activeNode;
 
     try {
         let { page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = "" } = req.query;
@@ -130,7 +130,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
                     as: "supplierBusinessNode",
                     required: true,
                     where: {
-                        id: current_node.id,
+                        id: current_node,
                     },
                     through: {
                         attributes: ["status", "createdAt"]
@@ -186,7 +186,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
                     as: "supplierBusinessNode",
                     required: true,
                     where: {
-                        id: current_node.id,
+                        id: current_node,
                     },
                     attributes: ["id"],
                     through: {
@@ -303,7 +303,7 @@ const createRequisition = asyncHandler(async (req, res) => {
     try {
         const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", items = [], } = req.body;
         const userDetails = req.user;
-        const current_node = userDetails?.userBusinessNode[0];
+        const current_node = req.activeNode;
         const year = new Date().getFullYear();
         const monthName = new Date().toLocaleString('default', { month: 'short' });
 
@@ -318,7 +318,7 @@ const createRequisition = asyncHandler(async (req, res) => {
         });
         if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
 
-        const allowNodes = await getAllowedBusinessNodes(current_node?.id, req.dbModels, false);
+        const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
 
         // check if at least one supplier node is allowed
         const isAllowed = supplierNode.some(supplier =>
@@ -330,7 +330,7 @@ const createRequisition = asyncHandler(async (req, res) => {
         }
 
         const requisition = await Requisition.create({
-            buyer_business_node_id: current_node?.id,
+            buyer_business_node_id: current_node,
             required_by_date,
             title,
             notes,

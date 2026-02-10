@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // GET
 const allPurchasOrderList = asyncHandler(async (req, res) => {
     const { PurchasOrder, PurchaseOrderItem, User, Product, RequisitionItem, Brand, Category, BusinessNode, NodeDetails } = req.dbModels;
-    const current_node = req.user?.userBusinessNode[0];
+    const current_node = req.activeNode;
 
     try {
         let { page = 1, limit = 10, poNo = "" } = req.query;
@@ -17,7 +17,7 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
         const purchasOrder = await PurchasOrder.findAll({
             where: {
                 ...(poNo && { po_no: { [Op.iLike]: poNo } }),
-                // form_business_node_id: current_node.id
+                // form_business_node_id: current_node
             },
             include: [
                 {
@@ -27,6 +27,16 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
                 {
                     model: BusinessNode,
                     as: "poFormBusinessNode",
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails"
+                        }
+                    ]
+                },
+                {
+                    model: BusinessNode,
+                    as: "poToBusinessNode",
                     include: [
                         {
                             model: NodeDetails,
@@ -117,7 +127,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
     try {
         const { quotationId = "" } = req.body;
         const userDetails = req.user;
-        const current_node = userDetails?.userBusinessNode[0];  // from business node
+        const current_node = req.activeNode;  // from business node
         const year = new Date().getFullYear();
         const monthName = new Date().toLocaleString('default', { month: 'short' });
 
@@ -181,7 +191,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
             po_no: "0",
             quotation_id: quotation.id,
             requisition_id: Number(requisitionId),
-            form_business_node_id: Number(current_node.id),
+            form_business_node_id: Number(current_node),
             to_business_node_id: Number(businessNodeId),
             status: "released",
             po_date: new Date(),
