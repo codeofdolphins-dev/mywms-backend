@@ -6,7 +6,7 @@ function BusinessNode(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        sequence: {
+        tenant_business_flow_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },

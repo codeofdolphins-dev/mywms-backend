@@ -38,6 +38,7 @@ const defineRootAssociations = (models) => {
         NodeUser,
         NodeDetails,
         RequisitionSupplier,
+        TenantBusinessFlow,
     } = models;
 
     // ******************************************** Self-Association *********************************
@@ -511,6 +512,20 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // businessNode <-> tenantBusinessFlow
+    BusinessNode.belongsTo(TenantBusinessFlow, {
+        foreignKey: "tenant_business_flow_id",
+        as: "parentFlow",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TenantBusinessFlow.hasMany(BusinessNode, {
+        foreignKey: "tenant_business_flow_id",
+        as: "flowNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
     // ********************************************Many-To-One*********************************
 
@@ -889,6 +904,7 @@ const defineTenantAssociations = (models) => {
         BusinessNode,
         BusinessNodeType,
         RequisitionSupplier,
+        TenantBusinessFlow
     } = models;
 
     // ******************************************** Self-Association *********************************
@@ -1330,6 +1346,20 @@ const defineTenantAssociations = (models) => {
     User.hasMany(Quotation, {
         foreignKey: "created_by",
         as: "createQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode <-> tenantBusinessFlow
+    BusinessNode.belongsTo(TenantBusinessFlow, {
+        foreignKey: "tenant_business_flow_id",
+        as: "parentFlow",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TenantBusinessFlow.hasMany(BusinessNode, {
+        foreignKey: "tenant_business_flow_id",
+        as: "flowNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

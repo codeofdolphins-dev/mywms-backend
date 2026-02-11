@@ -1066,12 +1066,12 @@ export const permissions = [
 ]
 
 
-export const warehouseTypeMaster = [
-  { warehouse_type: "Mfg Bond Warehouse" },
-  { warehouse_type: "Mother Warehouse (National level)" },
-  { warehouse_type: "Central Warehouse" },
-  { warehouse_type: "Regional Warehouse" },
-  { warehouse_type: "State Warehouse" },
-  { warehouse_type: "3PL Warehouse" },
-  { warehouse_type: "Retail Warehouse / Backroom Storage" },
-]
+// export const warehouseTypeMaster = [
+//   { warehouse_type: "Mfg Bond Warehouse" },
+//   { warehouse_type: "Mother Warehouse (National level)" },
+//   { warehouse_type: "Central Warehouse" },
+//   { warehouse_type: "Regional Warehouse" },
+//   { warehouse_type: "State Warehouse" },
+//   { warehouse_type: "3PL Warehouse" },
+//   { warehouse_type: "Retail Warehouse / Backroom Storage" },
+// ]

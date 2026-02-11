@@ -28,6 +28,45 @@ const allBusinessNodes = asyncHandler(async (req, res) => {
     }
 });
 
+
+const tenantBusinessFlow = asyncHandler(async (req, res) => {
+    const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
+    try {
+        const { email = "" } = req.query;
+        if (!email) throw new Error("Email required!!!");
+
+        const result = await Tenant.findOne({
+            where: { email },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "tenantsName",
+                    include: [
+                        {
+                            model: TenantBusinessFlowMaster,
+                            as: "businessFlows"
+                        }
+                    ]
+                },
+            ]
+        });
+
+        const formatedResult = result.toJSON();
+        formatedResult.businessFlows = result.tenantsName.businessFlows;
+        delete formatedResult.tenantsName.businessFlows;
+
+        return res.status(200).json({ success: true, code: 200, data: formatedResult });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+
+
+
 const all_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
     try {
@@ -77,9 +116,9 @@ const all_company = asyncHandler(async (req, res) => {
     }
 });
 
-
-
 // POST
+
+/** ==>> not in use anymore  */
 const registerNewTenant = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
     const rootTransaction = await req.dbObject.transaction();
@@ -128,6 +167,7 @@ const registerNewTenant = asyncHandler(async (req, res) => {
     }
 });
 
+
 const registerBusinessNode = asyncHandler(async (req, res) => {
     const { BusinessNode, NodeDetails, TenantBusinessFlow } = req.dbModels;
     const transaction = await req.dbObject.transaction();
@@ -155,7 +195,7 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
         const businessNode = await BusinessNode.create({
             name: `${node.name} - ${location}`,
             node_type_code: node.code,
-            sequence: tenantBusinessFlow.sequence,
+            tenant_business_flow_id: tenantBusinessFlow.id,
         }, { transaction });
 
         /**create node details */
@@ -240,6 +280,70 @@ const updateCompanyDetails = asyncHandler(async (req, res) => {
     }
 });
 
+// UPDATE
+const updateTenantBusinessFlow = asyncHandler(async (req, res) => {
+    const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
+    const rootTransaction = await req.dbObject.transaction();
+
+    let tenantTransaction = null;
+    try {
+        const { email, nodeSequence = [] } = req.body;
+        if (!email || nodeSequence.length < 1) {
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "email and nodeSequence must required!!!" });
+        }
+
+        const result = await Tenant.findOne({
+            where: { email },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "tenantsName"
+                },
+            ],
+        }, { transaction: rootTransaction });
+        if (!result) throw new Error("Record Not Found!!!");
+
+        const tenantId = result?.tenant_id;
+        const tenantDB = result?.tenantsName?.tenant;
+
+        /** prepare data sequence data */
+        const businessNodeSequence = selectedRecords.map((item, index) => ({
+            node_type_code: item.code,
+            sequence: index + 1
+        }));
+
+        /** destory old data in main DB */
+        await TenantBusinessFlowMaster.destory({ where: { tenant_id: tenantId } }, { transaction: rootTransaction });
+
+        /** insert new data in main DB */
+        await TenantBusinessFlowMaster.bulkCreate(
+            businessNodeSequence.map(item => ({
+                ...item,
+                tenant_id: tenantId
+            })), { transaction: rootTransaction }
+        );
+
+
+        const { sequelize, models } = await getTenantConnection(tenantDB);
+        const { TenantBusinessFlow } = models;
+        tenantTransaction = await sequelize.transaction();
+
+        await TenantBusinessFlow.bulkCreate(businessNodeSequence, { transaction: tenantTransaction });
+
+        await tenantTransaction.commit();
+        await rootTransaction.commit();
+
+        return res.status(200).json({ success: true, code: 200, message: "New Tenant is created successfully.", tenant_id: dbName });
+
+    } catch (error) {
+        if (tenantTransaction) await tenantTransaction.rollback();
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // DELETE
 const delete_company = asyncHandler(async (req, res) => {
@@ -278,4 +382,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { allBusinessNodes, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, tenantBusinessFlow, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails };

@@ -14,7 +14,7 @@ function NodeDetails(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        address: {                      // this store address, state_id, district_id, lat, log
+        address: {                      // this store address, state, district, lat, log
             type: DataTypes.JSONB,
             allowNull: true,
             defaultValue: {},

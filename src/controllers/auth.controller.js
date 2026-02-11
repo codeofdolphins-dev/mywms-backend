@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
-import { rootDB } from "../db/tenantMenager.service.js";
+import { deleteTenantDatabase, rootDB } from "../db/tenantMenager.service.js";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { removeFirstWord } from "../helper/removeFirstWord.js";
@@ -28,59 +28,50 @@ const logout = asyncHandler(async (req, res) => {
 
 // POST request
 const register_company = asyncHandler(async (req, res) => {
+
+    /** transaction instances from middleware */
+    const t_Transaction = req?.transaction?.t_Transaction ?? null;
+    const r_Transaction = req?.transaction?.r_Transaction ?? null;
+
     const transaction = await req.dbObject.transaction();
     const { Role, User } = req.dbModels;
 
-    const { models, rootSequelize } = await rootDB();
+    let models = null;
+    let rootTransaction = null;
+
+    if (req?.rootModels) {
+        models = req?.rootModels;
+        rootTransaction = r_Transaction;
+        
+    } else {
+        const { models: rootModels, rootSequelize } = await rootDB();
+
+        models = rootModels;
+        rootTransaction = await rootSequelize.transaction();
+    }
+
     const { Tenant, TenantsName } = models;
-    const rootTransaction = await rootSequelize.transaction();
-    const profile_image = req?.file?.filename || null;
+
+    const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { email = "", password = "", c_name = "", ph_no = "" } = req.body;
-        const dbName = req.headers["x-tenant-id"];
-        const isfileSave = req?.isfileSave;
-        let image_path = null;
+        const { email = "", password = "", name = "" } = req.body;
 
-
-        if ([email, password, c_name].some(field => field === "")) {
-            if (profile_image) await deleteImage(profile_image);
-            await rootTransaction.rollback();
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-        };
+        if ([email, password, name].some(field => field === "")) throw new Error("All fields are required!!!");
 
         const companyRole = await Role.findOne({ where: { role: "company" }, transaction });
-        if (!companyRole) {
-            if (profile_image) await deleteImage(profile_image);
-            await rootTransaction.rollback();
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Role 'company/owner' not found. Make sure roles are seeded." });
-        }
+        if (!companyRole) throw new Error("Role 'company/owner' not found. Make sure roles are seeded.");
 
         const isRegister = await User.findOne({ where: { email }, transaction });
-        if (isRegister) {
-            if (profile_image && isfileSave) await deleteImage(profile_image, dbName);
-            else if (profile_image && !isfileSave) await deleteImage(profile_image);
-            await rootTransaction.rollback();
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: `Company with email: ${email} already exists!!!` });
-        }
+        if (isRegister) throw new Error(`Company with email: ${email} already exists!!!`);
 
         const encryptPassword = await hashPassword(password);
-
-        if (!isfileSave && profile_image) {
-            const ismoved = await moveFile(profile_image, dbName);
-            image_path = ismoved ? `${dbName}/${profile_image}` : null;
-        }
 
         const user = await User.create({
             email,
             password: encryptPassword,
-            phone_no: ph_no,
-            company_name: c_name,
+            company_name: name,
             is_owner: true,
-            ...(image_path && { profile_image: image_path }),
         }, { transaction });
 
         await user.addRole(companyRole, { transaction });
@@ -95,36 +86,45 @@ const register_company = asyncHandler(async (req, res) => {
                 tenant_id: tenant.id,
                 email,
                 isOwner: true,
-                companyName: c_name
+                companyName: name
             }, { transaction: rootTransaction });
         } else {
-            await Tenant.update({
+            console.log("update tenant");
+
+            const [affectedRows] = await Tenant.update({
                 password,
-                companyName: c_name,
+                companyName: name,
             }, {
                 where: { email },
                 transaction: rootTransaction
             });
+
+            console.log("affectedRows", affectedRows);
+            console.log("email", email);
         }
-        if (!user) {
-            if (profile_image) await deleteImage(profile_image);
-            await rootTransaction.rollback();
-            await transaction.rollback();
-            return res.status(500).json({ success: false, code: 500, message: "Company Register Failed!!!" });
-        }
+        if (!user) throw new Error("Company Register Failed!!!");
 
         await rootTransaction.commit();
         await transaction.commit();
+
+        // if (r_Transaction) await r_Transaction.commit();
+        if (t_Transaction) await t_Transaction.commit();
+
         return res.status(200).json({ success: true, code: 200, message: "Company Register Successfully." });
 
     } catch (error) {
-        if (profile_image) await deleteImage(profile_image);
-        if (transaction) await transaction.rollback();
-        if (rootTransaction) await rootTransaction.rollback();
+        await transaction.rollback();
+        await rootTransaction.rollback();
+
+        // if (r_Transaction) await r_Transaction.rollback();
+        if (t_Transaction) await t_Transaction.rollback();
+
+        if (dbName !== "mywms") await deleteTenantDatabase(dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
