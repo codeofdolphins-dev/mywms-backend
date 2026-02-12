@@ -119,6 +119,7 @@ const createRawProduct = asyncHandler(async (req, res) => {
             package_type_id = "", unit_type_id = "", measure = "",
             description = "", reorder_level = "",
         } = req.body;
+        console.log(brands)
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
             await deleteImage(photo, dbName);
@@ -151,14 +152,20 @@ const createRawProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
         }
 
-        const existingBrands = await Brand.findAll({
+        // const existingBrands = await Brand.findAll({
+        //     where: {
+        //         id: {
+        //             [Op.in]: brands
+        //         }
+        //     }
+        // });
+        const existingBrands = await Brand.findOne({
             where: {
-                id: {
-                    [Op.in]: brands
-                }
+                id: Number(brands)
             }
         });
-        if (existingBrands.length !== brands.length) {
+        // if (existingBrands.length !== brands.length) {
+        if (!existingBrands) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Some Brands were not found!!!" });

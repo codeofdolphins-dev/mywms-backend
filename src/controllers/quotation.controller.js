@@ -195,8 +195,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
             ]
         });
         const totalPages = Math.ceil(totalItems / limit);
-
-
+        
 
         quotations.forEach((quotation) => {
             const supplierId = quotation.from_business_node_id;
@@ -213,7 +212,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                 grandTotal: quotation.grandTotal,
                 note: quotation.note,
                 createdAt: quotation.createdAt,
-                purchaseOrder_no: quotation.linkedPurchaseOrders.po_no,
+                purchaseOrder_no: quotation.linkedPurchaseOrders?.po_no,
 
                 item: item ? item : null,
                 meta: {
