@@ -898,7 +898,6 @@ export const roles = [
   { role: "owner" },
   { role: "company" },
   { role: "admin" },
-  { role: "node-admin" },
   { role: "user" },
 ];
 
@@ -930,18 +929,6 @@ export const permissions = [
   { permission: "role:assign" },
   { permission: "role:remove" },
 
-  // vehicle
-  { permission: "vehicle:create" },
-  { permission: "vehicle:read" },
-  { permission: "vehicle:update" },
-  { permission: "vehicle:delete" },
-
-  // driver
-  { permission: "drive:create" },
-  { permission: "drive:read" },
-  { permission: "drive:update" },
-  { permission: "drive:delete" },
-
   // permission
   { permission: "permission:read" },
   { permission: "permission:modify" },
@@ -972,12 +959,6 @@ export const permissions = [
   { permission: "invoice:update" },
   { permission: "invoice-item:update" },
 
-  //warehouse
-  { permission: "warehouse:create" },
-  { permission: "warehouse:read" },
-  { permission: "warehouse:update" },
-  { permission: "warehouse:delete" },
-
   // requisition
   { permission: "requisition:create" },
   { permission: "requisition:read" },
@@ -1003,13 +984,6 @@ export const permissions = [
   { permission: "category:read" },
   { permission: "category:update" },
   { permission: "category:delete" },
-
-  // vendor
-  { permission: "vendor:create" },
-  { permission: "vendor:read" },
-  { permission: "vendor:update" },
-  { permission: "vendor-bank:update" },
-  { permission: "vendor:delete" },
 
   // purchaseOrder
   { permission: "purchaseOrder:create" },
@@ -1064,14 +1038,3 @@ export const permissions = [
   { permission: "unit:update" },
   { permission: "unit:delete" },
 ]
-
-
-// export const warehouseTypeMaster = [
-//   { warehouse_type: "Mfg Bond Warehouse" },
-//   { warehouse_type: "Mother Warehouse (National level)" },
-//   { warehouse_type: "Central Warehouse" },
-//   { warehouse_type: "Regional Warehouse" },
-//   { warehouse_type: "State Warehouse" },
-//   { warehouse_type: "3PL Warehouse" },
-//   { warehouse_type: "Retail Warehouse / Backroom Storage" },
-// ]

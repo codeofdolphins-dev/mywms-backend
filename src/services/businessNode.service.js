@@ -8,32 +8,51 @@ import { Op } from "sequelize";
  */
 export const getAllowedBusinessNodes = async (userBusinessNodeId, models, removeSelf = true) => {
 
-    const { BusinessNode, NodeDetails } = models;
+    const { BusinessNode, NodeDetails, TenantBusinessFlow } = models;
 
     try {
-        const userNode = await BusinessNode.findByPk(userBusinessNodeId);
+        const userNode = await BusinessNode.findByPk(userBusinessNodeId, {
+            include: [
+                {
+                    model: TenantBusinessFlow,
+                    as: "parentFlow",
+                    where: { is_active: true }
+                }
+            ]
+        });
         if (!userNode) {
             throw new Error("Business node not found");
         }
 
-        const sequences = [userNode.sequence];
+        const sequences = [userNode.parentFlow.sequence];
 
-        if (userNode.sequence > 1) {
-            sequences.push(userNode.sequence - 1);
+        console.log(sequences);
+        // return
+
+
+        if (userNode.parentFlow.sequence > 1) {
+            sequences.push(userNode.parentFlow.sequence - 1);
         }
 
         return BusinessNode.findAll({
             where: {
-                sequence: sequences,
                 ...(removeSelf && { id: { [Op.ne]: Number(userBusinessNodeId) } })
             },
             include: [
+                {
+                    model: TenantBusinessFlow,
+                    as: "parentFlow",
+                    where: {
+                        sequence: { [Op.in]: sequences },
+                        is_active: true
+                    },
+                    order: [["sequence", "DESC"]]
+                },
                 {
                     model: NodeDetails,
                     as: "nodeDetails"
                 }
             ],
-            order: [["sequence", "DESC"]]
         });
     } catch (error) {
         throw error;

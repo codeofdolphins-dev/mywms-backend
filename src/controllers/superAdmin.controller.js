@@ -44,12 +44,16 @@ const tenantBusinessFlow = asyncHandler(async (req, res) => {
                     include: [
                         {
                             model: TenantBusinessFlowMaster,
-                            as: "businessFlows"
-                        }
-                    ]
+                            as: "businessFlows",
+                            where: { is_active: true },
+                            separate: true,
+                            order: [["sequence", "ASC"]],
+                        },
+                    ],
                 },
-            ]
+            ],
         });
+
 
         const formatedResult = result.toJSON();
         formatedResult.businessFlows = result.tenantsName.businessFlows;
@@ -64,9 +68,6 @@ const tenantBusinessFlow = asyncHandler(async (req, res) => {
 });
 
 
-
-
-
 const all_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
     try {
@@ -76,12 +77,14 @@ const all_company = asyncHandler(async (req, res) => {
 
         const offset = (page - 1) * limit;
 
-        let condition = {};
-        if (email) condition.email = email;
-        if (id) condition.id = id;
 
         const tenant = await Tenant.findAndCountAll({
-            where: { isOwner: true, password: { [Op.ne]: null }, ...condition },
+            where: {
+                isOwner: true,
+                password: { [Op.ne]: null },
+                ...(email && { email }),
+                ...(id && { id: Number(id) }),
+            },
             include: [
                 {
                     model: TenantsName,
@@ -101,7 +104,7 @@ const all_company = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: tenant,
+            data: tenant.rows,
             meta: {
                 totalItems,
                 totalPages,
@@ -115,6 +118,8 @@ const all_company = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 // POST
 
@@ -308,20 +313,27 @@ const updateTenantBusinessFlow = asyncHandler(async (req, res) => {
         const tenantDB = result?.tenantsName?.tenant;
 
         /** prepare data sequence data */
-        const businessNodeSequence = selectedRecords.map((item, index) => ({
+        const businessNodeSequence = nodeSequence.map((item, index) => ({
             node_type_code: item.code,
             sequence: index + 1
         }));
 
-        /** destory old data in main DB */
-        await TenantBusinessFlowMaster.destory({ where: { tenant_id: tenantId } }, { transaction: rootTransaction });
+        /** update main DB */
+        await TenantBusinessFlowMaster.update(
+            { is_active: false },
+            { where: { tenant_id: tenantId }, transaction: rootTransaction }
+        );
 
-        /** insert new data in main DB */
         await TenantBusinessFlowMaster.bulkCreate(
             businessNodeSequence.map(item => ({
                 ...item,
-                tenant_id: tenantId
-            })), { transaction: rootTransaction }
+                tenant_id: tenantId,
+                is_active: true,
+            })),
+            {
+                updateOnDuplicate: ["sequence", "is_active", "updatedAt"],
+                transaction: rootTransaction,
+            }
         );
 
 
@@ -329,12 +341,28 @@ const updateTenantBusinessFlow = asyncHandler(async (req, res) => {
         const { TenantBusinessFlow } = models;
         tenantTransaction = await sequelize.transaction();
 
-        await TenantBusinessFlow.bulkCreate(businessNodeSequence, { transaction: tenantTransaction });
+
+        /** update tenant DB */
+        await TenantBusinessFlow.update(
+            { is_active: false },
+            { where: {}, transaction: tenantTransaction }
+        );
+
+        await TenantBusinessFlow.bulkCreate(
+            businessNodeSequence.map(item => ({
+                ...item,
+                is_active: true,
+            })),
+            {
+                updateOnDuplicate: ["sequence", "is_active", "updatedAt"],
+                transaction: tenantTransaction,
+            }
+        );
 
         await tenantTransaction.commit();
         await rootTransaction.commit();
 
-        return res.status(200).json({ success: true, code: 200, message: "New Tenant is created successfully.", tenant_id: dbName });
+        return res.status(200).json({ success: true, code: 200, message: "Tenant Business Flow Updated" });
 
     } catch (error) {
         if (tenantTransaction) await tenantTransaction.rollback();
@@ -382,4 +410,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { allBusinessNodes, tenantBusinessFlow, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, tenantBusinessFlow, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails, updateTenantBusinessFlow };

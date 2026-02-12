@@ -6,7 +6,7 @@ const allRoles = asyncHandler(async (req, res) => {
     try {
         const roles = await Role.findAll();
 
-        return res.status(200).json({ success: true, code: 200, message: "Roles fetched successfully.", roles });
+        return res.status(200).json({ success: true, code: 200, message: "Roles fetched successfully.", data: roles });
 
     } catch (error) {
         console.log(error);
@@ -18,13 +18,13 @@ const allRoles = asyncHandler(async (req, res) => {
 const addRole = asyncHandler(async (req, res) => {
     const { Role } = req.dbModels;
     try {
-        const { newRole } = req.body;
+        const { newRole, status } = req.body;
 
         const isExists = await Role.findOne({ where: { role: newRole.toLowerCase().trim() } });
 
         if (isExists) return res.status(400).json({ success: false, code: 400, message: "Role already exists!!!" });
 
-        await Role.create({ role: newRole.toLowerCase().trim() });
+        await Role.create({ role: newRole.toLowerCase().trim(), status });
 
         return res.status(200).json({ success: true, code: 200, message: "Role Added." });
 

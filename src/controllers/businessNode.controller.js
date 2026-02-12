@@ -11,19 +11,15 @@ const tenantBusinessNodeList = asyncHandler(async (req, res) => {
     try {
         const codes = (await TenantBusinessFlow.findAll({
             attributes: ['node_type_code'],
-            raw: true
+            raw: true,
+            where: { is_active: true }
         })).map(r => r.node_type_code);
 
         const nodes = await BusinessNodeType.findAll({
             where: { code: { [Op.in]: codes } }
         });
 
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Fetched Successfully.",
-            data: nodes
-        });
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: nodes });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });

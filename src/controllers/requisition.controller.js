@@ -270,6 +270,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
     }
 });
 
+
 const getCreateRequisitionContext = asyncHandler(async (req, res) => {
     const models = req.dbModels;
 
@@ -289,11 +290,10 @@ const getCreateRequisitionContext = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 // POST
 const createRequisition = asyncHandler(async (req, res) => {
@@ -406,7 +406,7 @@ const deleteRequisition = asyncHandler(async (req, res) => {
         const isDeleted = await Requisition.destroy({
             where: { id: parseInt(id, 10) },
         });
-        if (!isDeleted) return res.status(503).json({success: false, code: 503, message: "Deletion failed!!!" });
+        if (!isDeleted) return res.status(503).json({ success: false, code: 503, message: "Deletion failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
     } catch (error) {
