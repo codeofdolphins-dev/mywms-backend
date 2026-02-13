@@ -7,8 +7,8 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        hsn_id: {
-            type: DataTypes.INTEGER,
+        hsn_code: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
         sku: {
@@ -25,6 +25,15 @@ function Product(sequelize) {
             type: DataTypes.ENUM("raw", "finished"),
             defaultValue: "raw",
             allowNull: false
+        },
+        gst_rate: {
+            type: DataTypes.DECIMAL(5, 2),
+            allowNull: true,
+            defaultValue: 0.00
+        },
+        is_taxable: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
         },
         package_type: {
             type: DataTypes.STRING,

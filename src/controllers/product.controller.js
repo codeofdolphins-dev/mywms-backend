@@ -117,14 +117,14 @@ const createRawProduct = asyncHandler(async (req, res) => {
             name = "", categories = "", brands = "",
             hsn_id = "", sku = "", barcode = "",
             package_type_id = "", unit_type_id = "", measure = "",
-            description = "", reorder_level = "",
+            description = "", reorder_level = "", is_taxable = true, gst_rate = ""
         } = req.body;
         console.log(brands)
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are  required!!!" });
+            return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
 
         // convert string
@@ -204,12 +204,14 @@ const createRawProduct = asyncHandler(async (req, res) => {
 
         const product = await Product.create({
             name: name.trim(),
-            hsn_id: hsn.id,
+            hsn_code: hsn.hsn_code,
             sku,
             barcode,
+            // gst_rate: Number(gst_rate),
+            // is_taxable: is_taxable,
             package_type: packageType.name,
-            unit_type: unitType.name,
             measure,
+            unit_type: unitType.name,
             description,
             reorder_level: Number(reorder_level),
             ...(photo ? { photo: `${dbName}/${photo}` } : null)

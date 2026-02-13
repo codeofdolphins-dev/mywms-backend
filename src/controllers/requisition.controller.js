@@ -331,15 +331,15 @@ const createRequisition = asyncHandler(async (req, res) => {
 
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
-            required_by_date,
+            ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             title,
             notes,
             grandTotal: total,
-            priority: priority.toLowerCase(),
+            ...(priority && { priority: priority.toLowerCase() }),
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
 
-        const requisition_no = `REQ-${year}-${monthName}-${requisition.id}`;
+        const requisition_no = `REQ-${year}-${monthName}-${Date.now()}-${requisition.id}`;
 
         await requisition.update({
             requisition_no,
@@ -371,9 +371,9 @@ const createRequisition = asyncHandler(async (req, res) => {
                 {
                     requisition_id: requisition.id,
                     product_id: product.id,
-                    brand_id: item.brand.id,
-                    category_id: item.category.id,
-                    sub_category_id: item.subCategory.id,
+                    brand: item.brand,
+                    category: item.category,
+                    sub_category: item.subCategory,
                     qty: item.reqQty,
                     priceLimit: item.priceLimit
                 },

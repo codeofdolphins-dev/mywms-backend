@@ -10,16 +10,16 @@ function RequisitionItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        brand_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
-        category_id: {
-            type: DataTypes.INTEGER,
+        brand: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
-        sub_category_id: {
-            type: DataTypes.INTEGER,
+        category: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        sub_category: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
         qty: {

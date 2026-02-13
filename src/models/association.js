@@ -117,13 +117,15 @@ const defineRootAssociations = (models) => {
 
     // hsn ↔ product
     HSN.hasOne(Product, {
-        foreignKey: "hsn_id",
+        foreignKey: "hsn_code",
+        sourceKey: "hsn_code",
         as: "product", // singular, since it's a hasOne relationship
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Product.belongsTo(HSN, {
-        foreignKey: "hsn_id",
+        foreignKey: "hsn_code",
+        targetKey: "hsn_code",
         as: "hsn", // or just "hsn" if not already used
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
@@ -673,7 +675,7 @@ const defineRootAssociations = (models) => {
     });
 
     // brand <-> requisitionItem
-    Brand.hasMany(RequisitionItem, {
+    /*Brand.hasMany(RequisitionItem, {
         foreignKey: "brand_id",
         as: "brandRequisitionItems",
         onDelete: "CASCADE",
@@ -684,10 +686,10 @@ const defineRootAssociations = (models) => {
         as: "brand",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
-    });
+    });*/
 
     // category <-> requisitionItem
-    Category.hasMany(RequisitionItem, {
+    /*Category.hasMany(RequisitionItem, {
         foreignKey: "category_id",
         as: "categoryRequisitionItems",
         onDelete: "CASCADE",
@@ -697,16 +699,16 @@ const defineRootAssociations = (models) => {
         foreignKey: "category_id",
         as: "category",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
+        onUp*ate: "CASCADE",
+    });*/
 
     // requisitionItem -> category
-    RequisitionItem.belongsTo(Category, {
+    /*RequisitionItem.belongsTo(Category, {
         foreignKey: "sub_category_id",
         as: "subCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
-    });
+    });*/
 
 
     // ********************************************Many-To-Many*********************************
@@ -971,14 +973,16 @@ const defineTenantAssociations = (models) => {
 
     // hsn ↔ product
     HSN.hasOne(Product, {
-        foreignKey: "hsn_id",
-        as: "product",
+        foreignKey: "hsn_code",
+        sourceKey: "hsn_code",
+        as: "product", // singular, since it's a hasOne relationship
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Product.belongsTo(HSN, {
-        foreignKey: "hsn_id",
-        as: "hsn",
+        foreignKey: "hsn_code",
+        targetKey: "hsn_code",
+        as: "hsn", // or just "hsn" if not already used
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -1523,7 +1527,7 @@ const defineTenantAssociations = (models) => {
     });
 
     // brand <-> requisitionItem
-    Brand.hasMany(RequisitionItem, {
+    /*Brand.hasMany(RequisitionItem, {
         foreignKey: "brand_id",
         as: "brandRequisitionItems",
         onDelete: "CASCADE",
@@ -1534,10 +1538,10 @@ const defineTenantAssociations = (models) => {
         as: "brand",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
-    });
+    });*/
 
     // category <-> requisitionItem
-    Category.hasMany(RequisitionItem, {
+    /*Category.hasMany(RequisitionItem, {
         foreignKey: "category_id",
         as: "categoryRequisitionItems",
         onDelete: "CASCADE",
@@ -1548,15 +1552,15 @@ const defineTenantAssociations = (models) => {
         as: "category",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
-    });
+    });*/
 
     // requisitionItem -> category
-    RequisitionItem.belongsTo(Category, {
+    /*RequisitionItem.belongsTo(Category, {
         foreignKey: "sub_category_id",
         as: "subCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
-    });
+    });*/
 
     // ********************************************Many-To-Many*********************************
     // user - role

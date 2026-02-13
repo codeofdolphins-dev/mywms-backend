@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { FLOAT, Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
@@ -59,16 +59,21 @@ const allHSNList = asyncHandler(async (req, res) => {
 const createHSN = asyncHandler(async (req, res) => {
     const { HSN } = req.dbModels;
     try {
-        const { code = "", rate = "" } = req.body;
+        const { code = "", default_gst_rate = "", cess_rate = "", is_exempt = "", effective_from = "", effective_to = "", description = "" } = req.body;
 
-        if (!code || !rate) return res.status(400).json({ success: false, code: 400, message: "Both fields are  required!!!" });
+        if (!code || !default_gst_rate) return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
 
         const is_exists = await HSN.findOne({ where: { hsn_code: code } });
         if (is_exists) return res.status(409).json({ success: false, code: 409, message: `HSN code: ${code} already exists!!!` });
 
         const hsn = await HSN.create({
-            hsn_code: code,
-            rate
+            hsn_code: Number(code),
+            default_gst_rate: Number(default_gst_rate),
+            ...(cess_rate && { cess_rate: Number(cess_rate) }),
+            is_exempt,
+            ...(effective_from && { effective_from: new Date(effective_from) }),
+            ...(effective_to && { effective_to: new Date(effective_to) }),
+            description,
         });
         if (!hsn) return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
 
