@@ -24,12 +24,14 @@ import userTypesApi from "./userTypes.route.js";
 import supplierApi from "./supplier.route.js";
 import businessApi from "./business.route.js";
 import packageTypeApi from "./packageType.route.js";
+import downloadApi from "../reports/routes/index.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 
 const router = Router();
 
+router.use("/download", downloadApi);
 router.use("/auth", authApi);
 router.use("/location", locationApi);
 router.use("/warehouse", warehouseApi);
@@ -57,6 +59,7 @@ router.use("/bom", bomApi);
 router.use("/unit", unitApi);
 router.use("/package-type", packageTypeApi);
 router.use("/user-types", userTypesApi);
+
 
 
 export default router;

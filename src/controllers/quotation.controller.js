@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allQuotation = asyncHandler(async (req, res) => {
-    const { Quotation, QuotationItem, BusinessNode, NodeDetails, RequisitionItem } = req.dbModels;
+    const { Quotation, QuotationItem, BusinessNode, NodeDetails, RequisitionItem, Product, UnitType, PackageType } = req.dbModels;
     const current_node = req.activeNode;
 
     try {
@@ -27,7 +27,26 @@ const allQuotation = asyncHandler(async (req, res) => {
                     include: [
                         {
                             model: RequisitionItem,
-                            as: "sourceRequisitionItem"
+                            as: "sourceRequisitionItem",
+                            include: [
+                                {
+                                    model: Product,
+                                    as: "product",
+                                    required: false,
+                                    include: [
+                                        {
+                                            model: UnitType,
+                                            as: "unitRef",
+                                            required: false,
+                                        },
+                                        {
+                                            model: PackageType,
+                                            as: "packageType",
+                                            required: false,
+                                        },
+                                    ],
+                                },
+                            ],
                         }
                     ]
                 },
@@ -73,7 +92,7 @@ const allQuotation = asyncHandler(async (req, res) => {
 
 /** GET all receive quotation list based on no */
 const allReceiveQuotationList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, Brand, Category, PurchasOrder } = req.dbModels;
+    const { Requisition, RequisitionItem, NodeDetails, BusinessNode, Quotation, QuotationItem, Product, PurchasOrder } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, reqNo = "", quotationId = "", } = req.query;
@@ -138,21 +157,6 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
                                     attributes: ["name", "barcode"]
 
                                 },
-                                {
-                                    model: Brand,
-                                    as: "brand",
-                                    attributes: ["name"]
-                                },
-                                {
-                                    model: Category,
-                                    as: "category",
-                                    attributes: ["name"]
-                                },
-                                {
-                                    model: Category,
-                                    as: "subCategory",
-                                    attributes: ["name"]
-                                },
                             ]
                         },
                     ],
@@ -195,7 +199,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
             ]
         });
         const totalPages = Math.ceil(totalItems / limit);
-        
+
 
         quotations.forEach((quotation) => {
             const supplierId = quotation.from_business_node_id;
@@ -252,6 +256,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
 const createQuotation = asyncHandler(async (req, res) => {
     const { Quotation, QuotationItem, Requisition, RequisitionItem, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+    console.log(req.body)
     try {
         const { reqNo = "", validTill = "", note = "", grandTotal = "", items = [] } = req.body;
         const year = new Date().getFullYear();
@@ -290,13 +295,13 @@ const createQuotation = asyncHandler(async (req, res) => {
             requisition_id: requisition.id,
             from_business_node_id: current_node,
             to_business_node_id: requisition.buyer_business_node_id,
-            valid_till: new Date(validTill),
+            ...(validTill && { valid_till: new Date(validTill) }),
             created_by: userDetails.id,
             grandTotal,
             note
         }, { transaction });
 
-        const quotation_no = `QT-${year}-${monthName}-${quotation.id}`;
+        const quotation_no = `QT-${year}-${monthName}-${Date.now()}-${quotation.id}`;
 
         await quotation.update({ quotation_no }, { transaction });
 
@@ -315,9 +320,9 @@ const createQuotation = asyncHandler(async (req, res) => {
             await QuotationItem.create({
                 quotation_id: quotation.id,
                 requisition_item_id: requisitionItem.id,
-                offer_price: item.offerPrice,
-                total_price: item.total,
-                tax_percent: item.tax,
+                offer_price: Number(item.offerPrice),
+                total_price: Number(item.total),
+                tax_percent: Number(item.tax),
                 ...(item.note && { note: item.note })
             }, { transaction });
         }
@@ -336,6 +341,38 @@ const createQuotation = asyncHandler(async (req, res) => {
 });
 
 // PUT
+const rejectQuotation = asyncHandler(async (req, res) => {
+    const { Quotation, RequisitionSupplier } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    try {
+        const { id } = req.params;
+
+        const quotation = await Quotation.findByPk(Number(id));
+        if (!quotation) throw new Error("Quotation Record Not Found!!!");
+
+        const requisitionSupplier = await RequisitionSupplier.findOne({
+            where: {
+                requisition_id: quotation.requisition_id,
+                supplier_business_node_id: quotation.from_business_node_id
+            }
+        });
+        if (!requisitionSupplier) throw new Error("Record Not Found!!!");
+
+        await quotation.update({ status: "rejected" }, { transaction });
+        await requisitionSupplier.update({ status: "rejected" }, { transaction });
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Quotation Rejected" });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+
 const updateQuotationDetails = asyncHandler(async (req, res) => {
     const { Quotation } = req.dbModels;
     try {
@@ -427,4 +464,4 @@ const deleteQuotation = asyncHandler(async (req, res) => {
     }
 });
 
-export { allQuotation, allReceiveQuotationList, createQuotation, updateQuotationItems, updateQuotationDetails, deleteQuotation };
+export { allQuotation, allReceiveQuotationList, createQuotation, updateQuotationItems, updateQuotationDetails, deleteQuotation, rejectQuotation };

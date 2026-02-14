@@ -4,7 +4,7 @@ import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, User, Product, UnitType, PackageType, Category, Brand } = req.dbModels;
+    const { Requisition, RequisitionItem, User, Product, UnitType, PackageType } = req.dbModels;
     const current_node = req.activeNode;
 
     try {
@@ -56,18 +56,6 @@ const allRequisitionList = asyncHandler(async (req, res) => {
                                 },
                             ],
                         },
-                        {
-                            model: Brand,
-                            as: "brand",
-                        },
-                        {
-                            model: Category,
-                            as: "category"
-                        },
-                        {
-                            model: Category,
-                            as: "subCategory"
-                        },
                     ],
                 },
             ],
@@ -107,11 +95,8 @@ const allRequisitionList = asyncHandler(async (req, res) => {
 
 /** GET all receive requisition list  */
 const allReceiveRequisitionList = asyncHandler(async (req, res) => {
-    const {
-        BusinessNode, Requisition, NodeDetails,
-        RequisitionItem, Product,
-        UnitType, PackageType, Category, Brand
-    } = req.dbModels;
+
+    const { BusinessNode, Requisition, NodeDetails, RequisitionItem, Product, UnitType, PackageType } = req.dbModels;
 
     const current_node = req.activeNode;
 
@@ -216,9 +201,6 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
                                 { model: PackageType, as: "packageType" },
                             ],
                         },
-                        { model: Brand, as: "brand" },
-                        { model: Category, as: "category" },
-                        { model: Category, as: "subCategory" },
                     ],
                 },
             ],

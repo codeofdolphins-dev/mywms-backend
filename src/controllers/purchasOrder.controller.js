@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
 const allPurchasOrderList = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItem, User, Product, RequisitionItem, Brand, Category, BusinessNode, NodeDetails } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem, User, Product, RequisitionItem, BusinessNode, NodeDetails } = req.dbModels;
     const current_node = req.activeNode;
 
     try {
@@ -61,21 +61,6 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
                                     as: "product",
                                     attributes: ["name", "barcode"]
 
-                                },
-                                {
-                                    model: Brand,
-                                    as: "brand",
-                                    attributes: ["name"]
-                                },
-                                {
-                                    model: Category,
-                                    as: "category",
-                                    attributes: ["name"]
-                                },
-                                {
-                                    model: Category,
-                                    as: "subCategory",
-                                    attributes: ["name"]
                                 },
                             ]
                         },
@@ -200,7 +185,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
             note: requisition.notes,
         }, { transaction }
         );
-        const po_no = `PO-${year}-${monthName}-${purchasOrder.id}`;
+        const po_no = `PO-${year}-${monthName}-${Date.now()}-${purchasOrder.id}`;
         await purchasOrder.update({ po_no }, { transaction });
 
         // PO items creation
