@@ -42,22 +42,6 @@ const allProductList = asyncHandler(async (req, res) => {
                     model: HSN,
                     as: "hsn"
                 },
-                // {
-                //     model: Category,
-                //     as: "productCategories",
-                //     through: { attributes: [] },
-                //     required: false,
-                //     where: {
-                //         parent_id: null
-                //     },
-                //     include: [
-                //         {
-                //             model: Category,
-                //             as: "subcategories",
-                //             required: false
-                //         }
-                //     ]
-                // },
                 {
                     model: Brand,
                     as: "productBrands",
