@@ -18,7 +18,7 @@ import HSN from "./hsn_master.model.js";
 import Quotation from "./quotation.model.js";
 import QuotationItem from "./quotationItem.model.js";
 import PurchasOrder from "./purchasOrder.model.js";
-import PurchaseOrderItem from "./PurchaseOrderItem.model.js";
+import PurchaseOrderItem from "./purchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
 import Supplier from "./supplier.model.js";
