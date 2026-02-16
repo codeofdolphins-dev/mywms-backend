@@ -2,10 +2,17 @@ import puppeteer from "puppeteer";
 import ejs from "ejs";
 import path from "path";
 
-export const generateRequisitionPDF = async (data) => {
+
+/**
+ * 
+ * @param {String} template template name save in templates folder without .ejs extension
+ * @param {Object} data pdf data
+ * @returns pdf
+ */
+export const generatePDF = async (template, data) => {
     const templatePath = path.join(
         process.cwd(),
-        "src/reports/templates/requisition.template.ejs"
+        `src/reports/templates/${template}.ejs`
     );
 
     const html = await ejs.renderFile(templatePath, { data });

@@ -87,9 +87,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 

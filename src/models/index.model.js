@@ -6,11 +6,9 @@ import Product from "./product.model.js";
 import Role from "./role.model.js";
 import RolePermissions from "./rolePermissions.joinModel.js";
 import State from "./main/state.model.js";
-import Inward from "./inward.model.js";
-import InwardItem from "./inwardItem.model.js";
 import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
-import Batch from "./batch.model.js";
+import NodeBatch from "./nodeBatch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
 import RequisitionItem from "./requisitionItem.model.js";
@@ -22,9 +20,6 @@ import PurchaseOrderItem from "./purchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
 import Supplier from "./supplier.model.js";
-import Inventory from "./inventory.model.js";
-import Outward from "./outward.model.js";
-import OutwardItems from "./outwardItems.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import UnitType from "./unitType.model.js";
@@ -43,7 +38,6 @@ import RequisitionSupplier from "./requisitionSupplier.joinModel.js";
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
     User(rootSequelize);
-    Inward(rootSequelize);
     Category(rootSequelize);
     District(rootSequelize);
     State(rootSequelize);
@@ -51,9 +45,8 @@ const defineRootModels = (rootSequelize) => {
     Role(rootSequelize);
     RolePermissions(rootSequelize);
     Product(rootSequelize);
-    InwardItem(rootSequelize);
     UserRoles(rootSequelize);
-    Batch(rootSequelize);
+    NodeBatch(rootSequelize);
     TenantsName(rootSequelize);
     Requisition(rootSequelize)
     RequisitionItem(rootSequelize)
@@ -64,9 +57,6 @@ const defineRootModels = (rootSequelize) => {
     PurchaseOrderItem(rootSequelize);
     Invoice(rootSequelize);
     InvoiceItems(rootSequelize);
-    Inventory(rootSequelize);
-    Outward(rootSequelize);
-    OutwardItems(rootSequelize);
     BillOfMaterial(rootSequelize);
     Brand(rootSequelize);
     UnitType(rootSequelize);
@@ -92,11 +82,9 @@ const defineTenantModels = (sequelize) => {
     Product(sequelize);
     Role(sequelize);
     RolePermissions(sequelize);
-    Inward(sequelize);
-    InwardItem(sequelize);
     User(sequelize);
     UserRoles(sequelize);
-    Batch(sequelize);
+    NodeBatch(sequelize);
     Requisition(sequelize),
     RequisitionItem(sequelize)
     HSN(sequelize);
@@ -106,9 +94,6 @@ const defineTenantModels = (sequelize) => {
     PurchaseOrderItem(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
-    Inventory(sequelize);
-    Outward(sequelize);
-    OutwardItems(sequelize);
     BillOfMaterial(sequelize);
     Brand(sequelize);
     UnitType(sequelize);

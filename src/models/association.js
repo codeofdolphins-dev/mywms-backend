@@ -6,10 +6,8 @@ const defineRootAssociations = (models) => {
         Product,
         Role,
         RolePermissions,
-        Inward,
-        InwardItem,
         UserRoles,
-        Batch,
+        NodeBatch,
         Tenant,
         TenantsName,
         Requisition,
@@ -22,9 +20,6 @@ const defineRootAssociations = (models) => {
         Invoice,
         InvoiceItems,
         Supplier,
-        Inventory,
-        Outward,
-        OutwardItems,
         BillOfMaterial,
         Brand,
         UnitType,
@@ -73,20 +68,6 @@ const defineRootAssociations = (models) => {
 
     // ********************************************One-To-One*********************************
 
-    // product ↔ qty
-    Product.hasOne(Batch, {
-        foreignKey: "product_id",
-        as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Batch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "batch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // tenant ↔ tenantsName
     TenantsName.hasOne(Tenant, {
         foreignKey: "tenant_id",
@@ -127,20 +108,6 @@ const defineRootAssociations = (models) => {
         foreignKey: "hsn_code",
         targetKey: "hsn_code",
         as: "hsn", // or just "hsn" if not already used
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoice ↔ inward
-    Invoice.hasOne(Inward, {
-        foreignKey: "invoice_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "purchaseInvoice",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -359,90 +326,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // inwardItem - product
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "stockInwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "stockInwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - product
-    Inventory.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(Inventory, {
-        foreignKey: "product_id",
-        as: "inventoryProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - inward
-    Inventory.belongsTo(Inward, {
-        foreignKey: "last_inward_id",
-        as: "inwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.hasMany(Inventory, {
-        foreignKey: "last_inward_id",
-        as: "inventoryInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - outward
-    Inventory.belongsTo(Outward, {
-        foreignKey: "last_outward_id",
-        as: "outwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(Inventory, {
-        foreignKey: "last_outward_id",
-        as: "inventoryOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // outwardItems <-> outward
-    OutwardItems.belongsTo(Outward, {
-        foreignKey: "outward_id",
-        as: "outward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(OutwardItems, {
-        foreignKey: "outward_id",
-        as: "outwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // outward <-> user
-    Outward.belongsTo(User, {
-        foreignKey: "outward_by",
-        as: "outwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Outward, {
-        foreignKey: "outward_by",
-        as: "userOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // tenantsName ↔ tenantBusinessFlowMaster
     TenantBusinessFlowMaster.belongsTo(TenantsName, {
         foreignKey: "tenant_id",
@@ -531,34 +414,6 @@ const defineRootAssociations = (models) => {
 
     // ********************************************Many-To-One*********************************
 
-    // stockInward - stockInwardItems
-    Inward.hasMany(InwardItem, {
-        foreignKey: "stock_inward_id",
-        as: "items",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Inward, {
-        foreignKey: "stock_inward_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // user - stock inward
-    User.hasMany(Inward, {
-        foreignKey: "inward_by",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(User, {
-        foreignKey: "inward_by",
-        as: "inwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // user <-> requisition
     User.hasMany(Requisition, {
         foreignKey: "created_by",
@@ -569,34 +424,6 @@ const defineRootAssociations = (models) => {
         as: "createdBy",
     });
 
-
-    // product <-> outwardItems
-    Product.hasMany(OutwardItems, {
-        foreignKey: "product_id",
-        as: "productOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "outwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // batch <-> outwardItems
-    Batch.hasMany(OutwardItems, {
-        foreignKey: "batch_id",
-        as: "batchOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Batch, {
-        foreignKey: "batch_id",
-        as: "outwardBatch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
     // product <-> billOfMaterial
     Product.hasMany(BillOfMaterial, {
@@ -670,6 +497,34 @@ const defineRootAssociations = (models) => {
         foreignKey: "node_type_code",
         as: "type",
         targetKey: "code",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ nodeBatch
+    Product.hasMany(NodeBatch, {
+        foreignKey: "product_id",
+        as: "batch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeBatch.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ nodeBatch
+    BusinessNode.hasMany(NodeBatch, {
+        foreignKey: "business_node_id",
+        as: "inventoryBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeBatch.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "inventoryNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -876,11 +731,9 @@ const defineTenantAssociations = (models) => {
         Product,
         Role,
         RolePermissions,
-        Inward,
-        InwardItem,
         User,
         UserRoles,
-        Batch,
+        NodeBatch,
         RequisitionItem,
         Requisition,
         HSN,
@@ -891,9 +744,6 @@ const defineTenantAssociations = (models) => {
         Invoice,
         InvoiceItems,
         Supplier,
-        Inventory,
-        Outward,
-        OutwardItems,
         BillOfMaterial,
         Brand,
         UnitType,
@@ -943,20 +793,6 @@ const defineTenantAssociations = (models) => {
 
     // ********************************************One-To-One*********************************
 
-    // product ↔ qty
-    Product.hasOne(Batch, {
-        foreignKey: "product_id",
-        as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Batch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "batch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // product ↔ requisitionItem
     Product.hasOne(RequisitionItem, {
         foreignKey: "product_id",
@@ -983,20 +819,6 @@ const defineTenantAssociations = (models) => {
         foreignKey: "hsn_code",
         targetKey: "hsn_code",
         as: "hsn", // or just "hsn" if not already used
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Invoice ↔ Inward
-    Invoice.hasOne(Inward, {
-        foreignKey: "invoice_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "purchaseInvoice",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -1214,90 +1036,6 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // InwardItem - Product
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "stockInwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "stockInwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Product
-    Inventory.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(Inventory, {
-        foreignKey: "product_id",
-        as: "inventoryProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Inward
-    Inventory.belongsTo(Inward, {
-        foreignKey: "last_inward_id",
-        as: "inwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.hasMany(Inventory, {
-        foreignKey: "last_inward_id",
-        as: "inventoryInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Outward
-    Inventory.belongsTo(Outward, {
-        foreignKey: "last_outward_id",
-        as: "outwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(Inventory, {
-        foreignKey: "last_outward_id",
-        as: "inventoryOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // OutwardItems <-> Outward
-    OutwardItems.belongsTo(Outward, {
-        foreignKey: "outward_id",
-        as: "outward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(OutwardItems, {
-        foreignKey: "outward_id",
-        as: "outwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Outward <-> user
-    Outward.belongsTo(User, {
-        foreignKey: "outward_by",
-        as: "outwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Outward, {
-        foreignKey: "outward_by",
-        as: "userOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // requisition <-> businessNode ==> BUYER
     Requisition.belongsTo(BusinessNode, {
         foreignKey: "buyer_business_node_id",
@@ -1370,34 +1108,6 @@ const defineTenantAssociations = (models) => {
 
     // ********************************************Many-To-One*********************************
 
-    // stockInward - stockInwardItems
-    Inward.hasMany(InwardItem, {
-        foreignKey: "stock_inward_id",
-        as: "items",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Inward, {
-        foreignKey: "stock_inward_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // User - stock inward
-    User.hasMany(Inward, {
-        foreignKey: "inward_by",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(User, {
-        foreignKey: "inward_by",
-        as: "inwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // user <-> requisition
     User.hasMany(Requisition, {
         foreignKey: "created_by",
@@ -1406,48 +1116,6 @@ const defineTenantAssociations = (models) => {
     Requisition.belongsTo(User, {
         foreignKey: "created_by",
         as: "createdBy",
-    });
-
-    // Product <-> InwardItem
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "inwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInwarded",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Product <-> OutwardItems
-    Product.hasMany(OutwardItems, {
-        foreignKey: "product_id",
-        as: "productOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "outwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Batch <-> OutwardItems
-    Batch.hasMany(OutwardItems, {
-        foreignKey: "batch_id",
-        as: "batchOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Batch, {
-        foreignKey: "batch_id",
-        as: "outwardBatch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
     });
 
     // Product <-> BillOfMaterial
@@ -1522,6 +1190,34 @@ const defineTenantAssociations = (models) => {
         foreignKey: "node_type_code",
         as: "type",
         targetKey: "code",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ nodeBatch
+    Product.hasMany(NodeBatch, {
+        foreignKey: "product_id",
+        as: "batch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeBatch.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ nodeBatch
+    BusinessNode.hasMany(NodeBatch, {
+        foreignKey: "business_node_id",
+        as: "inventoryBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeBatch.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "inventoryNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

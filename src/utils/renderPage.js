@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 const renderPage = async (page_name, data = {}) => {
         return await ejs.renderFile(
-        path.join(__dirname, `../views/pages/${page_name}.ejs`), { data: data}
+        path.join(__dirname, `../../views/pages/${page_name}.ejs`), { data: data}
     );
 }
 

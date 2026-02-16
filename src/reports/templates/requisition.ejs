@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Requisition <%= data.requisition_no %>
+    </title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            color: #222;
+        }
+
+        .container {
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .muted {
+            color: #666;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .box-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .info-table td {
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+
+        .info-table td.label {
+            width: 140px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        /* Items table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .items-table th,
+        .items-table td {
+            border-bottom: 1px solid #e5e5e5;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .items-table th {
+            background: #f9fafb;
+            font-weight: bold;
+            /* color: #444; */
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature {
+            margin-top: 40px;
+            width: 200px;
+            border-top: 1px solid #999;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h2>Requisition</h2>
+                <div class="muted">
+                    #<%= data.requisition_no %>
+                </div>
+            </div>
+
+            <div class="box">
+                <div class="box-title">Status</div>
+                <div>
+                    <%= data.status?.toUpperCase() %>
+                </div>
+                <div class="muted">Priority: <%= data.priority %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer + Meta -->
+        <div class="box">
+            <table class="info-table">
+                <tr>
+                    <td class="label">Business Location:</td>
+                    <td>
+                        <%= data?.buyer?.name %>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">Buyer:</td>
+                    <td>
+                        <%= data?.buyer?.nodeDetails?.name %> -
+                            <span style="color: #666;">
+                                <%= data?.buyer?.nodeDetails?.location %>
+                            </span>
+                    </td>
+
+                    <td class="label">Required By:</td>
+                    <td>
+                        <%= new Date(data.required_by_date).toDateString() %>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="label">Created By:</td>
+                    <td>
+                        <%= data?.createdBy?.name?.full_name %>
+                    </td>
+
+                    <td class="label">Created On:</td>
+                    <td>
+                        <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric" , month: "long" ,
+                            day: "numeric" }) %>
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <td class="label">Notes:</td>
+                    <td colspan="3">
+                        <%= data?.notes || '-' %>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Name</th>
+                    <th>Brand</th>
+                    <th>Category</th>
+                    <th>Sub Category</th>
+                    <th>Pack Size</th>
+                    <th class="right">Req. Qty</th>
+                    <th class="right">Price Limit</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <% data.items?.forEach(item=> { %>
+                    <tr>
+                        <td>
+                            <%= item.product?.barcode || '-' %>
+                        </td>
+                        <td>
+                            <%= item.product?.name || '-' %>
+                        </td>
+                        <td>
+                            <%= item.brand %>
+                        </td>
+                        <td>
+                            <%= item.category %>
+                        </td>
+                        <td>
+                            <%= item.sub_category %>
+                        </td>
+                        <td>
+                            <%= item.product?.measure %>
+                                <%= item.product?.unit_type %>
+                                    <%= item.product?.package_type %>
+                        </td>
+                        <td class="right">
+                            <%= item.qty %>
+                        </td>
+                        <td class="right">
+                            <%= Number(item.priceLimit).toFixed(2) %>
+                        </td>
+                    </tr>
+                    <% }) %>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="signature">Requested By</div>
+            <div class="signature">Approved By</div>
+        </div>
+
+    </div>
+</body>
+
+</html>
