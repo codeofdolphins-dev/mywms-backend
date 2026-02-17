@@ -34,6 +34,11 @@ const defineRootAssociations = (models) => {
         NodeDetails,
         RequisitionSupplier,
         TenantBusinessFlow,
+        NodeStockLedger,
+        GRN,
+        GRNItem,
+
+
     } = models;
 
     // ******************************************** Self-Association *********************************
@@ -100,14 +105,14 @@ const defineRootAssociations = (models) => {
     HSN.hasOne(Product, {
         foreignKey: "hsn_code",
         sourceKey: "hsn_code",
-        as: "product", // singular, since it's a hasOne relationship
+        as: "product",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Product.belongsTo(HSN, {
         foreignKey: "hsn_code",
         targetKey: "hsn_code",
-        as: "hsn", // or just "hsn" if not already used
+        as: "hsn",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -412,6 +417,94 @@ const defineRootAssociations = (models) => {
     });
 
 
+    /** grn */
+
+    // grnItem <-> grn
+    GRNItem.belongsTo(GRN, {
+        foreignKey: "grn_id",
+        as: "grn",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    GRN.hasMany(GRNItem, {
+        foreignKey: "grn_id",
+        as: "grnLineItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> purchasOrder
+    GRN.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order_id",
+        as: "grnPurchaseOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(GRN, {
+        foreignKey: "purchase_order_id",
+        as: "grns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> businessNode
+    GRN.belongsTo(BusinessNode, {
+        foreignKey: "from_node_id",
+        as: "fromNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(GRN, {
+        foreignKey: "from_node_id",
+        as: "fromGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> businessNode
+    GRN.belongsTo(BusinessNode, {
+        foreignKey: "to_node_id",
+        as: "toNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(GRN, {
+        foreignKey: "to_node_id",
+        as: "toGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // grnItem <-> purchaseOrderItem
+    GRNItem.belongsTo(PurchaseOrderItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "poItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.hasMany(GRNItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "grnItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grnItem <-> product
+    GRNItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "grnProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(GRNItem, {
+        foreignKey: "product_id",
+        as: "grnItemsForProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
     // ********************************************Many-To-One*********************************
 
     // user <-> requisition
@@ -525,6 +618,62 @@ const defineRootAssociations = (models) => {
     NodeBatch.belongsTo(BusinessNode, {
         foreignKey: "business_node_id",
         as: "inventoryNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ nodeStockLedger
+    Product.hasMany(NodeStockLedger, {
+        foreignKey: "product_id",
+        as: "stockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "linkedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ nodeStockLedger
+    BusinessNode.hasMany(NodeStockLedger, {
+        foreignKey: "from_node_id",
+        as: "formStockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(BusinessNode, {
+        foreignKey: "from_node_id",
+        as: "sourceNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ nodeStockLedger
+    BusinessNode.hasMany(NodeStockLedger, {
+        foreignKey: "to_node_id",
+        as: "toStockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(BusinessNode, {
+        foreignKey: "to_node_id",
+        as: "destinationNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // nodeBatch ↔ nodeStockLedger
+    NodeBatch.hasMany(NodeStockLedger, {
+        foreignKey: "source_batch_id",
+        as: "batchTransactions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(NodeBatch, {
+        foreignKey: "source_batch_id",
+        as: "sourceBatch",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -756,7 +905,12 @@ const defineTenantAssociations = (models) => {
         BusinessNode,
         BusinessNodeType,
         RequisitionSupplier,
-        TenantBusinessFlow
+        TenantBusinessFlow,
+        NodeStockLedger,
+        GRN,
+        GRNItem,
+
+
     } = models;
 
     // ******************************************** Self-Association *********************************
@@ -1106,6 +1260,94 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+
+    /** grn */
+
+    // grnItem <-> grn
+    GRNItem.belongsTo(GRN, {
+        foreignKey: "grn_id",
+        as: "grn",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    GRN.hasMany(GRNItem, {
+        foreignKey: "grn_id",
+        as: "grnLineItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> purchasOrder
+    GRN.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order_id",
+        as: "grnPurchaseOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(GRN, {
+        foreignKey: "purchase_order_id",
+        as: "grns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> businessNode
+    GRN.belongsTo(BusinessNode, {
+        foreignKey: "from_node_id",
+        as: "fromNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(GRN, {
+        foreignKey: "from_node_id",
+        as: "fromGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> businessNode
+    GRN.belongsTo(BusinessNode, {
+        foreignKey: "to_node_id",
+        as: "toNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(GRN, {
+        foreignKey: "to_node_id",
+        as: "toGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // grnItem <-> purchaseOrderItem
+    GRNItem.belongsTo(PurchaseOrderItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "poItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.hasMany(GRNItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "grnItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grnItem <-> product
+    GRNItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "grnProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(GRNItem, {
+        foreignKey: "product_id",
+        as: "grnItemsForProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // ********************************************Many-To-One*********************************
 
     // user <-> requisition
@@ -1218,6 +1460,63 @@ const defineTenantAssociations = (models) => {
     NodeBatch.belongsTo(BusinessNode, {
         foreignKey: "business_node_id",
         as: "inventoryNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ nodeStockLedger
+    Product.hasMany(NodeStockLedger, {
+        foreignKey: "product_id",
+        as: "stockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "linkedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // businessNode ↔ nodeStockLedger
+    BusinessNode.hasMany(NodeStockLedger, {
+        foreignKey: "from_node_id",
+        as: "formStockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(BusinessNode, {
+        foreignKey: "from_node_id",
+        as: "sourceNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ nodeStockLedger
+    BusinessNode.hasMany(NodeStockLedger, {
+        foreignKey: "to_node_id",
+        as: "toStockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(BusinessNode, {
+        foreignKey: "to_node_id",
+        as: "destinationNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // nodeBatch ↔ nodeStockLedger
+    NodeBatch.hasMany(NodeStockLedger, {
+        foreignKey: "source_batch_id",
+        as: "batchTransactions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedger.belongsTo(NodeBatch, {
+        foreignKey: "source_batch_id",
+        as: "sourceBatch",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

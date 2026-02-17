@@ -34,6 +34,9 @@ import NodeUser from "./nodeUsers.join_Model.js";
 import NodeDetails from "./businessModels/nodeDetails.model.js";
 import BusinessNodeType from "./businessModels/businessNodeType.model.js";
 import RequisitionSupplier from "./requisitionSupplier.joinModel.js";
+import NodeStockLedger from "./nodeStockLedger.model.js";
+import GRN from "./grn.model.js";
+import GRNItem from "./grnItems.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -48,8 +51,8 @@ const defineRootModels = (rootSequelize) => {
     UserRoles(rootSequelize);
     NodeBatch(rootSequelize);
     TenantsName(rootSequelize);
-    Requisition(rootSequelize)
-    RequisitionItem(rootSequelize)
+    Requisition(rootSequelize);
+    RequisitionItem(rootSequelize);
     HSN(rootSequelize);
     Quotation(rootSequelize);
     QuotationItem(rootSequelize);
@@ -72,7 +75,10 @@ const defineRootModels = (rootSequelize) => {
     NodeUser(rootSequelize);
     NodeDetails(rootSequelize);
     RequisitionSupplier(rootSequelize);
-    
+    NodeStockLedger(rootSequelize);
+    GRN(rootSequelize);
+    GRNItem(rootSequelize);
+
     return rootSequelize.models;
 }
 
@@ -85,12 +91,12 @@ const defineTenantModels = (sequelize) => {
     User(sequelize);
     UserRoles(sequelize);
     NodeBatch(sequelize);
-    Requisition(sequelize),
-    RequisitionItem(sequelize)
+    Requisition(sequelize);
+    RequisitionItem(sequelize);
     HSN(sequelize);
     Quotation(sequelize);
     QuotationItem(sequelize);
-    PurchasOrder(sequelize);    
+    PurchasOrder(sequelize);
     PurchaseOrderItem(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
@@ -108,7 +114,10 @@ const defineTenantModels = (sequelize) => {
     NodeUser(sequelize);
     NodeDetails(sequelize);
     RequisitionSupplier(sequelize);
-    
+    NodeStockLedger(sequelize);
+    GRN(sequelize);
+    GRNItem(sequelize);
+
     return sequelize.models;
 }
 

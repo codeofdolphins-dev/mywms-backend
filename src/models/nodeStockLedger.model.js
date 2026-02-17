@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
 function NodeStockLedger (sequelize) {
-    return sequelize.define("NodeStockLedger ", {
+    return sequelize.define("NodeStockLedger", {
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false
@@ -15,7 +15,7 @@ function NodeStockLedger (sequelize) {
             allowNull: true,
         },
         source_batch_id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             allowNull: false
         },
         qty: {
@@ -27,9 +27,9 @@ function NodeStockLedger (sequelize) {
             allowNull: false,
         },
         reference_id: {
-            type: DataTypes.DATEONLY,
+            type: DataTypes.INTEGER,
             allowNull: true,
         }
     });
 }
-export default NodeStockLedger ;
+export default NodeStockLedger;
