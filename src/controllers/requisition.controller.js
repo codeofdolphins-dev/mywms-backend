@@ -280,6 +280,8 @@ const createRequisition = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, Product, BusinessNode } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
+    // console.log(req.body); return
+
     try {
         const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", items = [], } = req.body;
         const userDetails = req.user;

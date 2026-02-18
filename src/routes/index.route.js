@@ -32,7 +32,6 @@ router.use("/location", locationApi);
 router.use("/user", userApi);
 router.use("/product", productApi);
 router.use("/brand", brandApi);
-router.use("/supplier", supplierApi);
 router.use("/super-admin", superAdminApi);
 router.use("/business", businessApi);
 
@@ -47,6 +46,7 @@ router.use("/hsn", hsnApi);
 router.use("/category", categoryApi);
 router.use("/quotation", quotationApi);
 router.use("/purchase-order", purchaseOrderApi);
+router.use("/supplier", supplierApi);
 router.use("/invoice", invoiceApi);
 router.use("/bom", bomApi);
 router.use("/unit", unitApi);

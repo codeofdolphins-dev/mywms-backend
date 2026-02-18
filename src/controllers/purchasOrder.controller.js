@@ -8,7 +8,6 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
 
     try {
         let { page = 1, limit = 10, poNo = "" } = req.query;
-        if (!poNo) throw new Error("PO no Missing!!!");
 
         page = parseInt(page);
         limit = parseInt(limit);
@@ -89,7 +88,11 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: poNo ? purchasOrder?.[0] : purchasOrder,
+            data: poNo
+                ? purchasOrder?.[0]
+                    ? purchasOrder?.[0]
+                    : []
+                : purchasOrder ?? [],
             ...(!poNo && {
                 meta: {
                     totalItems,

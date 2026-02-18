@@ -25,7 +25,7 @@ function GRN(sequelize) {
         },
         status: {
             type: DataTypes.ENUM("draft", "accepted", "cancelled"),
-            defaultValue: "draft"
+            defaultValue: "accepted"
         },
         created_by: {
             type: DataTypes.INTEGER

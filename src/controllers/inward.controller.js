@@ -70,150 +70,94 @@ const getInward = asyncHandler(async (req, res) => {
 
 // POST
 const createInward = asyncHandler(async (req, res) => {
-    const { Inward, InwardItem, PurchasOrder, Product, Batch, Vendor, Warehouse, Inventory } = req.dbModels;
+    const { PurchasOrder, Product, NodeBatch, GRN, PurchaseOrderItem } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
-        const { po_id = "", warehouse_id = "", vendor_id = "", challan_no = "", invoice = "", t_pass_no = "", vehicle_id = "", driver_id = "", status = "", note = "", items = [] } = req.body;
+        const { po_no = "", batch = "", received_date = "", items = [] } = req.body;
         const userDetails = req.user;
+        const year = new Date().getFullYear();
+        const monthName = new Date().toLocaleString('default', { month: 'short' });
 
-        if ([po_id, vendor_id, vehicle_id, driver_id, warehouse_id].some(item => item === "")) {
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Required field missing!!!" });
-        }
-        if (items.length == 0) {
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "items should not empty!!!" });
-        }
+        if (!po_no || !batch) throw new Error("po_no required!!!");
+        if (items.length == 0) throw new Error("items should not empty!!!");
 
-        const isPurchasOrderExists = await PurchasOrder.findByPk(po_id, { transaction });
-        if (!isPurchasOrderExists) {
+        const po = await PurchasOrder.findOne({
+            where: { po_no: po_no?.trim() }
+        });
+        if (!po) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "No Purchase order record found!!!" });
-        }
-        const isVendorExists = await Vendor.findByPk(vendor_id, { transaction });
-        if (!isVendorExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Vendor not found!!!" });
-        }
-        const vehicleExists = await Vehicle.findByPk(vehicle_id);
-        if (!vehicleExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Vehicle not found!!!" });
-        }
-        const driverExists = await Driver.findByPk(driver_id);
-        if (!driverExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Driver not found!!!" });
-        }
-        const warehouseExists = await Warehouse.findByPk(warehouse_id, { transaction });
-        if (!warehouseExists) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Warehouse not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Purchase Order record not found!!!" });
         }
 
-        const stockInward = await Inward.create({
-            po_id: parseInt(po_id, 10),
-            vendor_id: parseInt(vendor_id, 10),
-            inward_by: userDetails.id,
-            warehouse_id,
-            challan_no,
-            transport_pass_no: t_pass_no,
-            vehicle_id: parseInt(vehicle_id, 10),
-            driver_id: parseInt(driver_id, 10),
-            status: status === "" ? undefined : status.toLowerCase(),
-            note
+        const grn = await GRN.create({
+            purchase_order_id: po.id,
+            from_node_id: po.form_business_node_id,
+            to_node_id: po.to_business_node_id,
+            received_date: new Date(received_date),
+            created_by: userDetails.id
+
         }, { transaction });
+        const grn_no = `GRN-${year}-${monthName}-${Date.now()}-${grn.id}`;
+        await grn.update({ grn_no }, { transaction });
+
 
         for (const item of items) {
             const product = await Product.findOne({
-                where: {
-                    barcode: parseInt(item.barcode)
-                },
+                where: { barcode: Number(item.barcode) },
                 transaction
             });
-            if (!product) {
-                await transaction.rollback();
-                return res.status(200).json({ success: true, code: 200, message: `Product with barcode: ${item.barcode} not found` });
-            };
+            if (!product) throw new Error(`Product with barcode: ${item.barcode} not found`);
 
-            const totalQty = parseInt(item.qty, 10) - (parseInt(item.d_qty, 10) + parseInt(item.s_qty, 10));
-            if (totalQty <= 0) {
-                await transaction.rollback();
-                return res.status(422).json({ success: false, code: 422, message: 'Invalid quentity entered!!!' });
-            };
-            const totalCost = totalQty * parseInt(item.unit_cost, 10);
+            const purchaseOrderItem = await PurchaseOrderItem.findByPk(Number(item.id));
+            if (!purchaseOrderItem) throw new Error(`Item record not found!!!`);
 
-            await InwardItem.create({
-                stock_inward_id: stockInward.id,
+            /** create GRN item record */
+            await GRNItem.create({
+                grn_id: grn.id,
+                purchase_order_item_id: purchaseOrderItem.id,
                 product_id: product.id,
-                quantity: totalQty,
-                damage_qty: item.d_qty,
-                shortage_qty: item.s_qty,
-                total_cost: totalCost,
-                ...item
+                ordered_qty: purchaseOrderItem.qty,
+                shortage_qty: Number(item.s_qty),
+                damage_qty: Number(item.d_qty),
+                received_qty: Number(item.r_qty),
+                ...(m_date && { mfg_date: new Date(item.m_date) }),
+                ...(e_date && { expiry_date: new Date(item.e_date) }),
+            }, { transaction });
+
+            /** create batch record */
+            await NodeBatch.create({
+                product_id: product.id,
+                business_node_id: po.form_business_node_id,
+                batch_no: batch,
+                purchase_price: purchaseOrderItem.unit_price,
+                available_qty: Number(item.r_qty),
+                ...(m_date && { mfg_date: new Date(item.m_date) }),
+                ...(e_date && { expiry_date: new Date(item.e_date) }),
+                reference_id: grn.id,
+                reference_type: "grn",
+
+            }, { transaction });
+
+            /** create nodeStockLedger record */
+            await NodeStockLedger.create({
+                product_id,
+                from_node_id,
+                to_node_id,
+                source_batch_id,
+                qty,
+                transaction_type,
+                reference_id,
+
+
             }, { transaction });
 
 
-            const inventory = await Inventory.findOne({
-                where: {
-                    warehouse_id,
-                    product_id: product.id,
-                }, transaction
-            });
-            if (!inventory) {
-                const inventory = await Inventory.create({
-                    product_id: product.id,
-                    warehouse_id,
-                    available_qty: totalQty,
-                    last_inward_id: stockInward.id,
-                }, { transaction });
 
-                await Batch.create({
-                    product_id: product.id,
-                    inventory_id: inventory.id,
-                    warehouse_id,
-                    batch_number: item.batch_no,
-                    expiry_date: item.e_date === "" ? undefined : new Date(item.e_date),
-                    qty: totalQty,
-                    cost_price: parseInt(item.unit_cost, 10)
-                }, { transaction });
-
-            } else {
-                const batch = await Batch.findOne({
-                    where: {
-                        warehouse_id,
-                        product_id: product.id,
-                        batch_number: item.batch_no,
-                    }, transaction
-                });
-                if (batch) {
-                    const extendQty = batch.qty + totalQty;
-                    await Batch.update(
-                        { qty: extendQty },
-                        { where: { id: batch.id }, transaction }
-                    );
-                } else {
-                    await Batch.create({
-                        product_id: product.id,
-                        batch_number: item.batch_no,
-                        expiry_date: item.e_date === "" ? undefined : new Date(item.e_date),
-                        qty: totalQty,
-                        cost_price: parseInt(item.unit_cost, 10)
-                    }, { transaction })
-                }
-
-                // increse inventory qty
-                await Inventory.update(
-                    { available_qty: inventory.available_qty + totalQty },
-                    {
-                        where: {
-                            warehouse_id,
-                            product_id: product.id,
-                        }, transaction
-                    }
-                );
-            }
         };
+
+
+
+
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Inward Successfull." });
@@ -357,7 +301,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
             },
             { where: { id: inventory.id }, transaction }
         );
-        if(!isInventoryUpdated){
+        if (!isInventoryUpdated) {
             await transaction.rollback();
             return res.status(500).json({ success: false, code: 500, message: "Inventory updation failed!!!" });
         }

@@ -15,13 +15,33 @@ function GRNItem(sequelize) {
             allowNull: false
         },
         ordered_qty: {
-            type: DataTypes.DECIMAL(12, 3),
-            allowNull: false
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
+        shortage_qty: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
+        damage_qty: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
         },
         received_qty: {
-            type: DataTypes.DECIMAL(12, 3),
-            allowNull: false
-        }
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
+        mfg_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+        },
+        expiry_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+        },
     });
 
 }

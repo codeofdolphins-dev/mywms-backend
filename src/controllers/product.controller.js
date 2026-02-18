@@ -101,7 +101,7 @@ const createRawProduct = asyncHandler(async (req, res) => {
             name = "", categories = "", brands = "",
             hsn_id = "", sku = "", barcode = "",
             package_type_id = "", unit_type_id = "", measure = "",
-            description = "", reorder_level = "", is_taxable = true, gst_rate = ""
+            description = "", reorder_level = ""
         } = req.body;
         console.log(brands)
 

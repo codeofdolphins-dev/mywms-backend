@@ -7,7 +7,7 @@ import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 
-router.use(defineUserScope, defineDbObject, verifyJWT);
+router.use(verifyJWT);
 
 router.route("/list").get(verifyPermission("supplier:read"), supplierList);
 router.route("/create").post(verifyPermission("supplier:create"), registerSupplier);

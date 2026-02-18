@@ -256,7 +256,7 @@ const allReceiveQuotationList = asyncHandler(async (req, res) => {
 const createQuotation = asyncHandler(async (req, res) => {
     const { Quotation, QuotationItem, Requisition, RequisitionItem, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
-    console.log(req.body)
+    // console.log(req.body); return
     try {
         const { reqNo = "", validTill = "", note = "", grandTotal = "", items = [] } = req.body;
         const year = new Date().getFullYear();

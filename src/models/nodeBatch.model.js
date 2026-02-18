@@ -37,7 +37,7 @@ function NodeBatch(sequelize) {
             allowNull: true,
         },
         reference_type: {
-            type: DataTypes.ENUM("grn", "transfer"),
+            type: DataTypes.ENUM("grn", "adjustment", "opening"),
             allowNull: true,
         }
     });
