@@ -12,7 +12,7 @@ function NodeBatch(sequelize) {
         },
         batch_no: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         purchase_price: {
             type: DataTypes.DECIMAL(10, 2),

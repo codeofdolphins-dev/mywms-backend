@@ -1,9 +1,10 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { generateNo } from "../helper/generate.js";
 
 // GET
-const allPurchasOrderList = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItem, User, Product, RequisitionItem, BusinessNode, NodeDetails } = req.dbModels;
+export const allPurchasOrderList = asyncHandler(async (req, res) => {
+    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails } = req.dbModels;
     const current_node = req.activeNode;
 
     try {
@@ -13,15 +14,17 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const purchasOrder = await PurchasOrder.findAll({
+        const purchasOrder = await PurchasOrder.findAndCountAll({
             where: {
-                ...(poNo && { po_no: { [Op.iLike]: poNo?.trim() } }),
-                // form_business_node_id: current_node
+                ...(poNo && { po_no: { [Op.iLike]: `${poNo?.trim()}%` } }),
+                form_business_node_id: current_node
             },
+            distinct: true,
             include: [
                 {
                     model: User,
                     as: "POcreatedBy",
+                    attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
                 },
                 {
                     model: BusinessNode,
@@ -46,54 +49,118 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
                 {
                     model: PurchaseOrderItem,
                     as: "purchasOrderItems",
-                    separate: true,
-                    include: [
-                        {
-                            model: RequisitionItem,
-                            as: "poi_sourceRequisitionItem",
-                            attributes: {
-                                exclude: ["priceLimit", "qty", "remarks", "requisition_id", "createdAt", "updatedAt"]
-                            },
-                            include: [
-                                {
-                                    model: Product,
-                                    as: "product",
-                                    attributes: ["name", "barcode"]
-
-                                },
-                            ]
-                        },
-                    ],
-                    limit,
-                    offset,
-                    order: [["createdAt", "ASC"]],
                 },
             ],
+            limit,
+            offset,
+            order: [["createdAt", "ASC"]],
         });
         if (!purchasOrder) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        /** define pagination calculation */
-        const totalItems = await PurchaseOrderItem.count({
-            include: [
-                {
-                    model: PurchasOrder,
-                    as: "purchasOrder",
-                    where: { po_no: { [Op.iLike]: poNo } }
-                }
-            ]
-        })
+        const totalItems = purchasOrder.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: poNo
-                ? purchasOrder?.[0]
-                    ? purchasOrder?.[0]
-                    : []
-                : purchasOrder ?? [],
-            ...(!poNo && {
+            data: purchasOrder.rows,
+            meta: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
+    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, RequisitionItem, Product } = req.dbModels;
+
+    try {
+        let { page = 1, limit = 10, poNo = "", noLimit = false } = req.query;
+
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        const purchasOrder = await PurchasOrder.findOne({
+            where: {
+                po_no: {
+                    [Op.iLike]: poNo?.trim()
+                }
+            },
+            include: [
+                {
+                    model: User,
+                    as: "POcreatedBy",
+                    attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
+                },
+                {
+                    model: BusinessNode,
+                    as: "poFormBusinessNode",
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails"
+                        }
+                    ]
+                },
+                {
+                    model: BusinessNode,
+                    as: "poToBusinessNode",
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails"
+                        }
+                    ]
+                },
+            ],
+        });
+        if (!purchasOrder) throw new Error("Record not found!!!");
+
+        const { rows, count } = await PurchaseOrderItem.findAndCountAll({
+            where: {
+                purchase_order_id: purchasOrder.id
+            },
+            ...(!noLimit && { limit, offset }),
+            order: [["createdAt", "ASC"]],
+            include: [
+                {
+                    model: RequisitionItem,
+                    as: "poi_sourceRequisitionItem",
+                    attributes: {
+                        exclude: ["priceLimit", "qty", "remarks", "requisition_id", "createdAt", "updatedAt"]
+                    },
+                    include: [
+                        {
+                            model: Product,
+                            as: "product",
+                            attributes: ["name", "barcode"]
+                        }
+                    ]
+                }
+            ]
+        });
+
+        const totalItems = count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: {
+                ...purchasOrder.toJSON(),
+                items: rows
+            },
+            ...(!noLimit && {
                 meta: {
                     totalItems,
                     totalPages,
@@ -110,7 +177,7 @@ const allPurchasOrderList = asyncHandler(async (req, res) => {
 });
 
 // POST
-const createPurchasOrder = asyncHandler(async (req, res) => {
+export const createPurchasOrder = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, Quotation, QuotationItem, PurchasOrder, PurchaseOrderItem, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
@@ -118,8 +185,6 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
         const { quotationId = "" } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;  // from business node
-        const year = new Date().getFullYear();
-        const monthName = new Date().toLocaleString('default', { month: 'short' });
 
         if (!quotationId) throw new Error("Quotation no required!!!");
 
@@ -190,7 +255,8 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
             note: requisition.notes,
         }, { transaction }
         );
-        const po_no = `PO-${year}-${monthName}-${Date.now()}-${purchasOrder.id}`;
+        const po_no = generateNo("PO", purchasOrder.id);
+
         await purchasOrder.update({ po_no }, { transaction });
 
         // PO items creation
@@ -222,7 +288,7 @@ const createPurchasOrder = asyncHandler(async (req, res) => {
 });
 
 // DELETE
-const deletePurchasOrder = asyncHandler(async (req, res) => {
+export const deletePurchasOrder = asyncHandler(async (req, res) => {
     const { PurchasOrder } = req.dbModels;
     try {
         const { id } = req.params;
@@ -239,7 +305,7 @@ const deletePurchasOrder = asyncHandler(async (req, res) => {
 });
 
 // PUT
-const updatePurchasOrder = asyncHandler(async (req, res) => {
+export const updatePurchasOrder = asyncHandler(async (req, res) => {
     const { PurchasOrder } = req.dbModels;
     try {
         const { id = "", status = "", priority = "", expected_delivery_date = "", note = "" } = req.body;
@@ -272,7 +338,7 @@ const updatePurchasOrder = asyncHandler(async (req, res) => {
     }
 });
 
-const updatePurchasOrderItem = asyncHandler(async (req, res) => {
+export const updatePurchasOrderItem = asyncHandler(async (req, res) => {
     const { PurchasOrder, PurchaseOrderItem } = req.dbModels;
     try {
         const { id = "", quantity_ordered = "", unit_price = "", note = "" } = req.body;
@@ -319,5 +385,3 @@ const updatePurchasOrderItem = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-export { allPurchasOrderList, createPurchasOrder, deletePurchasOrder, updatePurchasOrder, updatePurchasOrderItem };

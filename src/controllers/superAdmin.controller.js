@@ -5,7 +5,6 @@ import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 import { deleteImage } from "../utils/handelImage.js";
-import { hashPassword } from "../utils/hashPassword.js";
 
 
 // GET

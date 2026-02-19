@@ -5,7 +5,7 @@ function GRN(sequelize) {
         grn_no: {
             type: DataTypes.STRING,
             unique: true,
-            allowNull: false
+            allowNull: true
         },
         purchase_order_id: {
             type: DataTypes.INTEGER,

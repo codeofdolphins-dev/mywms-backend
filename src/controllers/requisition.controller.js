@@ -1,6 +1,8 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
+import { generateNo } from "../helper/generate.js";
+
 
 // GET
 const allRequisitionList = asyncHandler(async (req, res) => {
@@ -286,9 +288,6 @@ const createRequisition = asyncHandler(async (req, res) => {
         const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
-        const year = new Date().getFullYear();
-        const monthName = new Date().toLocaleString('default', { month: 'short' });
-
 
         if (!title || items?.length < 1 || supplier_node?.length < 1) throw new Error("Required fields are missing!!!");
 
@@ -321,7 +320,7 @@ const createRequisition = asyncHandler(async (req, res) => {
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
 
-        const requisition_no = `REQ-${year}-${monthName}-${Date.now()}-${requisition.id}`;
+        const requisition_no = generateNo("REQ", requisition.id);
 
         await requisition.update({
             requisition_no,

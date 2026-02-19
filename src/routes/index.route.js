@@ -21,6 +21,7 @@ import supplierApi from "./supplier.route.js";
 import businessApi from "./business.route.js";
 import packageTypeApi from "./packageType.route.js";
 import pdfApi from "../reports/routes/index.route.js";
+import inwardApi from "./inward.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -51,6 +52,7 @@ router.use("/invoice", invoiceApi);
 router.use("/bom", bomApi);
 router.use("/unit", unitApi);
 router.use("/package-type", packageTypeApi);
+router.use("/inward", inwardApi);
 
 
 

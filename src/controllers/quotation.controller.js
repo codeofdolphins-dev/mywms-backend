@@ -1,3 +1,4 @@
+import { generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
@@ -259,8 +260,6 @@ const createQuotation = asyncHandler(async (req, res) => {
     // console.log(req.body); return
     try {
         const { reqNo = "", validTill = "", note = "", grandTotal = "", items = [] } = req.body;
-        const year = new Date().getFullYear();
-        const monthName = new Date().toLocaleString('default', { month: 'short' });
 
         if (!reqNo) throw new Error("Requisition no required!!!");
         if (items.length == 0) throw new Error("Empty items not allow!!!");
@@ -301,7 +300,7 @@ const createQuotation = asyncHandler(async (req, res) => {
             note
         }, { transaction });
 
-        const quotation_no = `QT-${year}-${monthName}-${Date.now()}-${quotation.id}`;
+        const quotation_no = generateNo("QT", quotation.id);
 
         await quotation.update({ quotation_no }, { transaction });
 

@@ -1,9 +1,5 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { rootDB } from "../db/tenantMenager.service.js";
-import { hashPassword } from "../utils/hashPassword.js";
-import { removeFirstWord } from "../helper/removeFirstWord.js"
-import { deleteImage } from "../utils/handelImage.js";
 
 // GET
 const tenantBusinessNodeList = asyncHandler(async (req, res) => {
