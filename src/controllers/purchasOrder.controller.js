@@ -8,7 +8,10 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
     const current_node = req.activeNode;
 
     try {
-        let { page = 1, limit = 10, poNo = "" } = req.query;
+        let { page = 1, limit = 10, poNo = "", isOwn = null } = req.query;
+
+        // console.log(typeof isOwn);
+        isOwn = isOwn === 'true';
 
         page = parseInt(page);
         limit = parseInt(limit);
@@ -16,8 +19,8 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
 
         const purchasOrder = await PurchasOrder.findAndCountAll({
             where: {
-                ...(poNo && { po_no: { [Op.iLike]: `${poNo?.trim()}%` } }),
-                form_business_node_id: current_node
+                ...(poNo?.trim() && { po_no: { [Op.iLike]: `${poNo?.trim()}%` } }),
+                [isOwn ? 'form_business_node_id' : 'to_business_node_id']: current_node
             },
             distinct: true,
             include: [

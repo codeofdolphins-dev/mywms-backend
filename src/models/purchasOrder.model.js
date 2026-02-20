@@ -24,8 +24,8 @@ function PurchasOrder(sequelize) {
             allowNull: false
         },
         status: {
-            type: DataTypes.ENUM("created", "released", "acknowledge", "in_fulfillment", "in_transit", "delevered", "closed", "cancelled"),
-            defaultValue: "created"
+            type: DataTypes.ENUM( "released", "approve", "closed", "cancelled"),
+            defaultValue: "released"
         },
         po_date: {
             type: DataTypes.DATEONLY,
