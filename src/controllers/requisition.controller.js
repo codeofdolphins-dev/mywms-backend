@@ -5,7 +5,7 @@ import { generateNo } from "../helper/generate.js";
 
 
 // GET
-const allRequisitionList = asyncHandler(async (req, res) => {
+export const allRequisitionList = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, User, Product, UnitType, PackageType } = req.dbModels;
     const current_node = req.activeNode;
 
@@ -94,7 +94,7 @@ const allRequisitionList = asyncHandler(async (req, res) => {
 });
 
 /** GET all receive requisition list  */
-const allReceiveRequisitionList = asyncHandler(async (req, res) => {
+export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
 
     const { BusinessNode, Requisition, NodeDetails, RequisitionItem, Product, UnitType, PackageType } = req.dbModels;
 
@@ -253,7 +253,7 @@ const allReceiveRequisitionList = asyncHandler(async (req, res) => {
 });
 
 
-const getCreateRequisitionContext = asyncHandler(async (req, res) => {
+export const getCreateRequisitionContext = asyncHandler(async (req, res) => {
     const models = req.dbModels;
 
     try {
@@ -278,14 +278,14 @@ const getCreateRequisitionContext = asyncHandler(async (req, res) => {
 
 
 // POST
-const createRequisition = asyncHandler(async (req, res) => {
+export const createInternalRequisition = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, Product, BusinessNode } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     // console.log(req.body); return
 
     try {
-        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", items = [], } = req.body;
+        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", type = "internal", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
@@ -298,6 +298,107 @@ const createRequisition = asyncHandler(async (req, res) => {
             }
         });
         if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
+
+        const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
+
+        // check if at least one supplier node is allowed
+        const isAllowed = supplierNode.some(supplier =>
+            allowNodes.some(allowed => allowed.id === supplier.id)
+        );
+        if (!isAllowed) {
+            await transaction.rollback();
+            return res.status(403).json({ success: false, code: 403, message: "You are not allowed to create requisition" });
+        }
+
+        const requisition = await Requisition.create({
+            buyer_business_node_id: current_node,
+            ...(required_by_date && { required_by_date: new Date(required_by_date) }),
+            title,
+            notes,
+            grandTotal: total,
+            type,
+            ...(priority && { priority: priority.toLowerCase() }),
+            created_by: parseInt(userDetails.id, 10),
+        }, { transaction });
+
+        const requisition_no = generateNo("REQ", requisition.id);
+
+        await requisition.update({
+            requisition_no,
+        }, { transaction });
+
+        /** push all supplier id into join table (requisitionSupplier) */
+        await requisition.addSupplierBusinessNode(
+            supplierNode.map(node => node.id),
+            {
+                through: {
+                    status: "sent",
+                },
+                transaction,
+            }
+        );
+
+        for (const item of items) {
+            if (!item.barcode || !item.brand || !item.category) throw new Error("required field are missing!!!");
+
+            const product = await Product.findOne({
+                where: { barcode: parseInt(item.barcode, 10) },
+            });
+            if (!product) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
+            }
+
+            await RequisitionItem.create(
+                {
+                    requisition_id: requisition.id,
+                    product_id: product.id,
+                    brand: item.brand,
+                    category: item.category,
+                    sub_category: item.subCategory,
+                    qty: item.reqQty,
+                    priceLimit: item.priceLimit
+                },
+                { transaction }
+            );
+        }
+
+        await transaction.commit();
+        return res
+            .status(200)
+            .json({
+                success: true,
+                code: 200,
+                message: "Requisition Created.",
+            });
+    } catch (error) {
+        await transaction.rollback();
+        console.log(error);
+        return res
+            .status(500)
+            .json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const createExternalRequisition = asyncHandler(async (req, res) => {
+    const { Requisition, RequisitionItem, Product, BusinessNode, Vendor } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    // console.log(req.body); return
+
+    try {
+        const { title = "", vendor_category_id = "", required_by_date = "", priority = "", notes = "", total = "", type = "external", items = "", } = req.body;
+        const userDetails = req.user;
+        const current_node = req.activeNode;
+
+        if (!title || items?.length < 1 || vendor_category_id?.length < 1) throw new Error("Required fields are missing!!!");
+
+        // fetch all Vendor
+        const allVendor = await Vendor.findAll({
+            where: {
+                vendor_category_id: vendor_category_id
+            }
+        });
 
         const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
 
@@ -379,7 +480,8 @@ const createRequisition = asyncHandler(async (req, res) => {
     }
 });
 
-const deleteRequisition = asyncHandler(async (req, res) => {
+// DELETE
+export const deleteRequisition = asyncHandler(async (req, res) => {
     const { Requisition } = req.dbModels;
     try {
         const { id } = req.params;
@@ -396,7 +498,7 @@ const deleteRequisition = asyncHandler(async (req, res) => {
     }
 });
 
-const updateRequisition = asyncHandler(async (req, res) => {
+export const updateRequisition = asyncHandler(async (req, res) => {
     const { Requisition } = req.dbModels;
     try {
         const {
@@ -453,7 +555,7 @@ const updateRequisition = asyncHandler(async (req, res) => {
     }
 });
 
-const updateRequisitionItems = asyncHandler(async (req, res) => {
+export const updateRequisitionItems = asyncHandler(async (req, res) => {
     const { Requisition, RequisitionItem, Unit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
@@ -546,13 +648,3 @@ const updateRequisitionItems = asyncHandler(async (req, res) => {
             .json({ success: false, code: 500, message: error.message });
     }
 });
-
-export {
-    createRequisition,
-    deleteRequisition,
-    allRequisitionList,
-    updateRequisition,
-    updateRequisitionItems,
-    getCreateRequisitionContext,
-    allReceiveRequisitionList
-};

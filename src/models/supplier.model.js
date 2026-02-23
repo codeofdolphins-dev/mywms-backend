@@ -7,16 +7,16 @@ function Supplier(sequelize) {
             allowNull: false,
             defaultValue: {}
         },
-        supplier_type: {
-            type: DataTypes.ENUM("RAW", "FINISHED"),
-            allowNull: false,
-            defaultValue: "FINISHED"
-        },
-        business_mode: {
-            type: DataTypes.ENUM("MANUFACTURING", "TRADING"),
-            allowNull: false,
-            defaultValue: "TRADING"
-        },
+        // supplier_type: {
+        //     type: DataTypes.ENUM("RAW", "FINISHED"),
+        //     allowNull: false,
+        //     defaultValue: "FINISHED"
+        // },
+        // business_mode: {
+        //     type: DataTypes.ENUM("MANUFACTURING", "TRADING"),
+        //     allowNull: false,
+        //     defaultValue: "TRADING"
+        // },
         contact_phone: {
             type: DataTypes.STRING,
             allowNull: true

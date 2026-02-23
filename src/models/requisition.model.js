@@ -22,6 +22,10 @@ function Requisition(sequelize) {
             type: DataTypes.DECIMAL,
             allowNull: true
         },
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "external"
+        },
         required_by_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,

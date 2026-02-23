@@ -2,8 +2,6 @@ import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js"
 import { deleteSupplier, registerSupplier, supplierList, updateSupplierDetails } from "../controllers/supplier.controller.js";
-import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
-import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 

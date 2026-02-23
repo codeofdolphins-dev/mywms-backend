@@ -41,3 +41,13 @@ export function generateBatch(id) {
         throw error;
     }
 };
+
+/**
+ * 
+ * @param {string} str category name
+ * @returns category code
+ */
+export function generateVenCatCode(str) {
+    if(str === "") return;
+    return str.split(/\s+/).reduce((acc, word) => acc + word[0], "VC-")?.toUpperCase();
+};

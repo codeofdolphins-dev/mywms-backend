@@ -6,14 +6,18 @@ function Quotation(sequelize) {
             type: DataTypes.STRING,
             unique: true
         },
-        requisition_id: {   // rename from pr_id
+        requisition_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             unique: true
         },
-        from_business_node_id: { // Location B (supplier role)
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "external"
+        },
+        from_supplier_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         to_business_node_id: {   // Location A (requester)
             type: DataTypes.INTEGER,
@@ -21,13 +25,13 @@ function Quotation(sequelize) {
         },
         status: {
             type: DataTypes.ENUM(
+                "draft",
                 "submitted",
-                "revised",
                 "accepted",
                 "rejected",
                 "expired"
             ),
-            defaultValue: "submitted"
+            defaultValue: "draft"
         },
         valid_till: {
             type: DataTypes.DATE,

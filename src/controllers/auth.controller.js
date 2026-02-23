@@ -42,7 +42,7 @@ const register_company = asyncHandler(async (req, res) => {
     if (req?.rootModels) {
         models = req?.rootModels;
         rootTransaction = r_Transaction;
-        
+
     } else {
         const { models: rootModels, rootSequelize } = await rootDB();
 
@@ -143,9 +143,7 @@ const registeredUserWithNodes = asyncHandler(async (req, res) => {
         const loginUser = req.user;
 
         if (
-            [email, full_name, phone_no, password].some(item =>
-                item === ""
-            )
+            [email, full_name, phone_no, password].some(item => item === "")
         ) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();

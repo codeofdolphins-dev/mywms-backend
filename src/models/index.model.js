@@ -37,6 +37,9 @@ import RequisitionSupplier from "./requisitionSupplier.joinModel.js";
 import NodeStockLedger from "./nodeStockLedger.model.js";
 import GRN from "./grn.model.js";
 import GRNItem from "./grnItems.model.js";
+import Vendor from "./vendor.model.js";
+import VendorCategory from "./vendorCategory.model.js";
+import RequisitionVendor from "./requisitionVendor.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -78,6 +81,9 @@ const defineRootModels = (rootSequelize) => {
     NodeStockLedger(rootSequelize);
     GRN(rootSequelize);
     GRNItem(rootSequelize);
+    Vendor(rootSequelize);
+    VendorCategory(rootSequelize);
+    RequisitionVendor(rootSequelize);
 
     return rootSequelize.models;
 }
@@ -117,6 +123,9 @@ const defineTenantModels = (sequelize) => {
     NodeStockLedger(sequelize);
     GRN(sequelize);
     GRNItem(sequelize);
+    Vendor(sequelize);
+    VendorCategory(sequelize);
+    RequisitionVendor(sequelize);
 
     return sequelize.models;
 }

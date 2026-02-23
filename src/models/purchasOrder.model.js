@@ -15,21 +15,21 @@ function PurchasOrder(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        form_business_node_id: {
+        from_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        to_business_node_id: {
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "external"
+        },
+        to_supplier_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         status: {
-            type: DataTypes.ENUM( "released", "approve", "closed", "cancelled"),
+            type: DataTypes.ENUM("released", "approve", "closed", "cancelled"),
             defaultValue: "released"
-        },
-        po_date: {
-            type: DataTypes.DATEONLY,
-            allowNull: true
         },
         created_by: {
             type: DataTypes.INTEGER,

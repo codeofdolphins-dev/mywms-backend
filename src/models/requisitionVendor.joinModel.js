@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function RequisitionSupplier(sequelize) {
-    return sequelize.define("RequisitionSupplier", {
+function RequisitionVendor(sequelize) {
+    return sequelize.define("RequisitionVendor", {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -11,8 +11,8 @@ function RequisitionSupplier(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        supplier_business_node_id: {       // Location B (supplier Internal)
-            type: DataTypes.INTEGER,
+        vendor_id: {
+            type: DataTypes.INTEGER,       // Location B (vendor External)
             allowNull: false,
         },
         status: {
@@ -22,4 +22,4 @@ function RequisitionSupplier(sequelize) {
     });
 }
 
-export default RequisitionSupplier;
+export default RequisitionVendor;
