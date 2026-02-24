@@ -475,13 +475,13 @@ const defineRootAssociations = (models) => {
 
 
     // vendor <-> vendorCategory
-    Vendor.belongsTo(VendorCategory, {
+    User.belongsTo(VendorCategory, {
         foreignKey: "vendor_category_id",
         as: "vendorCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    VendorCategory.hasMany(Vendor, {
+    VendorCategory.hasMany(User, {
         foreignKey: "vendor_category_id",
         as: "vendor",
         onDelete: "CASCADE",
@@ -857,7 +857,7 @@ const defineRootAssociations = (models) => {
     });
 
     // requisition - vendor
-    Requisition.belongsToMany(Vendor, {
+    Requisition.belongsToMany(User, {
         through: RequisitionVendor,
         as: "requisitionVendor",
         foreignKey: "requisition_id",
@@ -865,7 +865,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    Vendor.belongsToMany(Requisition, {
+    User.belongsToMany(Requisition, {
         through: RequisitionVendor,
         as: "vendorRequisition",
         foreignKey: "vendor_id",
@@ -1322,13 +1322,13 @@ const defineTenantAssociations = (models) => {
 
 
     // vendor <-> vendorCategory
-    Vendor.belongsTo(VendorCategory, {
+    User.belongsTo(VendorCategory, {
         foreignKey: "vendor_category_id",
         as: "vendorCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    VendorCategory.hasMany(Vendor, {
+    VendorCategory.hasMany(User, {
         foreignKey: "vendor_category_id",
         as: "vendor",
         onDelete: "CASCADE",
@@ -1696,6 +1696,24 @@ const defineTenantAssociations = (models) => {
         through: RequisitionSupplier,
         as: "supplierRequisition",
         foreignKey: "supplier_business_node_id",
+        otherKey: "requisition_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // requisition - vendor
+    Requisition.belongsToMany(User, {
+        through: RequisitionVendor,
+        as: "requisitionVendor",
+        foreignKey: "requisition_id",
+        otherKey: "vendor_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.belongsToMany(Requisition, {
+        through: RequisitionVendor,
+        as: "vendorRequisition",
+        foreignKey: "vendor_id",
         otherKey: "requisition_id",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",

@@ -899,6 +899,7 @@ export const roles = [
   { role: "company" },
   { role: "admin" },
   { role: "user" },
+  { role: "vendor" },
 ];
 
 export const businessNodeTypes = [

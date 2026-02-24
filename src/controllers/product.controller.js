@@ -4,10 +4,10 @@ import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js"
 
 
 // GET
-const allProductList = asyncHandler(async (req, res) => {
+export const allProductList = asyncHandler(async (req, res) => {
     const { Product, Category, HSN, Brand, PackageType, UnitType, CategoryProducts } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "raw", noLimit = false } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "finished", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -88,7 +88,7 @@ const allProductList = asyncHandler(async (req, res) => {
 });
 
 // POST
-const createRawProduct = asyncHandler(async (req, res) => {
+export const createFinishedProduct = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     const { Product, HSN, Category, Brand, PackageType, UnitType } = req.dbModels;
@@ -103,7 +103,6 @@ const createRawProduct = asyncHandler(async (req, res) => {
             package_type_id = "", unit_type_id = "", measure = "",
             description = "", reorder_level = ""
         } = req.body;
-        console.log(brands)
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
             await deleteImage(photo, dbName);
@@ -136,23 +135,11 @@ const createRawProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
         }
 
-        // const existingBrands = await Brand.findAll({
-        //     where: {
-        //         id: {
-        //             [Op.in]: brands
-        //         }
-        //     }
-        // });
-        const existingBrands = await Brand.findOne({
-            where: {
-                id: Number(brands)
-            }
-        });
-        // if (existingBrands.length !== brands.length) {
+        const existingBrands = await Brand.findOne({ where: { id: Number(brands) } });
         if (!existingBrands) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Some Brands were not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Brands not found!!!" });
         }
 
         const existingCategories = await Category.findAll({
@@ -198,7 +185,8 @@ const createRawProduct = asyncHandler(async (req, res) => {
             unit_type: unitType.name,
             description,
             reorder_level: Number(reorder_level),
-            ...(photo ? { photo: `${dbName}/${photo}` } : null)
+            ...(photo ? { photo: `${dbName}/${photo}` } : null),
+            product_type: "finished"
         }, { transaction });
 
         if (!product) throw new Error("Insertion failed!!!");
@@ -206,34 +194,70 @@ const createRawProduct = asyncHandler(async (req, res) => {
         await product.addProductBrands(existingBrands, { transaction });
         await product.addProductCategories(existingCategories, { transaction });
 
-        // if (product_type === "finished" && req.body?.items.length > 0) {
-        //     const { items } = req.body;
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Finished Product added successfully." });
 
-        //     for (const item of items) {
-        //         const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } })
-        //         if (!rawProduct) {
-        //             await transaction.rollback();
-        //             await deleteImage(profile_image, dbName);
-        //             return res.status(400).json({ success: false, code: 400, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
-        //         }
+    } catch (error) {
+        await transaction.rollback();
+        if (photo) await deleteImage(photo, dbName);
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
 
-        //         const BOM = await BillOfMaterial.create({
-        //             finished_product_id: product.id,
-        //             raw_product_id: rawProduct.id,
-        //             quantity_required: parseInt(item.qty, 10),
-        //             uom: item.uom
-        //         }, { transaction });
+export const createRawProduct = asyncHandler(async (req, res) => {
+    // console.log(req.body); return
 
-        //         if (!BOM) {
-        //             await transaction.rollback();
-        //             await deleteImage(profile_image, dbName);
-        //             return res.status(500).json({ success: false, code: 500, message: "Insertion failed for BOM!!! " });
-        //         }
-        //     }
-        // }
+    const { Product, UnitType } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    const dbName = req.headers['x-tenant-id'];
+    let photo = req?.file?.filename || null;
+
+    try {
+        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "" } = req.body;
+
+        if ([name, unit_type_id].some(item => item === "")) {
+            if (photo) await deleteImage(photo, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
+        };
+
+        const unitType = await UnitType.findByPk(Number(unit_type_id));
+        if (!unitType) {
+            if (photo) await deleteImage(photo, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
+        };
+
+        const isExists = await Product.findOne({
+            where: {
+                unit_type: unitType.name,
+                name: name.trim().toLowerCase(),
+                product_type: "raw"
+            }
+        })
+        if (isExists) {
+            if (photo) await deleteImage(photo, dbName);
+            await transaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: `Product already exists!!!` });
+        };
+
+        const product = await Product.create({
+            name: name?.trim(),
+            ...(barcode?.trim() && { barcode: barcode.trim() }),
+            unit_type: unitType.name,
+            description,
+            reorder_level: Number(reorder_level),
+            product_type: "raw",
+            ...(photo ? { photo: `${dbName}/${photo}` } : null)
+        }, { transaction });
+
+        if (!product) throw new Error("Insertion failed!!!");
+        // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(product)));
+
 
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Product added successfully." });
+        return res.status(200).json({ success: true, code: 200, message: "Raw Product added successfully" });
 
     } catch (error) {
         await transaction.rollback();
@@ -244,7 +268,7 @@ const createRawProduct = asyncHandler(async (req, res) => {
 });
 
 // DELETE
-const deleteProduct = asyncHandler(async (req, res) => {
+export const deleteProduct = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
         const { id } = req.params;
@@ -267,7 +291,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 });
 
 // PUT
-const updateProduct = asyncHandler(async (req, res) => {
+export const updateProduct = asyncHandler(async (req, res) => {
     const { Product, HSN, Category, Brand, PackageType, UnitType } = req.dbModels;
     const dbName = req.headers["x-tenant-id"];
     const profile_image = req?.file?.filename || null;
@@ -400,7 +424,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 
 // PUT
-const updateProductBatch = asyncHandler(async (req, res) => {
+export const updateProductBatch = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
         const { batch_id = "", batch_no = "", barcode = "" } = req.body;
@@ -426,8 +450,6 @@ const updateProductBatch = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-export { allProductList, createRawProduct, deleteProduct, updateProduct, updateProductBatch };
 
 
 

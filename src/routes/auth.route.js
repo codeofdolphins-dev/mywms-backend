@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { forgetPassword, login, logout, register_company, registeredUserWithNodes, request_otp, resetPassword, updateUser, verify_otp } from "../controllers/auth.controller.js";
+import { forgetPassword, login, logout, register_company, registeredUserWithNodes, registerVendor, request_otp, resetPassword, updateUser, verify_otp } from "../controllers/auth.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
@@ -9,11 +9,19 @@ import { registerNewTenant } from "../middlewares/tenantRegister.middleware.js";
 
 const router = Router();
 
+// register company - POSTMAN ONLY
 router.route("/register-company").post(upload.none(), defineUserScope, defineDbObject, register_company);
 
+// register tenant company
 router.route("/register-new-company").post(registerNewTenant, register_company);
 
+// register user
 router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registeredUserWithNodes);
+
+// register vendor
+router.route("/register-vendor").post(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registerVendor);
+
+
 
 router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), updateUser);
 

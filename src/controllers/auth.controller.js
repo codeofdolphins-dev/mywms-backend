@@ -7,7 +7,7 @@ import { removeFirstWord } from "../helper/removeFirstWord.js";
 import { hashPassword } from "../helper/hashPassword.js";
 
 // GET request
-const logout = asyncHandler(async (req, res) => {
+export const logout = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
         const { id } = req.user;
@@ -27,7 +27,7 @@ const logout = asyncHandler(async (req, res) => {
 
 
 // POST request
-const register_company = asyncHandler(async (req, res) => {
+export const register_company = asyncHandler(async (req, res) => {
 
     /** transaction instances from middleware */
     const t_Transaction = req?.transaction?.t_Transaction ?? null;
@@ -126,7 +126,75 @@ const register_company = asyncHandler(async (req, res) => {
 });
 
 
-const registeredUserWithNodes = asyncHandler(async (req, res) => {
+export const registerVendor = asyncHandler(async (req, res) => {
+    const { models, rootSequelize } = await rootDB();
+    const { Tenant, TenantsName } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const { User, VendorCategory, Role } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    const dbName = req.headers["x-tenant-id"];
+
+    try {
+        const { email = "", password = "", full_name = "", vendor_category_id = "", gst_no = "", phone = "", company_name = "" } = req.body;
+
+        if (
+            [email, full_name, phone, password, vendor_category_id].some(item => item === "")
+        ) throw new Error("Required fields are missing!!!");
+
+        const vendorRole = await Role.findOne({ where: { role: "vendor" } });
+        if(!vendorRole) throw new Error("Role not found. Make sure roles are seeded properly!!!");
+
+        const vendorCategory = await VendorCategory.findByPk(Number(vendor_category_id));
+        if (!vendorCategory) throw new Error("Category record not found!!!");
+
+        const isExists = await User.findOne({ where: { email } });
+        if (isExists) throw new Error(`Vendor with email: ${email} already exists!!!`);
+
+        const hashPass = await hashPassword(password);
+
+        const user = await User.create({
+            email: email.toLowerCase().trim(),
+            password: hashPass,
+            name: {
+                full_name,
+                first_name: full_name.split(" ")[0],
+                last_name: removeFirstWord(full_name),
+            },
+            phone_no: phone,
+            vendor_category_id: vendorCategory.id,
+            company_name,
+            type: "external",
+            meta: {
+                gst_no
+            }
+        }, { transaction });
+
+        await user.addRole(vendorRole, { transaction });
+
+        const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
+        await Tenant.create({
+            tenant_id: tenantsName.id,
+            email,
+            password,
+            companyName: company_name
+        }, { transaction: rootTransaction });
+
+        await transaction.commit();
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Register Successfully" });
+
+    } catch (error) {
+        console.log(error);
+        if (transaction) await transaction.rollback();
+        if (rootTransaction) await rootTransaction.rollback();
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
     const { User } = req.dbModels;
     const transaction = await req.dbObject.transaction();
@@ -208,7 +276,7 @@ const registeredUserWithNodes = asyncHandler(async (req, res) => {
 });
 
 // PUT
-const updateUser = asyncHandler(async (req, res) => {
+export const updateUser = asyncHandler(async (req, res) => {
 
     // console.log(req.body); 
     // console.log(JSON.parse(req.body.node));
@@ -280,91 +348,7 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 });
 
-// const user_registration = asyncHandler(async (req, res) => {
-//     const { User, Warehouse, WarehouseType, UserType } = req.dbModels;
-//     const transaction = await req.dbObject.transaction();
-
-//     const { models, rootSequelize } = await rootDB();
-//     const { Tenant, TenantsName } = models;
-//     const rootTransaction = await rootSequelize.transaction();
-
-//     const profile_image = req?.file?.filename || null;
-//     const dbName = req.headers["x-tenant-id"];
-
-//     try {
-//         const { email = "", password = "", full_name = "", ph_number = "", address = "", state_id = "", district_id = "", pincode = "", company_name = "", user_type = "" } = req.body;
-//         const loginUser = req.user;
-
-//         if ([email, full_name, ph_number, address, state_id, district_id, pincode].some(item => item === "")) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-//         }
-
-//         const isRegister = await User.findOne({ where: { email } });
-//         if (isRegister) {
-//             if (profile_image) await deleteImage(profile_image);
-//             await transaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: `User with email: ${email} already exists!!!` });
-//         }
-
-//         const encryptPassword = await hashPassword(password);
-
-//         const user = await User.create({
-//             email: email.toLowerCase().trim(),
-//             password: encryptPassword,
-//             // user_type_id: userType.id,
-//             name: {
-//                 full_name,
-//                 first_name: full_name.split(" ")[0],
-//                 last_name: full_name.split(" ")?.[1] || '',
-//             },
-//             phone_no: ph_number,
-//             ...(profile_image && { profile_image: `${dbName}/${profile_image}` }),
-//             address: {
-//                 address,
-//                 state_id,
-//                 district_id,
-//                 pincode
-//             },
-//             ...(company_name && { company_name }),
-//             owner_id: loginUser.id,
-//             owner_type: loginUser.userType?.type,
-//         }, { transaction });
-
-//         const typeInLower = userType.type.toLowerCase();
-//         const isWarehouse = typeInLower.includes("warehouse");
-//         if (isWarehouse) {
-//             const warehouse = await registerWarehouse(req, user, Warehouse, WarehouseType, userType.type, transaction);
-//             if (!warehouse) {
-//                 if (profile_image) await deleteImage(profile_image);
-//                 await transaction.rollback();
-//                 return res.status(500).json({ success: false, code: 500, message: "Creation failed!!!" });
-//             }
-//         }
-
-//         const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
-//         await Tenant.create({
-//             tenant_id: tenantsName.id,
-//             email,
-//             password,
-//             ...(company_name && { companyName: company_name })
-//         }, { transaction: rootTransaction });
-
-//         await transaction.commit();
-//         await rootTransaction.commit();
-//         return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
-
-//     } catch (error) {
-//         if (profile_image) await deleteImage(profile_image);
-//         await rootTransaction.rollback();
-//         await transaction.rollback();
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
-
-const login = asyncHandler(async (req, res) => {
+export const login = asyncHandler(async (req, res) => {
     const { User, Role } = req.dbModels;
     try {
         const { email = "", password = "" } = req.body;
@@ -422,7 +406,7 @@ const login = asyncHandler(async (req, res) => {
     };
 });
 
-const request_otp = asyncHandler(async (req, res) => {
+export const request_otp = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
         const { email = "" } = req.body;
@@ -450,7 +434,7 @@ const request_otp = asyncHandler(async (req, res) => {
     }
 });
 
-const verify_otp = asyncHandler(async (req, res) => {
+export const verify_otp = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
         const { email = "", userOTP = "" } = req.body;
@@ -480,7 +464,7 @@ const verify_otp = asyncHandler(async (req, res) => {
     }
 });
 
-const forgetPassword = asyncHandler(async (req, res) => {
+export const forgetPassword = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
         const { email = "", password = "" } = req.body;
@@ -515,7 +499,7 @@ const forgetPassword = asyncHandler(async (req, res) => {
     }
 });
 
-const resetPassword = asyncHandler(async (req, res) => {
+export const resetPassword = asyncHandler(async (req, res) => {
     const { User } = req.dbModels;
     try {
 
@@ -544,8 +528,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 });
 
-
-export { register_company, login, logout, forgetPassword, resetPassword, request_otp, verify_otp, registeredUserWithNodes, updateUser };
 
 /** ================================== helper =============================== */
 function generateOTP() {

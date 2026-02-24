@@ -293,9 +293,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         // fetch all supplier nodes
         const supplierNode = await BusinessNode.findAll({
-            where: {
-                id: supplier_node
-            }
+            where: { id: supplier_node }
         });
         if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
 
@@ -317,6 +315,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             notes,
             grandTotal: total,
             type,
+            type: "internal",
             ...(priority && { priority: priority.toLowerCase() }),
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
@@ -327,8 +326,8 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             requisition_no,
         }, { transaction });
 
-        /** push all supplier id into join table (requisitionSupplier) */
-        await requisition.addSupplierBusinessNode(
+        /** push all vendor id into join table (RequisitionVendor) */
+        await requisition.addRequisitionVendor(
             supplierNode.map(node => node.id),
             {
                 through: {
@@ -364,26 +363,18 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         }
 
         await transaction.commit();
-        return res
-            .status(200)
-            .json({
-                success: true,
-                code: 200,
-                message: "Requisition Created.",
-            });
+        return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
+
     } catch (error) {
         await transaction.rollback();
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
 export const createExternalRequisition = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, Product, BusinessNode, Vendor } = req.dbModels;
+    const { Requisition, RequisitionItem, Product, User, VendorCategory } = req.dbModels;
     const transaction = await req.dbObject.transaction();
-
     // console.log(req.body); return
 
     try {
@@ -393,23 +384,16 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
 
         if (!title || items?.length < 1 || vendor_category_id?.length < 1) throw new Error("Required fields are missing!!!");
 
+        const vCat = await VendorCategory.findByPk(Number(vendor_category_id));
+        if (!vCat) throw new Error("Vendor category not found!!!");
+
         // fetch all Vendor
-        const allVendor = await Vendor.findAll({
+        const allVendors = await User.findAll({
             where: {
-                vendor_category_id: vendor_category_id
+                vendor_category_id: Number(vendor_category_id)
             }
         });
-
-        const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
-
-        // check if at least one supplier node is allowed
-        const isAllowed = supplierNode.some(supplier =>
-            allowNodes.some(allowed => allowed.id === supplier.id)
-        );
-        if (!isAllowed) {
-            await transaction.rollback();
-            return res.status(403).json({ success: false, code: 403, message: "You are not allowed to create requisition" });
-        }
+        if (!allVendors) throw new Error("No vendor records found!!!");
 
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
@@ -418,6 +402,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             notes,
             grandTotal: total,
             ...(priority && { priority: priority.toLowerCase() }),
+            type: "external",
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
 
@@ -429,7 +414,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
 
         /** push all supplier id into join table (requisitionSupplier) */
         await requisition.addSupplierBusinessNode(
-            supplierNode.map(node => node.id),
+            allVendors.map(node => node.id),
             {
                 through: {
                     status: "sent",

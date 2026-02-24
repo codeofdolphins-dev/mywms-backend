@@ -9,7 +9,7 @@ function Product(sequelize) {
         },
         hsn_code: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         sku: {
             type: DataTypes.STRING,
@@ -18,7 +18,7 @@ function Product(sequelize) {
         },
         barcode: {
             type: DataTypes.BIGINT,
-            allowNull: false,
+            allowNull: true,
             unique: true,
         },
         product_type: {
@@ -37,7 +37,7 @@ function Product(sequelize) {
         },
         package_type: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         measure: {
             type: DataTypes.STRING,
@@ -45,7 +45,7 @@ function Product(sequelize) {
         },
         unit_type: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         description: {
             type: DataTypes.STRING,
