@@ -1,11 +1,11 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { saveBase64Image, deleteImage, moveFile } from "../utils/handelImage.js";
+import { deleteImage } from "../utils/handelImage.js";
 
 
 // GET
 export const allProductList = asyncHandler(async (req, res) => {
-    const { Product, Category, HSN, Brand, PackageType, UnitType, CategoryProducts } = req.dbModels;
+    const { Product, HSN, Brand, PackageType, UnitType } = req.dbModels;
     try {
         let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "finished", noLimit = false } = req.query;
         page = parseInt(page, 10);
@@ -25,18 +25,21 @@ export const allProductList = asyncHandler(async (req, res) => {
                         },
                         {
                             barcode: {
-                                [Op.eq]: text
+                                [Op.like]: `${text}%`
                             }
                         },
                         {
                             sku: {
-                                [Op.iLike]: `${sku}%`
+                                [Op.iLike]: `${text}%`
                             }
                         },
                     ]
                 }),
                 product_type: type,
             },
+            ...(type === "raw" && {
+                attributes: ["id", "name", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
+            }),
             include: [
                 {
                     model: HSN,
@@ -62,7 +65,11 @@ export const allProductList = asyncHandler(async (req, res) => {
             ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
-        await helper(req.dbModels, product);
+
+        if (type !== "raw") {
+            await helper(req.dbModels, product);
+        };
+
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
         const totalItems = product.count;
@@ -169,10 +176,6 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         }
 
-        // if (product_type === "finished" && req?.file === undefined && base64Image) {
-        //     profile_image = await saveBase64Image(base64Image);
-        // };
-
         const product = await Product.create({
             name: name.trim(),
             hsn_code: hsn.hsn_code,
@@ -214,7 +217,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
     let photo = req?.file?.filename || null;
 
     try {
-        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "" } = req.body;
+        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", p_code = "" } = req.body;
 
         if ([name, unit_type_id].some(item => item === "")) {
             if (photo) await deleteImage(photo, dbName);
@@ -232,7 +235,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
         const isExists = await Product.findOne({
             where: {
                 unit_type: unitType.name,
-                name: name.trim().toLowerCase(),
+                name: { [Op.iLike]: name.trim() },
                 product_type: "raw"
             }
         })
@@ -242,8 +245,11 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Product already exists!!!` });
         };
 
+        console.log(isExists)
+
         const product = await Product.create({
             name: name?.trim(),
+            sku: p_code,
             ...(barcode?.trim() && { barcode: barcode.trim() }),
             unit_type: unitType.name,
             description,
@@ -257,7 +263,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
 
 
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Raw Product added successfully" });
+        return res.status(200).json({ success: true, code: 200, message: "Raw Product added" });
 
     } catch (error) {
         await transaction.rollback();
@@ -300,10 +306,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
     try {
         let {
             id = "", name = "", categories = "", brands = "",
-            hsn_id = "", sku = "", barcode = "",
-            gst_type = "", package_type_id = "",
-            unit_type_id = "", measure = "", unit = "", MRP = "",
-            description = "", purchase_price = "", reorder_level = "", is_active = ""
+            hsn_id = "", sku = "", barcode = "", package_type_id = "",
+            unit_type_id = "", measure = "",
+            description = "", reorder_level = "", is_active = ""
         } = req.body;
 
         if (!(id || barcode)) {
@@ -315,7 +320,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         const product = await Product.findOne({
             where: (barcode || id) ? {
                 [Op.or]: [
-                    { barcode: Number(barcode) || null },
+                    { barcode: barcode },
                     { id: Number(id) || null }
                 ]
             } : undefined,
@@ -345,14 +350,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
             product.setProductCategories(category);
         }
         if (brands) {
-            brands = JSON.parse(brands);
-
-            const brand = await Brand.findAll({
-                where: {
-                    id: {
-                        [Op.in]: brands
-                    }
-                }
+            const brand = await Brand.findOne({
+                where: { id: Number(brands) }
             })
             if (!brand) {
                 if (profile_image) await deleteImage(profile_image, dbName);
@@ -371,8 +370,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
             product.hsn_id = hsn.id;
         }
         if (sku) product.sku = sku;
-        if (gst_type) product.gst_type = gst_type.trim().toLowerCase();
-
         if (package_type_id) {
             const packageType = await PackageType.findByPk(Number(package_type_id));
             console.log(packageType)
@@ -383,8 +380,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
             };
             product.package_type = packageType.name;
         }
-
-
         if (unit_type_id) {
             const unitType = await UnitType.findByPk(Number(unit_type_id));
             if (!unitType) {
@@ -394,15 +389,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
             };
             product.unit_type = unitType.name;
         }
-
-        // if (unit) product.unit = unit;
         if (measure) product.measure = measure;
         if (description) product.description = description;
-        // if (purchase_price) product.purchase_price = purchase_price;
-        // if (MRP) product.MRP = parseFloat(MRP);
         if (reorder_level) product.reorder_level = Number(reorder_level);
         if (is_active) product.is_active = is_active;
-
         if (profile_image) {
             if (product.photo) {
                 await deleteImage(product.photo);
@@ -410,7 +400,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
             product.photo = `${dbName}/${profile_image}`;
         }
 
-        const isUpdate = await product.save({ transaction })
+        const isUpdate = await product.save({ transaction });
         if (!isUpdate) throw new Error("Updation failed!!!");
 
         await transaction.commit();
@@ -453,7 +443,11 @@ export const updateProductBatch = asyncHandler(async (req, res) => {
 
 
 
-
+/**
+ * 
+ * @param {Object} models DB model
+ * @param {Object} product product fetched data from DB
+ */
 async function helper(models, product) {
     const { CategoryProducts, Category } = models;
 

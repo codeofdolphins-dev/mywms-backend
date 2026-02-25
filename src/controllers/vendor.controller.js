@@ -4,14 +4,14 @@ import bcrypt from "bcrypt";
 
 // GET
 export const allVendorList = asyncHandler(async (req, res) => {
-    const { Vendor, VendorCategory } = req.dbModels;
+    const { User, VendorCategory } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const vendor = await Vendor.findAndCountAll({
+        const vendor = await User.findAndCountAll({
             where: {
                 ...(id && { id }),
                 ...(text ? {
@@ -24,10 +24,9 @@ export const allVendorList = asyncHandler(async (req, res) => {
                         { phone: { [Op.iLike]: `${text}%` } },
                     ]
                 } : {}),
+                type: "external"
             },
-            attributes: {
-                exclude: ["password", "access_token"]
-            },
+            attributes: ["email", "name", "company_name", "phone_no", "meta", "vendor_category_id", "is_active"],
             include: [
                 {
                     model: VendorCategory,

@@ -17,7 +17,7 @@ function Product(sequelize) {
             unique: true,
         },
         barcode: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.STRING,
             allowNull: true,
             unique: true,
         },
@@ -25,15 +25,6 @@ function Product(sequelize) {
             type: DataTypes.ENUM("raw", "finished"),
             defaultValue: "raw",
             allowNull: false
-        },
-        gst_rate: {
-            type: DataTypes.DECIMAL(5, 2),
-            allowNull: true,
-            defaultValue: 0.00
-        },
-        is_taxable: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
         },
         package_type: {
             type: DataTypes.STRING,

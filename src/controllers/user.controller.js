@@ -74,7 +74,7 @@ const currentUser = asyncHandler(async (req, res) => {
 const allUserList = asyncHandler(async (req, res) => {
     const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", type = "internal", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -93,6 +93,7 @@ const allUserList = asyncHandler(async (req, res) => {
                         { phone_no: { [Op.iLike]: `${text}%` } },
                     ]
                 } : {}),
+                type
             },
             attributes: {
                 exclude: ["password", "accessToken", "is_owner"]
