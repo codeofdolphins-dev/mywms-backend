@@ -49,5 +49,5 @@ export function generateBatch(id) {
  */
 export function generateVenCatCode(str) {
     if(str === "") return;
-    return str.split(/\s+/).reduce((acc, word) => acc + word[0], "VC-")?.toUpperCase();
+    return str.split(/\s+/).reduce((acc, word) => acc + word, "VC-")?.toUpperCase();
 };

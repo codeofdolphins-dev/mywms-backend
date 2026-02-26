@@ -19,6 +19,6 @@ router.route("/list").get(verifyPermission("vendor:read"), allVendorList);
 router.route("/category/list").get(verifyPermission("vendor-category:read"), allVendorCategoryList);
 router.route("/category/create").post(verifyPermission("vendor-category:create"), createVendorCategory);
 router.route("/category/update").put(verifyPermission("vendor-category:update"), updateVendorCategoryDetails);
-router.route("/category/delete").delete(verifyPermission("vendor-category:delete"), deleteVendorCategory);
+router.route("/category/delete/:id").delete(verifyPermission("vendor-category:delete"), deleteVendorCategory);
 
 export default router;

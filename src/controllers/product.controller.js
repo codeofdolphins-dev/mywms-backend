@@ -15,7 +15,7 @@ export const allProductList = asyncHandler(async (req, res) => {
         const product = await Product.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
-                ...(barcode && { barcode: Number(barcode) }),
+                ...(barcode && { barcode: barcode }),
                 ...(text && {
                     [Op.or]: [
                         {
@@ -62,7 +62,7 @@ export const allProductList = asyncHandler(async (req, res) => {
                     // attributes: ["name"]
                 },
             ],
-            ...(noLimit && { limit, offset }),
+            ...(!noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
 
@@ -80,12 +80,14 @@ export const allProductList = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: product.rows,
-            meta: {
-                totalItems,
-                totalPages,
-                currentPage: page,
-                limit
-            }
+            ...(!noLimit && {
+                meta: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    limit
+                }
+            })
         });
 
     } catch (error) {

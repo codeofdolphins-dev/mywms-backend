@@ -105,7 +105,7 @@ export const updateVendorCategoryDetails = asyncHandler(async (req, res) => {
 export const deleteVendorCategory = asyncHandler(async (req, res) => {
     const { VendorCategory } = req.dbModels;
     try {
-        const { id } = req.query;
+        const { id } = req.params;
         if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
 
         const record = await VendorCategory.findByPk(Number(id));
