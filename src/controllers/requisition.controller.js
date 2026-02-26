@@ -326,9 +326,9 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             requisition_no,
         }, { transaction });
 
-        /** push all vendor id into join table (RequisitionVendor) */
-        await requisition.addRequisitionVendor(
-            supplierNode.map(node => node.id),
+        /** push all supplier id into join table (requisitionSupplier) */
+        await requisition.addSupplierBusinessNode(
+            allVendors.map(node => node.id),
             {
                 through: {
                     status: "sent",
@@ -341,7 +341,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             if (!item.barcode || !item.brand || !item.category) throw new Error("required field are missing!!!");
 
             const product = await Product.findOne({
-                where: { barcode: parseInt(item.barcode, 10) },
+                where: { barcode: item.barcode },
             });
             if (!product) {
                 await transaction.rollback();
@@ -378,7 +378,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { title = "", vendor_category_id = "", required_by_date = "", priority = "", notes = "", total = "", type = "external", items = "", } = req.body;
+        const { title = "", vendor_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
@@ -406,15 +406,15 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             created_by: parseInt(userDetails.id, 10),
         }, { transaction });
 
-        const requisition_no = generateNo("REQ", requisition.id);
+        const requisition_no = generateNo("EX-REQ", requisition.id);
 
         await requisition.update({
             requisition_no,
         }, { transaction });
 
-        /** push all supplier id into join table (requisitionSupplier) */
-        await requisition.addSupplierBusinessNode(
-            allVendors.map(node => node.id),
+        /** push all vendor id into join table (RequisitionVendor) */
+        await requisition.addRequisitionVendor(
+            supplierNode.map(node => node.id),
             {
                 through: {
                     status: "sent",
@@ -424,11 +424,10 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         );
 
         for (const item of items) {
-            if (!item.barcode || !item.brand || !item.category) throw new Error("required field are missing!!!");
+            const { id = "", priceLimit = "", reqQty = "" } = item;
+            if ([id, reqQty, priceLimit].some(i => i === "")) throw new Error("required fields are missing!!!");
 
-            const product = await Product.findOne({
-                where: { barcode: parseInt(item.barcode, 10) },
-            });
+            const product = await Product.findByPk(Number(id));
             if (!product) {
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });

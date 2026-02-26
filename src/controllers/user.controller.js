@@ -39,6 +39,9 @@ const currentUser = asyncHandler(async (req, res) => {
                         {
                             model: NodeDetails,
                             as: "nodeDetails",
+                            attributes: {
+                                exclude: ["business_node_id"]
+                            }
                         },
                         {
                             model: BusinessNodeType,
@@ -53,7 +56,10 @@ const currentUser = asyncHandler(async (req, res) => {
         const plainUser = user.toJSON();
 
         // set active node
-        plainUser.activeNode = req.activeNode;
+        plainUser.activeNode = plainUser?.userBusinessNode?.find(node => node.id === req.activeNode);
+
+        // remove businessnode array
+        delete plainUser?.userBusinessNode;
 
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,
