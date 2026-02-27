@@ -17,10 +17,7 @@ const defineRootAssociations = (models) => {
         QuotationItem,
         PurchasOrder,
         PurchaseOrderItem,
-        Invoice,
-        InvoiceItems,
         Supplier,
-        BillOfMaterial,
         Brand,
         UnitType,
         SupplierBrand,
@@ -37,9 +34,9 @@ const defineRootAssociations = (models) => {
         NodeStockLedger,
         GRN,
         GRNItem,
-        Vendor,
         VendorCategory,
         RequisitionVendor,
+        RequisitionCategory
 
 
     } = models;
@@ -206,6 +203,7 @@ const defineRootAssociations = (models) => {
 
     // ********************************************One-To-Many*********************************
 
+    /************* Requisition (PR) ********************/
     // requisition <-> requisitionItem
     RequisitionItem.belongsTo(Requisition, {
         foreignKey: "requisition_id",
@@ -220,7 +218,22 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisition <-> requisitionCategory
+    Requisition.belongsTo(RequisitionCategory, {
+        foreignKey: "requisition_category_id",
+        as: "requisitionCategory",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionCategory.hasMany(Requisition, {
+        foreignKey: "requisition_category_id",
+        as: "categoryRequisition",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
+
+    /************* Quotation ********************/
     // quotation ↔ quotationItem
     Quotation.hasMany(QuotationItem, {
         foreignKey: "quotation_id",
@@ -234,10 +247,6 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-
-
-
-
 
 
     /************* PURCHASE ORDER (PO) ********************/
@@ -279,37 +288,6 @@ const defineRootAssociations = (models) => {
     BusinessNode.hasMany(PurchasOrder, {
         foreignKey: "form_business_node_id",
         as: "fromPurchaseOrders",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-
-
-
-    // invoiceItems <-> invoice
-    InvoiceItems.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "invoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Invoice.hasMany(InvoiceItems, {
-        foreignKey: "invoice_id",
-        as: "invoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoiceItems <-> product
-    InvoiceItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "InvoiceItemProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InvoiceItems, {
-        foreignKey: "product_id",
-        as: "productInvoiceItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -499,35 +477,6 @@ const defineRootAssociations = (models) => {
     Requisition.belongsTo(User, {
         foreignKey: "created_by",
         as: "createdBy",
-    });
-
-
-    // product <-> billOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "finished_product_id",
-        as: "bomItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "finished_product_id",
-        as: "finishedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product <-> billOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "raw_product_id",
-        as: "usedInBoms",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "raw_product_id",
-        as: "rawMaterial",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
     });
 
     // unitType <-> product
@@ -892,10 +841,7 @@ const defineTenantAssociations = (models) => {
         QuotationItem,
         PurchasOrder,
         PurchaseOrderItem,
-        Invoice,
-        InvoiceItems,
         Supplier,
-        BillOfMaterial,
         Brand,
         UnitType,
         SupplierBrand,
@@ -911,9 +857,9 @@ const defineTenantAssociations = (models) => {
         NodeStockLedger,
         GRN,
         GRNItem,
-        Vendor,
         VendorCategory,
-        RequisitionVendor
+        RequisitionVendor,
+        RequisitionCategory
 
 
     } = models;
@@ -1068,6 +1014,7 @@ const defineTenantAssociations = (models) => {
 
     // ********************************************One-To-Many*********************************
 
+    /************* requisition (PR) ********************/
     // requisition <-> requisitionItem
     RequisitionItem.belongsTo(Requisition, {
         foreignKey: "requisition_id",
@@ -1082,6 +1029,36 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisition <-> requisitionCategory
+    Requisition.belongsTo(RequisitionCategory, {
+        foreignKey: "requisition_category_id",
+        as: "requisitionCategory",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionCategory.hasMany(Requisition, {
+        foreignKey: "requisition_category_id",
+        as: "categoryRequisition",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // requisition <-> businessNode ==> BUYER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyerRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* quotation ********************/
     // quotation ↔ quotationItem
     Quotation.hasMany(QuotationItem, {
         foreignKey: "quotation_id",
@@ -1096,12 +1073,33 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // quotation <-> businessNode
+    Quotation.belongsTo(BusinessNode, {
+        foreignKey: "to_business_node_id",
+        as: "toBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Quotation, {
+        foreignKey: "to_business_node_id",
+        as: "receivedQuotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
-
-
-
-
-
+    // quotation <-> User
+    Quotation.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "quotationCreated",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(Quotation, {
+        foreignKey: "created_by",
+        as: "createQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
 
     /************* PURCHASE ORDER (PO) ********************/
@@ -1148,76 +1146,6 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    // InvoiceItems <-> Invoice
-    InvoiceItems.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "invoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Invoice.hasMany(InvoiceItems, {
-        foreignKey: "invoice_id",
-        as: "invoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // InvoiceItems <-> Product
-    InvoiceItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "InvoiceItemProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InvoiceItems, {
-        foreignKey: "product_id",
-        as: "productInvoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition <-> businessNode ==> BUYER
-    Requisition.belongsTo(BusinessNode, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyer",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(Requisition, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyerRequisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // quotation <-> businessNode
-    Quotation.belongsTo(BusinessNode, {
-        foreignKey: "to_business_node_id",
-        as: "toBusinessNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(Quotation, {
-        foreignKey: "to_business_node_id",
-        as: "receivedQuotations",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // quotation <-> User
-    Quotation.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "quotationCreated",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Quotation, {
-        foreignKey: "created_by",
-        as: "createQuotation",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // businessNode <-> tenantBusinessFlow
     BusinessNode.belongsTo(TenantBusinessFlow, {
         foreignKey: "tenant_business_flow_id",
@@ -1233,8 +1161,7 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    /** grn */
-
+    /************* grn ********************/
     // grnItem <-> grn
     GRNItem.belongsTo(GRN, {
         foreignKey: "grn_id",
@@ -1345,34 +1272,6 @@ const defineTenantAssociations = (models) => {
     Requisition.belongsTo(User, {
         foreignKey: "created_by",
         as: "createdBy",
-    });
-
-    // Product <-> BillOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "finished_product_id",
-        as: "bomItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "finished_product_id",
-        as: "finishedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Product <-> BillOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "raw_product_id",
-        as: "usedInBoms",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "raw_product_id",
-        as: "rawMaterial",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
     });
 
     // UnitType <-> Product

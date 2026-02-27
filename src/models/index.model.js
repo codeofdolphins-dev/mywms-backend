@@ -39,6 +39,7 @@ import GRN from "./grn.model.js";
 import GRNItem from "./grnItems.model.js";
 import VendorCategory from "./vendorCategory.model.js";
 import RequisitionVendor from "./requisitionVendor.joinModel.js";
+import RequisitionCategory from "./requisitionCategory.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -82,6 +83,7 @@ const defineRootModels = (rootSequelize) => {
     GRNItem(rootSequelize);
     VendorCategory(rootSequelize);
     RequisitionVendor(rootSequelize);
+    RequisitionCategory(rootSequelize);
 
     return rootSequelize.models;
 }
@@ -123,6 +125,7 @@ const defineTenantModels = (sequelize) => {
     GRNItem(sequelize);
     VendorCategory(sequelize);
     RequisitionVendor(sequelize);
+    RequisitionCategory(sequelize);
 
     return sequelize.models;
 }

@@ -22,6 +22,10 @@ function Requisition(sequelize) {
             type: DataTypes.DECIMAL,
             allowNull: true
         },
+        requisition_category_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
         type: {
             type: DataTypes.ENUM("internal", "external"),
             defaultValue: "external"

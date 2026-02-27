@@ -903,7 +903,6 @@ export const roles = [
 ];
 
 export const businessNodeTypes = [
-  // { name: "Vendor", code: "L-100", category: "supplier", },
   { name: "Mfg Bond Warehouse", code: "L-101", category: "manufacturing", },
   { name: "Mother Warehouse (National level)", code: "L-102", category: "warehouse", },
   { name: "Central Warehouse", code: "L-103", category: "warehouse", },
