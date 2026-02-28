@@ -19,6 +19,10 @@ function GRN(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
+        mfg_unit_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
         received_date: {
             type: DataTypes.DATEONLY,
             allowNull: false

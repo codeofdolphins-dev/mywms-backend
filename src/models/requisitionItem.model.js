@@ -12,11 +12,11 @@ function RequisitionItem(sequelize) {
         },
         brand: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         category: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         sub_category: {
             type: DataTypes.STRING,
@@ -28,6 +28,7 @@ function RequisitionItem(sequelize) {
         },
         priceLimit: {
             type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0.00,
             allowNull: true,
         },
         remarks: {

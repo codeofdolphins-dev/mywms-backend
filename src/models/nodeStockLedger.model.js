@@ -14,6 +14,14 @@ function NodeStockLedger (sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        from_mfg_unit_id: {             // for manufacturing units
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        to_mfg_unit_id: {               // for manufacturing units
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         source_batch_id: {
             type: DataTypes.INTEGER,
             allowNull: false

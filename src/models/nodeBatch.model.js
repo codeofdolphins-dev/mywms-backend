@@ -10,6 +10,10 @@ function NodeBatch(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        mfg_unit_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         batch_no: {
             type: DataTypes.STRING,
             allowNull: true
@@ -32,6 +36,8 @@ function NodeBatch(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true,
         },
+
+        // optional
         reference_id: {
             type: DataTypes.INTEGER,
             allowNull: true,

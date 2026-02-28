@@ -34,9 +34,8 @@ const defineRootAssociations = (models) => {
         NodeStockLedger,
         GRN,
         GRNItem,
-        VendorCategory,
-        RequisitionVendor,
-        RequisitionCategory
+        RequisitionCategory,
+        ManufacturingUnit
 
 
     } = models;
@@ -232,6 +231,20 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisition <-> businessNode ==> BUYER
+    Requisition.belongsTo(BusinessNode, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Requisition, {
+        foreignKey: "buyer_business_node_id",
+        as: "buyerRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
     /************* Quotation ********************/
     // quotation ↔ quotationItem
@@ -248,8 +261,36 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // quotation <-> businessNode
+    Quotation.belongsTo(BusinessNode, {
+        foreignKey: "to_business_node_id",
+        as: "toBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Quotation, {
+        foreignKey: "to_business_node_id",
+        as: "receivedQuotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
-    /************* PURCHASE ORDER (PO) ********************/
+    // quotation <-> User
+    Quotation.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "quotationCreated",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(Quotation, {
+        foreignKey: "created_by",
+        as: "createQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* purchas Order (PO) ********************/
     // purchaseOrderItem(POD) <-> purchasOrder(PO)
     PurchaseOrderItem.belongsTo(PurchasOrder, {
         foreignKey: "purchase_order_id",
@@ -292,6 +333,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+
     // tenantsName ↔ tenantBusinessFlowMaster
     TenantBusinessFlowMaster.belongsTo(TenantsName, {
         foreignKey: "tenant_id",
@@ -306,49 +348,8 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // requisition <-> businessNode ==> BUYER
-    Requisition.belongsTo(BusinessNode, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyer",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(Requisition, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyerRequisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
-
-    // quotation <-> businessNode
-    Quotation.belongsTo(BusinessNode, {
-        foreignKey: "to_business_node_id",
-        as: "toBusinessNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(Quotation, {
-        foreignKey: "to_business_node_id",
-        as: "receivedQuotations",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // quotation <-> User
-    Quotation.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "quotationCreated",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Quotation, {
-        foreignKey: "created_by",
-        as: "createQuotation",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
+    /************* businessNode ********************/
     // businessNode <-> tenantBusinessFlow
     BusinessNode.belongsTo(TenantBusinessFlow, {
         foreignKey: "tenant_business_flow_id",
@@ -363,9 +364,22 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // businessNode <-> tenantBusinessFlow
+    ManufacturingUnit.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "parentBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(ManufacturingUnit, {
+        foreignKey: "business_node_id",
+        as: "unitLocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
-    /** grn */
 
+    /************* grn ********************/
     // grnItem <-> grn
     GRNItem.belongsTo(GRN, {
         foreignKey: "grn_id",
@@ -422,7 +436,23 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // grn <-> manufacturingUnit
+    GRN.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnit",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(GRN, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnitGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
+
+
+    /************* grnItem ********************/
     // grnItem <-> purchaseOrderItem
     GRNItem.belongsTo(PurchaseOrderItem, {
         foreignKey: "purchase_order_item_id",
@@ -452,15 +482,16 @@ const defineRootAssociations = (models) => {
     });
 
 
-    // vendor <-> vendorCategory
-    User.belongsTo(VendorCategory, {
-        foreignKey: "vendor_category_id",
+    /************* manufacturingUnit ********************/
+    // nodeBatch <-> manufacturingUnit
+    NodeBatch.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_unit_id",
         as: "vendorCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    VendorCategory.hasMany(User, {
-        foreignKey: "vendor_category_id",
+    ManufacturingUnit.hasMany(NodeBatch, {
+        foreignKey: "mfg_unit_id",
         as: "vendor",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
@@ -804,24 +835,6 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-
-    // requisition - vendor
-    Requisition.belongsToMany(User, {
-        through: RequisitionVendor,
-        as: "requisitionVendor",
-        foreignKey: "requisition_id",
-        otherKey: "vendor_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.belongsToMany(Requisition, {
-        through: RequisitionVendor,
-        as: "vendorRequisition",
-        foreignKey: "vendor_id",
-        otherKey: "requisition_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 };
 
 const defineTenantAssociations = (models) => {
@@ -857,9 +870,8 @@ const defineTenantAssociations = (models) => {
         NodeStockLedger,
         GRN,
         GRNItem,
-        VendorCategory,
-        RequisitionVendor,
-        RequisitionCategory
+        RequisitionCategory,
+        ManufacturingUnit
 
 
     } = models;
@@ -1146,6 +1158,7 @@ const defineTenantAssociations = (models) => {
     });
 
 
+    /************* businessNode ********************/
     // businessNode <-> tenantBusinessFlow
     BusinessNode.belongsTo(TenantBusinessFlow, {
         foreignKey: "tenant_business_flow_id",
@@ -1156,6 +1169,20 @@ const defineTenantAssociations = (models) => {
     TenantBusinessFlow.hasMany(BusinessNode, {
         foreignKey: "tenant_business_flow_id",
         as: "flowNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode <-> tenantBusinessFlow
+    ManufacturingUnit.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "parentBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(ManufacturingUnit, {
+        foreignKey: "business_node_id",
+        as: "unitLocations",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -1218,7 +1245,23 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // grn <-> manufacturingUnit
+    GRN.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnit",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(GRN, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnitGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
+
+
+    /************* grnItem ********************/
     // grnItem <-> purchaseOrderItem
     GRNItem.belongsTo(PurchaseOrderItem, {
         foreignKey: "purchase_order_item_id",
@@ -1248,15 +1291,16 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    // vendor <-> vendorCategory
-    User.belongsTo(VendorCategory, {
-        foreignKey: "vendor_category_id",
+    /************* manufacturingUnit ********************/
+    // nodeBatch <-> manufacturingUnit
+    NodeBatch.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_unit_id",
         as: "vendorCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    VendorCategory.hasMany(User, {
-        foreignKey: "vendor_category_id",
+    ManufacturingUnit.hasMany(NodeBatch, {
+        foreignKey: "mfg_unit_id",
         as: "vendor",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
@@ -1595,24 +1639,6 @@ const defineTenantAssociations = (models) => {
         through: RequisitionSupplier,
         as: "supplierRequisition",
         foreignKey: "supplier_business_node_id",
-        otherKey: "requisition_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition - vendor
-    Requisition.belongsToMany(User, {
-        through: RequisitionVendor,
-        as: "requisitionVendor",
-        foreignKey: "requisition_id",
-        otherKey: "vendor_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.belongsToMany(Requisition, {
-        through: RequisitionVendor,
-        as: "vendorRequisition",
-        foreignKey: "vendor_id",
         otherKey: "requisition_id",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
