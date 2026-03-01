@@ -42,46 +42,21 @@ import ManufacturingUnit from "./manufacturingUnit.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
-    User(rootSequelize);
-    Category(rootSequelize);
     District(rootSequelize);
     State(rootSequelize);
     Permission(rootSequelize);
     Role(rootSequelize);
     RolePermissions(rootSequelize);
-    Product(rootSequelize);
     UserRoles(rootSequelize);
-    NodeBatch(rootSequelize);
     TenantsName(rootSequelize);
-    Requisition(rootSequelize);
-    RequisitionItem(rootSequelize);
-    HSN(rootSequelize);
-    Quotation(rootSequelize);
-    QuotationItem(rootSequelize);
-    PurchasOrder(rootSequelize);
-    PurchaseOrderItem(rootSequelize);
-    Invoice(rootSequelize);
-    InvoiceItems(rootSequelize);
-    BillOfMaterial(rootSequelize);
-    Brand(rootSequelize);
-    UnitType(rootSequelize);
-    Supplier(rootSequelize);
-    SupplierBrand(rootSequelize);
-    CategoryProducts(rootSequelize);
-    BrandProducts(rootSequelize);
+    User(rootSequelize);
     BusinessNodeType(rootSequelize);
     TenantBusinessFlowMaster(rootSequelize);
     TenantBusinessFlow(rootSequelize);
-    BusinessNode(rootSequelize);
-    PackageType(rootSequelize);
-    NodeUser(rootSequelize);
+    BusinessNode(rootSequelize)
     NodeDetails(rootSequelize);
-    RequisitionSupplier(rootSequelize);
-    NodeStockLedger(rootSequelize);
-    GRN(rootSequelize);
-    GRNItem(rootSequelize);
-    RequisitionCategory(rootSequelize);
-    ManufacturingUnit(rootSequelize);
+    Quotation(rootSequelize);
+    QuotationItem(rootSequelize);
 
     return rootSequelize.models;
 }
