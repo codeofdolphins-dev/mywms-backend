@@ -26,7 +26,7 @@ function RequisitionItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        priceLimit: {
+        price_limit: {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0.00,
             allowNull: true,

@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 import { generateNo } from "../helper/generate.js";
+import { rootDB } from "../db/tenantMenager.service.js"
 
 
 // GET
@@ -356,7 +357,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
                     category: item.category,
                     sub_category: item.subCategory,
                     qty: item.reqQty,
-                    priceLimit: item.priceLimit
+                    price_limit: item.priceLimit
                 },
                 { transaction }
             );
@@ -372,56 +373,58 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
     }
 });
 
+
 export const createExternalRequisition = asyncHandler(async (req, res) => {
-    const { Requisition, RequisitionItem, Product, User, VendorCategory } = req.dbModels;
+    const { rootSequelize, models } = await rootDB();
+    const { RFQ, RFQItem } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const { Requisition, RequisitionItem, Product, RequisitionCategory } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     // console.log(req.body); return
 
     try {
-        const { title = "", vendor_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", } = req.body;
+        const { title = "", requisition_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
-        if (!title || items?.length < 1 || vendor_category_id?.length < 1) throw new Error("Required fields are missing!!!");
+        if (!title || items?.length < 1) throw new Error("Required fields are missing!!!");
 
-        const vCat = await VendorCategory.findByPk(Number(vendor_category_id));
-        if (!vCat) throw new Error("Vendor category not found!!!");
+        const rCat = await RequisitionCategory.findByPk(Number(requisition_category_id));
 
-        // fetch all Vendor
-        const allVendors = await User.findAll({
-            where: {
-                vendor_category_id: Number(vendor_category_id)
-            }
-        });
-        if (!allVendors) throw new Error("No vendor records found!!!");
 
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
-            ...(required_by_date && { required_by_date: new Date(required_by_date) }),
-            title,
-            notes,
+            title: title?.trim(),
+            notes: notes?.trim(),
             grandTotal: total,
-            ...(priority && { priority: priority.toLowerCase() }),
+            requisition_category_id: rCat?.id,
             type: "external",
+            ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             created_by: parseInt(userDetails.id, 10),
+            ...(priority && { priority: priority.toLowerCase() }),
         }, { transaction });
 
-        const requisition_no = generateNo("EX-REQ", requisition.id);
-
+        // update requisition no field
         await requisition.update({
-            requisition_no,
+            requisition_no: generateNo("EX-REQ", requisition.id)
         }, { transaction });
 
-        /** push all vendor id into join table (RequisitionVendor) */
-        await requisition.addRequisitionVendor(
-            supplierNode.map(node => node.id),
-            {
-                through: {
-                    status: "sent",
-                },
-                transaction,
-            }
-        );
+
+        const rfq = await RFQ.create({
+            buyer_tenant_id: current_node,
+            pr_reference_id: requisition.id,
+            title: title?.trim(),
+            notes: notes?.trim(),
+            status: "open",
+            ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
+            grand_total: total,
+        }, {
+            transaction: rootTransaction
+        });
+
+        await rfq.update({ rfq_no: generateNo("RFQ", rfq.id) }, { transaction: rootTransaction });
+
 
         for (const item of items) {
             const { id = "", priceLimit = "", reqQty = "" } = item;
@@ -433,6 +436,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
             }
 
+            // create record in requisition item model
             await RequisitionItem.create(
                 {
                     requisition_id: requisition.id,
@@ -441,10 +445,19 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
                     category: item.category,
                     sub_category: item.subCategory,
                     qty: item.reqQty,
-                    priceLimit: item.priceLimit
+                    price_limit: item.priceLimit
                 },
                 { transaction }
             );
+
+            await RFQItem.create({
+                rfq_id: rfq.id,
+                product_name: product.name,
+                qty: item.reqQty,
+                uom: product.unit_type,
+                price_limit: item.priceLimit
+            }, { transaction: rootTransaction });
+
         }
 
         await transaction.commit();

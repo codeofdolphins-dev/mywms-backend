@@ -14,15 +14,23 @@ function RFQ(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        note: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
         status: {
             type: DataTypes.ENUM("draft", "open", "closed", "cancelled"),
-            defaultValue: "sent",
+            defaultValue: "open",
         },
         submission_deadline: {
             type: DataTypes.DATEONLY,
             allowNull: true,
         },
-        grandTotal: {
+        grand_total: {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0.00,
         },

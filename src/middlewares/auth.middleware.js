@@ -3,8 +3,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-    const { User, BusinessNodeType, Role, Permission, BusinessNode, NodeDetails } = req.dbModels;
+    console.log(req.dbModels)
     try {
+        const { User, BusinessNodeType, Role, Permission, BusinessNode } = req.dbModels;
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
         if (!token) return res.status(401).json({ success: false, code: 401, message: "Unauthorized request" });
 
@@ -12,18 +13,19 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
         const user = await User.findByPk(decodedToken?.id, {
             include: [
-                {
+                ...(BusinessNode ? [{
                     model: BusinessNode,
                     as: "userBusinessNode",
                     attributes: {
                         exclude: ["parent_node_id"]
                     },
                     through: { attributes: [] },
-                },
+                }] : []
+                ),
             ]
         });
         if (!user || !user.accessToken || user.accessToken !== token) return res.status(401).json({ success: false, code: 401, message: "Token expired or Invalid token" });
-        
+
         const data = user.toJSON();
         const activeNode = data?.userBusinessNode?.length === 1 ? data?.userBusinessNode?.[0]?.id : null;
 

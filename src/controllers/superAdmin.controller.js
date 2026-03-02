@@ -34,6 +34,9 @@ const tenantBusinessFlow = asyncHandler(async (req, res) => {
         const { email = "" } = req.query;
         if (!email) throw new Error("Email required!!!");
 
+        const isExists = await Tenant.findOne({ where: { email: email?.trim() } });
+        if (!isExists) throw new Error("Record not found!!!");
+
         const result = await Tenant.findOne({
             where: { email },
             include: [
@@ -54,7 +57,7 @@ const tenantBusinessFlow = asyncHandler(async (req, res) => {
         });
 
 
-        const formatedResult = result.toJSON();
+        const formatedResult = result?.toJSON();
         formatedResult.businessFlows = result.tenantsName.businessFlows;
         delete formatedResult.tenantsName.businessFlows;
 

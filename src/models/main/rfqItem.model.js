@@ -1,13 +1,13 @@
 import { DataTypes } from "sequelize";
 
-function RFQ(sequelize) {
-    return sequelize.define("RFQ", {
+function RFQItem(sequelize) {
+    return sequelize.define("RFQItem", {
         rfq_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
         product_name: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: true,
         },
         qty: {
@@ -18,12 +18,12 @@ function RFQ(sequelize) {
             type: DataTypes.STRING,
             allowNull: true,
         },
-        priceLimit: {
+        price_limit: {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0.00,
             allowNull: true
-        },
+        }
     });
 }
 
-export default RFQ;
+export default RFQItem;

@@ -39,6 +39,10 @@ import GRN from "./grn.model.js";
 import GRNItem from "./grnItems.model.js";
 import RequisitionCategory from "./requisitionCategory.model.js";
 import ManufacturingUnit from "./manufacturingUnit.model.js";
+import RFQ from "./main/rfq.model.js";
+import RFQItem from "./main/rfqItem.model.js";
+import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
+import RfqQuotation from "./main/rfqQuotation.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -52,11 +56,10 @@ const defineRootModels = (rootSequelize) => {
     User(rootSequelize);
     BusinessNodeType(rootSequelize);
     TenantBusinessFlowMaster(rootSequelize);
-    TenantBusinessFlow(rootSequelize);
-    BusinessNode(rootSequelize)
-    NodeDetails(rootSequelize);
-    Quotation(rootSequelize);
-    QuotationItem(rootSequelize);
+    RfqQuotation(rootSequelize);
+    RfqQuotationItem(rootSequelize);
+    RFQ(rootSequelize);
+    RFQItem(rootSequelize);
 
     return rootSequelize.models;
 }

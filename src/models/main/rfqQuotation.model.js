@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function Quotation(sequelize) {
-    return sequelize.define("Quotation", {
+function RfqQuotation(sequelize) {
+    return sequelize.define("RfqQuotation", {
         rfq_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -15,11 +15,11 @@ function Quotation(sequelize) {
             defaultValue: 1,
         },
         status: {
-            type: DataTypes.ENUM("draft", "open", "closed", "cancelled"),
+            type: DataTypes.ENUM("draft", "sent", "confirmed", "closed", "cancelled"),
             defaultValue: "sent",
         },
-        total_amount: {
-            type: DataTypes.TEXT,
+        grand_total: {
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
         meta: {
@@ -29,4 +29,4 @@ function Quotation(sequelize) {
     });
 }
 
-export default Quotation;
+export default RfqQuotation;

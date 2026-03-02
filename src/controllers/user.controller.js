@@ -3,9 +3,11 @@ import { Op, Sequelize } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
+    console.log(req.dbModels)
     try {
+        const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
         const { id } = req.user;
+
 
         const user = await User.findByPk(id, {
             attributes: {
@@ -26,7 +28,7 @@ const currentUser = asyncHandler(async (req, res) => {
                         }
                     ]
                 },
-                {
+                ...(BusinessNode ? [{
                     model: BusinessNode,
                     as: "userBusinessNode",
                     attributes: {
@@ -48,7 +50,8 @@ const currentUser = asyncHandler(async (req, res) => {
                             as: "type",
                         },
                     ]
-                },
+                }] : []
+                ),
             ]
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
@@ -76,6 +79,7 @@ const currentUser = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 const allUserList = asyncHandler(async (req, res) => {
     const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
@@ -163,8 +167,6 @@ const allUserList = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
 
 const warehouseEmployeeList = asyncHandler(async (req, res) => {
     const { User, IndividualDetails } = req.dbModels;

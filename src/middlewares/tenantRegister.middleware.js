@@ -2,12 +2,13 @@ import { deleteTenantDatabase, generateDatabase, getTenantConnection, rootDB } f
 
 
 const businessNodeSequence = [
-    { node_type_code: "L-102", sequence: 1 },
-    { node_type_code: "L-103", sequence: 2 },
-    { node_type_code: "L-104", sequence: 3 },
-    { node_type_code: "L-105", sequence: 4 },
-    { node_type_code: "L-110", sequence: 5 },
-    { node_type_code: "L-111", sequence: 6 }
+    { node_type_code: "L-101", sequence: 1 },
+    { node_type_code: "L-102", sequence: 2 },
+    { node_type_code: "L-103", sequence: 3 },
+    { node_type_code: "L-104", sequence: 4 },
+    { node_type_code: "L-105", sequence: 5 },
+    { node_type_code: "L-110", sequence: 6 },
+    { node_type_code: "L-111", sequence: 7 }
 ];
 
 export const registerNewTenant = (async function (req, res, next) {
@@ -56,7 +57,7 @@ export const registerNewTenant = (async function (req, res, next) {
         return next();
 
     } catch (error) {
-        if(t_Transaction) await t_Transaction.rollback();
+        if (t_Transaction) await t_Transaction.rollback();
         await r_Transaction.rollback();
 
         await deleteTenantDatabase(dbName);

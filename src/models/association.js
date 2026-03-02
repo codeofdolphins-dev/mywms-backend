@@ -6,32 +6,14 @@ const defineRootAssociations = (models) => {
         Tenant,
         TenantsName,
         TenantBusinessFlowMaster,
-        BusinessNodeType,
-        BusinessNode,
-        NodeDetails,
-        TenantBusinessFlow,
         User,
         Permission,
-
+        RFQ,
+        RFQItem,
+        RfqQuotation,
+        RfqQuotationItem,
 
     } = models;
-
-    // ******************************************** Self-Association *********************************
-
-    // parent → children
-    BusinessNode.hasMany(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "children",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    // child → parent
-    BusinessNode.belongsTo(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "parentNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
     // ********************************************One-To-One*********************************
 
@@ -49,73 +31,114 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-
-    // businessNode ↔ nodeDetails
-    BusinessNode.hasOne(NodeDetails, {
-        foreignKey: "business_node_id",
-        as: "nodeDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    NodeDetails.belongsTo(BusinessNode, {
-        foreignKey: "business_node_id",
-        as: "businessNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-
-
     // ********************************************One-To-Many*********************************
     // tenantsName ↔ tenantBusinessFlowMaster
-    TenantBusinessFlowMaster.belongsTo(TenantsName, {
-        foreignKey: "tenant_id",
-        as: "tenant",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
     TenantsName.hasMany(TenantBusinessFlowMaster, {
         foreignKey: "tenant_id",
         as: "businessFlows",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-
-
-    /************* businessNode ********************/
-    // businessNode <-> tenantBusinessFlow
-    BusinessNode.belongsTo(TenantBusinessFlow, {
-        foreignKey: "tenant_business_flow_id",
-        as: "parentFlow",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    TenantBusinessFlow.hasMany(BusinessNode, {
-        foreignKey: "tenant_business_flow_id",
-        as: "flowNode",
+    TenantBusinessFlowMaster.belongsTo(TenantsName, {
+        foreignKey: "tenant_id",
+        as: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
-
-
-    // ********************************************Many-To-One*********************************
-
-    // businessNodeType <-> businessNode
-    BusinessNodeType.hasMany(BusinessNode, {
-        foreignKey: "node_type_code",
-        as: "nodes",
-        sourceKey: "code",
+    // tenantsName ↔ rfq
+    TenantsName.hasMany(RFQ, {
+        foreignKey: "buyer_tenant_id",
+        as: "buyerRfqs",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    BusinessNode.belongsTo(BusinessNodeType, {
-        foreignKey: "node_type_code",
-        as: "type",
-        targetKey: "code",
+    RFQ.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant_id",
+        as: "buyerTenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+
+    // tenantsName ↔ quotation  =>> Vendor
+    TenantsName.hasMany(RfqQuotation, {
+        foreignKey: "vendor_tenant_id",
+        as: "quotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotation.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant_id",
+        as: "vendorTenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /** ******************* rfq ************************ */
+    // rfq ↔ rfqItem
+    RFQ.hasMany(RFQItem, {
+        foreignKey: "rfq_id",
+        as: "items",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RFQItem.belongsTo(RFQ, {
+        foreignKey: "rfq_id",
+        as: "rfq",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // rfq ↔ rfqItem
+    RFQ.hasMany(RfqQuotation, {
+        foreignKey: "rfq_id",
+        as: "rfqQuotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotation.belongsTo(RFQ, {
+        foreignKey: "rfq_id",
+        as: "linkedRfq",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* quotation ************************ */
+    // quotation ↔ quotationItem
+    RfqQuotation.hasMany(RfqQuotationItem, {
+        foreignKey: "quotation_id",
+        as: "quotationItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(RfqQuotation, {
+        foreignKey: "quotation_id",
+        as: "parentQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    
+    /** ******************* rfqItem ************************ */
+    // rfqItem ↔ quotationItem
+    RFQItem.hasMany(RfqQuotationItem, {
+        foreignKey: "rfq_item_id",
+        as: "relatedQuotationItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(RFQItem, {
+        foreignKey: "rfq_item_id",
+        as: "sourceRfqItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
 
 
 

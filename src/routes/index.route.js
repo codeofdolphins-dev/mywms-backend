@@ -23,6 +23,8 @@ import packageTypeApi from "./packageType.route.js";
 import pdfApi from "../reports/routes/index.route.js";
 import inwardApi from "./inward.route.js";
 import vendorApi from "./vendor.route.js";
+import requisitionCategoryApi from "./requisitionCategory.route.js";
+import rfqApi from "./rfq.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -37,6 +39,7 @@ router.use("/brand", brandApi);
 router.use("/super-admin", superAdminApi);
 router.use("/business", businessApi);
 router.use("/vendor", vendorApi);
+router.use("/rfq", rfqApi);
 
 router.use(defineUserScope, defineDbObject);
 router.use("/pdf", pdfApi);
@@ -45,6 +48,7 @@ router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);
 router.use("/requisition", requisitionApi);
+router.use("/requisition-category", requisitionCategoryApi);
 router.use("/hsn", hsnApi);
 router.use("/category", categoryApi);
 router.use("/quotation", quotationApi);
