@@ -3,7 +3,6 @@ import { Op, Sequelize } from "sequelize";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
-    console.log(req.dbModels)
     try {
         const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
         const { id } = req.user;

@@ -6,8 +6,8 @@ function RFQ(sequelize) {
             type: DataTypes.STRING,
             allowNull: true,
         },
-        buyer_tenant_id: {
-            type: DataTypes.INTEGER,
+        buyer_tenant: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
         pr_reference_id: {
@@ -15,6 +15,10 @@ function RFQ(sequelize) {
             allowNull: false,
         },
         title: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        priority: {
             type: DataTypes.STRING,
             allowNull: true,
         },

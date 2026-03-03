@@ -329,7 +329,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         /** push all supplier id into join table (requisitionSupplier) */
         await requisition.addSupplierBusinessNode(
-            allVendors.map(node => node.id),
+            supplierNode.map(node => node.id),
             {
                 through: {
                     status: "sent",
@@ -381,6 +381,8 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
 
     const { Requisition, RequisitionItem, Product, RequisitionCategory } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+
+    const dbName = req.headers["x-tenant-id"];
     // console.log(req.body); return
 
     try {
@@ -391,7 +393,6 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         if (!title || items?.length < 1) throw new Error("Required fields are missing!!!");
 
         const rCat = await RequisitionCategory.findByPk(Number(requisition_category_id));
-
 
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
@@ -406,23 +407,22 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         }, { transaction });
 
         // update requisition no field
-        await requisition.update({
-            requisition_no: generateNo("EX-REQ", requisition.id)
-        }, { transaction });
+        await requisition.update({ requisition_no: generateNo("EX-REQ", requisition.id) }, { transaction });
 
+        const nodeDetails = await fetchNodeDetails(req.dbModels, current_node);
 
         const rfq = await RFQ.create({
-            buyer_tenant_id: current_node,
+            buyer_tenant: dbName,
             pr_reference_id: requisition.id,
             title: title?.trim(),
             notes: notes?.trim(),
             status: "open",
             ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
             grand_total: total,
+            meta: nodeDetails
         }, {
             transaction: rootTransaction
         });
-
         await rfq.update({ rfq_no: generateNo("RFQ", rfq.id) }, { transaction: rootTransaction });
 
 
@@ -461,21 +461,18 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         }
 
         await transaction.commit();
-        return res
-            .status(200)
-            .json({
-                success: true,
-                code: 200,
-                message: "Requisition Created.",
-            });
+        await rootTransaction.commit();
+
+        return res.status(200).json({ success: true, code: 200, message: "Requisition Created." });
+
     } catch (error) {
         await transaction.rollback();
+        await rootTransaction.rollback();
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 // DELETE
 export const deleteRequisition = asyncHandler(async (req, res) => {
@@ -645,3 +642,24 @@ export const updateRequisitionItems = asyncHandler(async (req, res) => {
             .json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+
+/** Helper */
+/**
+ * 
+ * @param {object} dbObject 
+ * @param {number} nodeId 
+ */
+async function fetchNodeDetails(dbObject, nodeId) {
+    try {
+        const { NodeDetails } = dbObject;
+
+        return await NodeDetails.findOne({
+            where: { business_node_id: Number(nodeId) }
+        });
+
+    } catch (error) {
+        throw error;
+    }
+}

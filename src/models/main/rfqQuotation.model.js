@@ -6,8 +6,8 @@ function RfqQuotation(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        vendor_tenant_id: {
-            type: DataTypes.INTEGER,
+        vendor_tenant: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
         revision_no: {
