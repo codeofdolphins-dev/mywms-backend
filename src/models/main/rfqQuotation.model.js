@@ -18,6 +18,10 @@ function RfqQuotation(sequelize) {
             type: DataTypes.ENUM("draft", "sent", "confirmed", "closed", "cancelled"),
             defaultValue: "sent",
         },
+        valid_till: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+        },
         grand_total: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,

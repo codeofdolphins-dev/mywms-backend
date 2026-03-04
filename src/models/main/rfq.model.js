@@ -10,8 +10,8 @@ function RFQ(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        pr_reference_id: {
-            type: DataTypes.INTEGER,
+        pr_reference_code: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
         title: {

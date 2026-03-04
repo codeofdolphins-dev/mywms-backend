@@ -407,15 +407,17 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         }, { transaction });
 
         // update requisition no field
-        await requisition.update({ requisition_no: generateNo("EX-REQ", requisition.id) }, { transaction });
+        const requisition_no = generateNo("EX-REQ", requisition.id)
+        await requisition.update({ requisition_no }, { transaction });
 
         const nodeDetails = await fetchNodeDetails(req.dbModels, current_node);
 
         const rfq = await RFQ.create({
             buyer_tenant: dbName,
-            pr_reference_id: requisition.id,
+            pr_reference_code: requisition_no,
             title: title?.trim(),
-            notes: notes?.trim(),
+            priority,
+            note: notes?.trim(),
             status: "open",
             ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
             grand_total: total,

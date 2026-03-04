@@ -6,6 +6,10 @@ function RFQItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        product_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         product_name: {
             type: DataTypes.STRING,
             allowNull: true,
