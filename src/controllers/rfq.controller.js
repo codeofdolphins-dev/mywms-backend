@@ -1,6 +1,5 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { generateNo } from "../helper/generate.js";
 import { rootDB } from "../db/tenantMenager.service.js"
 
 
@@ -56,106 +55,7 @@ export const allRfqList = asyncHandler(async (req, res) => {
 
 
 // POST
-const create = asyncHandler(async (req, res) => {
-    const { rootSequelize, models } = await rootDB();
-    const { RFQ, RFQItem } = models;
-    const rootTransaction = await rootSequelize.transaction();
-
-    const { Requisition, RequisitionItem, Product, RequisitionCategory } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-    // console.log(req.body); return
-
-    try {
-        const { title = "", requisition_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", } = req.body;
-        const userDetails = req.user;
-        const current_node = req.activeNode;
-
-        if (!title || items?.length < 1) throw new Error("Required fields are missing!!!");
-
-        const rCat = await RequisitionCategory.findByPk(Number(requisition_category_id));
-
-
-        const requisition = await Requisition.create({
-            buyer_business_node_id: current_node,
-            title,
-            notes,
-            grandTotal: total,
-            requisition_category_id: rCat?.id,
-            type: "external",
-            ...(required_by_date && { required_by_date: new Date(required_by_date) }),
-            created_by: parseInt(userDetails.id, 10),
-            ...(priority && { priority: priority.toLowerCase() }),
-        }, { transaction });
-
-        // update requisition no field
-        await requisition.update({
-            requisition_no: generateNo("EX-REQ", requisition.id)
-        }, { transaction });
-
-
-        const rfq = await RFQ.create({
-            buyer_tenant_id: current_node,
-            pr_reference_id: requisition.id,
-            status: "open",
-            ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
-            grand_total: total,
-        }, {
-            transaction: rootTransaction
-        });
-
-        await rfq.update({ rfq_no: generateNo("RFQ", rfq.id) }, { transaction: rootTransaction });
-
-
-        for (const item of items) {
-            const { id = "", priceLimit = "", reqQty = "" } = item;
-            if ([id, reqQty, priceLimit].some(i => i === "")) throw new Error("required fields are missing!!!");
-
-            const product = await Product.findByPk(Number(id));
-            if (!product) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
-            }
-
-            // create record in requisition item model
-            await RequisitionItem.create(
-                {
-                    requisition_id: requisition.id,
-                    product_id: product.id,
-                    brand: item.brand,
-                    category: item.category,
-                    sub_category: item.subCategory,
-                    qty: item.reqQty,
-                    price_limit: item.priceLimit
-                },
-                { transaction }
-            );
-
-            await RFQItem.create({
-                rfq_id: rfq.id,
-                product_name: product.name,
-                qty: item.reqQty,
-                uom: product.unit_type,
-                price_limit: item.priceLimit
-            }, { transaction: rootTransaction });
-
-        }
-
-        await transaction.commit();
-        return res
-            .status(200)
-            .json({
-                success: true,
-                code: 200,
-                message: "Requisition Created.",
-            });
-    } catch (error) {
-        await transaction.rollback();
-        console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
-    }
-});
+/** create Requesition(EX) == RFQ */
 
 
 // DELETE
