@@ -3,8 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { deleteTenantDatabase, rootDB } from "../db/tenantMenager.service.js";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
-import { removeFirstWord } from "../helper/removeFirstWord.js";
-import { hashPassword } from "../helper/hashPassword.js";
+import { hashPassword, removeFirstWord } from "../helper/helper.js";
 
 // GET request
 export const logout = asyncHandler(async (req, res) => {

@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 import { generateNo } from "../helper/generate.js";
 import { rootDB } from "../db/tenantMenager.service.js"
+import { fetchNodeDetails } from "../helper/helper.js";
 
 
 // GET
@@ -644,24 +645,3 @@ export const updateRequisitionItems = asyncHandler(async (req, res) => {
             .json({ success: false, code: 500, message: error.message });
     }
 });
-
-
-
-/** Helper */
-/**
- * 
- * @param {object} dbObject 
- * @param {number} nodeId 
- */
-async function fetchNodeDetails(dbObject, nodeId) {
-    try {
-        const { NodeDetails } = dbObject;
-
-        return await NodeDetails.findOne({
-            where: { business_node_id: Number(nodeId) }
-        });
-
-    } catch (error) {
-        throw error;
-    }
-}

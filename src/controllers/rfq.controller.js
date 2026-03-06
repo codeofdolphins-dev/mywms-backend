@@ -28,7 +28,7 @@ export const allRfqList = asyncHandler(async (req, res) => {
             ],
             limit,
             offset,
-            order: [["createdAt", "ASC"]],
+            order: [["createdAt", "DESC"]],
         });
         if (!rfq) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
