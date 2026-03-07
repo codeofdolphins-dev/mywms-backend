@@ -6,8 +6,8 @@ function RFQ(sequelize) {
             type: DataTypes.STRING,
             allowNull: true,
         },
-        buyer_tenant: {
-            type: DataTypes.STRING,
+        buyer_tenant_id: {
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
         pr_reference_code: {
