@@ -43,6 +43,7 @@ import RFQ from "./main/rfq.model.js";
 import RFQItem from "./main/rfqItem.model.js";
 import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
 import RfqQuotation from "./main/rfqQuotation.model.js";
+import RfqQuotationRevision from "./main/RfqQuotationRevisions .model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -57,6 +58,7 @@ const defineRootModels = (rootSequelize) => {
     BusinessNodeType(rootSequelize);
     TenantBusinessFlowMaster(rootSequelize);
     RfqQuotation(rootSequelize);
+    RfqQuotationRevision(rootSequelize);
     RfqQuotationItem(rootSequelize);
     RFQ(rootSequelize);
     RFQItem(rootSequelize);
