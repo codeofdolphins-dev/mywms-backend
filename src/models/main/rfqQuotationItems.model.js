@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 
 function RfqQuotationItem(sequelize) {
     return sequelize.define("RfqQuotationItem", {
-        quotation_id: {
+        revision_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
