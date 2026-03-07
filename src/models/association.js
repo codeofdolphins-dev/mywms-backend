@@ -11,6 +11,7 @@ const defineRootAssociations = (models) => {
         RFQ,
         RFQItem,
         RfqQuotation,
+        RfqQuotationRevision,
         RfqQuotationItem,
 
     } = models;
@@ -65,16 +66,14 @@ const defineRootAssociations = (models) => {
 
     // tenantsName ↔ quotation  =>> Vendor
     TenantsName.hasMany(RfqQuotation, {
-        foreignKey: "vendor_tenant",
+        foreignKey: "vendor_tenant_id",
         as: "quotations",
-        sourceKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     RfqQuotation.belongsTo(TenantsName, {
-        foreignKey: "vendor_tenant",
+        foreignKey: "vendor_tenant_id",
         as: "vendorTenant",
-        targetKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -112,16 +111,32 @@ const defineRootAssociations = (models) => {
 
 
     /** ******************* quotation ************************ */
-    // quotation ↔ quotationItem
-    RfqQuotation.hasMany(RfqQuotationItem, {
+    // quotation ↔ rfqQuotationRevision
+    RfqQuotation.hasMany(RfqQuotationRevision, {
         foreignKey: "quotation_id",
-        as: "quotationItems",
+        as: "quotationRevision",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    RfqQuotationItem.belongsTo(RfqQuotation, {
+    RfqQuotationRevision.belongsTo(RfqQuotation, {
         foreignKey: "quotation_id",
-        as: "parentQuotation",
+        as: "revisionQuotationParent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* rfqQuotationRevision ************************ */
+    // rfqQuotationRevision ↔ rfqQuotationItem
+    RfqQuotationRevision.hasMany(RfqQuotationItem, {
+        foreignKey: "revision_id",
+        as: "revisionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(RfqQuotationRevision, {
+        foreignKey: "revision_id",
+        as: "itemsRevision",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
