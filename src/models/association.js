@@ -49,14 +49,16 @@ const defineRootAssociations = (models) => {
 
     // tenantsName ↔ rfq
     TenantsName.hasMany(RFQ, {
-        foreignKey: "buyer_tenant_id",
+        foreignKey: "buyer_tenant",
         as: "buyerRfqs",
+        sourceKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     RFQ.belongsTo(TenantsName, {
-        foreignKey: "buyer_tenant_id",
+        foreignKey: "buyer_tenant",
         as: "buyerTenant",
+        targetKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -64,14 +66,16 @@ const defineRootAssociations = (models) => {
 
     // tenantsName ↔ quotation  =>> Vendor
     TenantsName.hasMany(RfqQuotation, {
-        foreignKey: "vendor_tenant_id",
+        foreignKey: "vendor_tenant",
         as: "quotations",
+        sourceKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     RfqQuotation.belongsTo(TenantsName, {
-        foreignKey: "vendor_tenant_id",
+        foreignKey: "vendor_tenant",
         as: "vendorTenant",
+        targetKey: "tenant",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

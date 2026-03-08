@@ -7,12 +7,12 @@ import { fetchNodeDetails } from "../helper/helper.js";
 // GET
 export const allRfqQuotationList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationItem, TenantsName, Tenant } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, TenantsName, Tenant } = models;
 
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { page = 1, limit = 10, id = "", rfq_no = "", reqNo = "" } = req.query;
+        let { page = 1, limit = 10, id = "", rfq_no = "", revision_no = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -20,9 +20,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
         let rfq_id = null;
         if (rfq_no) {
             const rfq = await RFQ.findOne({
-                where: {
-                    [Op.or]: [{ rfq_no }, { pr_reference_code: reqNo.trim() }]
-                }
+                where: { rfq_no }
             });
             rfq_id = rfq.id;
         }
@@ -31,7 +29,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
             where: {
                 ...(id && { id: Number(id) }),
                 ...(rfq_no && { rfq_id }),
-                ...(!reqNo && { vendor_tenant: dbName }),
+                vendor_tenant: dbName,
             },
             include: [
                 {
@@ -40,34 +38,28 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
                     // attributes: ["rfq_no"]
                 },
                 {
-                    model: RfqQuotationItem,
-                    as: "quotationItems",
-                    attributes: {
-                        exclude: ["quotation_id", "qty"]
-                    },
+                    model: RfqQuotationRevision,
+                    as: "quotationRevision",
                     include: [
                         {
-                            model: RFQItem,
-                            as: "sourceRfqItem"
+                            model: RfqQuotationItem,
+                            as: "revisionItems",
+                            attributes: {
+                                exclude: ["quotation_id", "qty"]
+                            },
+                            include: [
+                                {
+                                    model: RFQItem,
+                                    as: "sourceRfqItem"
+                                }
+                            ]
                         }
                     ]
                 },
-                ...(reqNo && [{
-                    model: TenantsName,
-                    as: "vendorTenant",
-                    attributes: ["id"],
-                    include: [
-                        {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            attributes: ["companyName"],
-                        }
-                    ]
-                }])
             ],
             limit,
             offset,
-            order: [["createdAt", reqNo ? "ASC" : "DESC"]],
+            order: [["createdAt", "DESC"]],
         });
         if (!rfqQuotation) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -130,18 +122,18 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
 //                 revision_no: revision
 //             },
 //             include: [
-//                 {
-//                     model: TenantsName,
-//                     as: "vendorTenant",
-//                     attributes: ["id"],
-//                     include: [
-//                         {
-//                             model: Tenant,
-//                             as: "tenantDetails",
-//                             attributes: ["companyName"]
-//                         }
-//                     ]
-//                 },
+// {
+//     model: TenantsName,
+//     as: "vendorTenant",
+//     attributes: ["id"],
+//     include: [
+//         {
+//             model: Tenant,
+//             as: "tenantDetails",
+//             attributes: ["companyName"]
+//         }
+//     ]
+// },
 //                 {
 //                     model: RFQ,
 //                     as: "linkedRfq",
@@ -205,90 +197,80 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
 
 export const getQuotationWithPaginatedItems = async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationItem, TenantsName, Tenant } = models;
+    const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, RFQItem, TenantsName, Tenant } = models;
 
     try {
-        const {
-            reqNo,
-            baseRevision = 1,
-            targetVendorId, // This should match the 'vendor_tenant' string (e.g., "mywms")
-            targetRevision,
-            page = 1,
-            limit = 10
-        } = req.query;
+        const { page = 1, limit = 10, reqNo, targetVendor, targetRevision, } = req.query;
 
-        if (!reqNo) return res.status(400).json({ success: false, message: "reqNo is required" });
+        // 1. Get the RFQ Header
+        const rfq = await RFQ.findOne({ where: { pr_reference_code: reqNo } });
+        if (!rfq) return res.status(404).json({ success: false, code: 404, message: "RFQ not found" });
 
-        // 1. Find RFQ by pr_reference_code
-        const rfq = await RFQ.findOne({
-            where: { pr_reference_code: reqNo.trim() }
+        // 2. Get all Vendor Headers for this RFQ
+        const vendorHeaders = await RfqQuotation.findAll({
+            where: { rfq_id: rfq.id },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "vendorTenant",
+                    attributes: ["id"],
+                    include: [
+                        {
+                            model: Tenant,
+                            as: "tenantDetails",
+                            attributes: ["companyName"]
+                        }
+                    ]
+                },
+            ] // include company names, etc.
         });
 
-        if (!rfq) return res.status(404).json({ success: false, message: "RFQ not found" });
+        // 3. Process each vendor's revision and items
+        const data = await Promise.all(vendorHeaders.map(async (header) => {
+            console.log(header.toJSON())
+            const isTarget = targetVendor && String(header.vendor_tenant) === String(targetVendor);
 
-        // 2. Fetch Quotations with logic to handle the target vendor override
-        const quotations = await RfqQuotation.findAll({
-            where: {
-                rfq_id: rfq.id,
-                [Op.or]: [
-                    {
-                        // Set everyone to base revision
-                        revision_no: parseInt(baseRevision),
-                        // EXCEPT the vendor we are specifically targeting for a different revision
-                        ...(targetVendorId && targetRevision && {
-                            vendor_tenant: { [Op.ne]: targetVendorId }
-                        })
-                    },
-                    ...(targetVendorId ? [{
-                        // Explicitly fetch the target vendor's requested revision
-                        vendor_tenant: targetVendorId,
-                        revision_no: parseInt(targetRevision || baseRevision)
-                    }] : [])
-                ]
-            },
-            include: [{
-                model: TenantsName,
-                as: "vendorTenant",
-                include: [{ model: Tenant, as: "tenantDetails", attributes: ["companyName"] }]
-            }],
-            order: [["createdAt", "DESC"]]
-        });
+            // Determine which revision to show: 
+            // If it's the target vendor, use targetRevision. Otherwise, use their latest (current_revision_no).
+            const revToFetch = isTarget && targetRevision ? targetRevision : header.current_revision_no;
 
-        // 3. Process items and apply pagination ONLY to the target vendor
-        const data = await Promise.all(quotations.map(async (quotation) => {
-            // Compare against 'vendor_tenant' column as per your schema
-            const isTarget = targetVendorId && String(quotation.vendor_tenant) === String(targetVendorId);
+            // Fetch the specific Revision record
+            const revisionRecord = await RfqQuotationRevision.findOne({
+                where: {
+                    quotation_id: header.id,
+                    revision_no: revToFetch
+                }
+            });
 
-            const pPage = parseInt(page);
-            const pLimit = parseInt(limit);
-            const offset = (pPage - 1) * pLimit;
+            if (!revisionRecord) return { ...header.toJSON(), revision: null, items: [] };
 
+            // Fetch Items for this specific revision with CONDITIONAL pagination
             const items = await RfqQuotationItem.findAndCountAll({
-                where: { quotation_id: quotation.id },
+                where: { revision_id: revisionRecord.id },
                 include: [{ model: RFQItem, as: "sourceRfqItem" }],
-                attributes: { exclude: ["quotation_id"] },
-                // Pagination applied only if it's the target
-                limit: isTarget ? pLimit : undefined,
-                offset: isTarget ? offset : undefined,
-                order: [["createdAt", "ASC"]]
+                limit: isTarget ? parseInt(limit) : undefined,
+                offset: isTarget ? (parseInt(page) - 1) * parseInt(limit) : undefined,
+                order: [['createdAt', 'ASC']]
             });
 
             return {
-                ...quotation.toJSON(),
+                ...header.toJSON(),
+                activeRevision: revisionRecord,
+                requisition: rfq,
                 quotationItems: items.rows,
                 pagination: {
                     totalItems: items.count,
-                    currentPage: isTarget ? pPage : 1,
-                    totalPages: isTarget ? Math.ceil(items.count / pLimit) : 1,
-                    isPaginated: isTarget,
-                    activeRevision: quotation.revision_no
+                    currentPage: isTarget ? parseInt(page) : 1,
+                    totalPages: isTarget ? Math.ceil(items.count / limit) : 1,
+                    isPaginated: isTarget
                 }
             };
         }));
 
-        return res.status(200).json({ success: true, data });
+        return res.status(200).json({ success: true, code: 200, data: data });
 
     } catch (error) {
+        console.log(error)
         return res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -300,7 +282,7 @@ export const getQuotationWithPaginatedItems = async (req, res) => {
 export const createRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationItem } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const dbName = req.headers["x-tenant-id"];
@@ -313,36 +295,44 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         const rfq = await RFQ.findOne({ where: { rfq_no } });
         if (!rfq) throw new Error("RFQ record not found!!!");
 
+
+        //  check record already exists or not
         const isExists = await RfqQuotation.findOne({
             where: {
                 rfq_id: rfq.id,
                 vendor_tenant: dbName
             }
         });
-        if (isExists) throw new Error("Record already created!!!");
+        if (isExists) {
+            await rootTransaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: "Record already created!!!" });
+        }
 
         const nodeDetails = await fetchNodeDetails(req.dbModels, current_node);
-        console.log(nodeDetails);
 
         const rfqQuotation = await RfqQuotation.create({
             rfq_id: rfq.id,
             vendor_tenant: dbName,
-            buyer_name: buyer_name?.trim(),
+            buyer_name: buyer_name?.trim() ?? "",
             ...(valid_till && { valid_till: new Date(valid_till) }),
-            grand_total: Number(grandTotal),
             meta: nodeDetails,
+        }, { transaction: rootTransaction });
+
+        const revision = await RfqQuotationRevision.create({
+            quotation_id: rfqQuotation.id,
+            grand_total: Number(grandTotal),
         }, { transaction: rootTransaction });
 
 
         for (const item of items) {
-            const { id = "", offer_price = "", qty = "", line_total = "" } = item;
+            const { id = "", offer_price = "", qty = "" } = item;
             if (!id || !offer_price) throw new Error("Required fields are missing in items array!!!");
 
             const rfqItem = await RFQItem.findByPk(Number(id));
             if (!rfqItem) throw new Error("RFQ items record not found!!!");
 
             await RfqQuotationItem.create({
-                quotation_id: rfqQuotation.id,
+                revision_id: revision.id,
                 rfq_item_id: rfqItem.id,
                 qty,
                 offer_price,
