@@ -7,12 +7,12 @@ import { fetchNodeDetails } from "../helper/helper.js";
 // GET
 export const allRfqQuotationList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, TenantsName, Tenant } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
 
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { page = 1, limit = 10, id = "", rfq_no = "", revision_no = "" } = req.query;
+        let { page = 1, limit = 10, id = "", rfq_no = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -85,115 +85,6 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
-// export const getQuotationWithPaginatedItems = async (req, res) => {
-//     const { models } = await rootDB();
-//     const { RFQ, RFQItem, RfqQuotation, RfqQuotationItem, TenantsName, Tenant } = models;
-
-//     try {
-//         let { page = 1, limit = 10, reqNo = "", revision = 1 } = req.query;
-
-//         page = parseInt(page);
-//         limit = parseInt(limit);
-//         revision = parseInt(revision);
-
-//         const offset = (page - 1) * limit;
-
-//         if (!reqNo) throw new Error("reqNo required");
-
-
-//         // 1️⃣ Find RFQ
-//         const rfq = await RFQ.findOne({
-//             where: { pr_reference_code: reqNo.trim() }
-//         });
-
-//         if (!rfq) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "RFQ not found"
-//             });
-//         }
-
-//         // 2️⃣ Get all vendor quotations for that revision
-//         const quotations = await RfqQuotation.findAll({
-//             where: {
-//                 rfq_id: rfq.id,
-//                 revision_no: revision
-//             },
-//             include: [
-// {
-//     model: TenantsName,
-//     as: "vendorTenant",
-//     attributes: ["id"],
-//     include: [
-//         {
-//             model: Tenant,
-//             as: "tenantDetails",
-//             attributes: ["companyName"]
-//         }
-//     ]
-// },
-//                 {
-//                     model: RFQ,
-//                     as: "linkedRfq",
-//                 },
-//             ],
-//             order: [["createdAt", "DESC"]]
-//         });
-
-//         // 3️⃣ Attach paginated items for each quotation
-//         const result = await Promise.all(
-//             quotations.map(async (quotation) => {
-
-//                 const items = await RfqQuotationItem.findAndCountAll({
-//                     where: {
-//                         quotation_id: quotation.id
-//                     },
-//                     attributes: {
-//                         exclude: ["quotation_id", "qty"]
-//                     },
-//                     include: [
-//                         {
-//                             model: RFQItem,
-//                             as: "sourceRfqItem"
-//                         }
-//                     ],
-//                     limit,
-//                     offset,
-//                     order: [["createdAt", "ASC"]]
-//                 });
-
-//                 return {
-//                     ...quotation.toJSON(),
-//                     quotationItems: items.rows,
-//                     itemsMeta: {
-//                         totalItems: items.count,
-//                         totalPages: Math.ceil(items.count / limit),
-//                         currentPage: page,
-//                         limit
-//                     }
-//                 };
-//             })
-//         );
-
-//         return res.status(200).json({
-//             success: true,
-//             message: "Fetched successfully",
-//             data: result
-//         });
-
-//     } catch (error) {
-//         console.error(error);
-
-//         return res.status(500).json({
-//             success: false,
-//             message: error.message
-//         });
-//     }
-// };
-
-
 
 export const getQuotationWithPaginatedItems = async (req, res) => {
     const { models } = await rootDB();
@@ -275,7 +166,41 @@ export const getQuotationWithPaginatedItems = async (req, res) => {
     }
 };
 
+export const negotiateRfqQuotation = async (req, res) => {
+    const { models } = await rootDB();
+    const { RfqQuotation, RfqQuotationRevision } = models;
 
+    try {
+        const { id } = req.body;
+        if (!id) throw new Error("quotation id must required!!!");
+
+        const quotation = await RfqQuotation.findByPk(Number(id));
+        if (!quotation) {
+            return res.status(404).json({ success: false, code: 404, message: 'Quotation record not found!!!' });
+        }
+
+        const current_revision_no = quotation.current_revision_no;
+        if (current_revision_no == 3) {
+            return res.status(405).json({ success: false, code: 405, message: 'Cannot negotiate this quotation!!!' });
+        }
+
+        const quotationRevision = await RfqQuotationRevision.findOne({
+            where: { quotation_id: Number(id) }
+        });
+        if (!quotationRevision) {
+            return res.status(404).json({ success: false, code: 404, message: 'Record not found!!!' });
+        }
+
+        quotationRevision.status = "negotiate";
+        await quotationRevision.save();
+
+        return res.status(200).json({ success: true, code: 200, message: 'Negotiation started successfully!!!' });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 
 // POST
@@ -325,10 +250,10 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 
 
         for (const item of items) {
-            const { id = "", offer_price = "", qty = "" } = item;
-            if (!id || !offer_price) throw new Error("Required fields are missing in items array!!!");
+            const { rfq_item_id = "", offer_price = "", qty = "" } = item;
+            if (!rfq_item_id || !offer_price) throw new Error("Required fields are missing in items array!!!");
 
-            const rfqItem = await RFQItem.findByPk(Number(id));
+            const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
             if (!rfqItem) throw new Error("RFQ items record not found!!!");
 
             await RfqQuotationItem.create({
@@ -353,7 +278,6 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 // DELETE
 export const deleteRfqQuotation = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-
     const { RfqQuotation } = models;
 
     const dbName = req.headers["x-tenant-id"];
@@ -378,59 +302,60 @@ export const deleteRfqQuotation = asyncHandler(async (req, res) => {
 });
 
 
-const updateRequisition = asyncHandler(async (req, res) => {
+// PUT
+export const updateRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationItem } = models;
+    const { RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
     const rootTransaction = await rootSequelize.transaction();
 
-    const dbName = req.headers["x-tenant-id"];
-
     try {
-        const { id = "", valid_till = "", grandTotal = "", buyer_name = "", items = "" } = req.body;
+        const { quotation_id = "", grandTotal = "", items = "" } = req.body;
+        if (!quotation_id || items?.length < 1) throw new Error("Required fields are missing!!!");
 
-        const requisition = await Requisition.findByPk(parseInt(id, 10));
-        if (!requisition)
-            return res.status(404).json({
-                success: false,
-                code: 404,
-                message: "No requisition record found!!!",
-            });
-
-        const currentStatus = requisition.status;
-
-        if (["draft", "submitted"].some((item) => item === currentStatus)) {
-            let updateDetails = {};
-            if (title) updateDetails.title = title;
-            if (status) updateDetails.status = status;
-            if (priority) updateDetails.priority = priority;
-            if (notes) updateDetails.notes = notes;
-
-            const isUpdate = await Requisition.update(updateDetails, {
-                where: { id },
-            });
-            if (!isUpdate)
-                return res.status(503).json({
-                    success: false,
-                    code: 503,
-                    message: "Updation failed!!!",
-                });
-
-            return res.status(200).json({
-                success: true,
-                code: 200,
-                message: "Updated Successfully.",
-            });
+        const quotation = await RfqQuotation.findByPk(Number(quotation_id));
+        if (!quotation) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Quotation record not found!!!" });
         }
-        return res.status(422).json({
-            success: false,
-            code: 422,
-            message: "Updation not possible!!!",
-        });
+
+        const current_revision_no = quotation.current_revision_no;
+        if (current_revision_no >= 3) {
+            await rootTransaction.rollback();
+            return res.status(405).json({ success: false, code: 405, message: "Cannot update this quotation!!!" });
+        };
+
+        quotation.current_revision_no = current_revision_no + 1;
+        await quotation.save({ transaction: rootTransaction });
+
+        const revision = await RfqQuotationRevision.create({
+            quotation_id: quotation.id,
+            grand_total: Number(grandTotal),
+            revision_no: current_revision_no + 1,
+        }, { transaction: rootTransaction });
+
+
+        for (const item of items) {
+            const { rfq_item_id = "", offer_price = "", qty = "" } = item;
+            if (!rfq_item_id || !offer_price) throw new Error("Required fields are missing in items array!!!");
+
+            const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
+            if (!rfqItem) throw new Error("RFQ items record not found!!!");
+
+            await RfqQuotationItem.create({
+                revision_id: revision.id,
+                rfq_item_id: rfqItem.id,
+                qty,
+                offer_price,
+            }, { transaction: rootTransaction });
+        };
+
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
+
     } catch (error) {
+        await rootTransaction.rollback();
         console.log(error);
-        return res
-            .status(500)
-            .json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
