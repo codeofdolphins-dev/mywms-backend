@@ -434,6 +434,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             if ([id, reqQty, priceLimit].some(i => i === "")) throw new Error("required fields are missing!!!");
 
             const product = await Product.findByPk(Number(id));
+            console.log(product)
             if (!product) {
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
@@ -455,6 +456,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
 
             await RFQItem.create({
                 rfq_id: rfq.id,
+                product_id: product.id,
                 product_name: product.name,
                 qty: item.reqQty,
                 uom: product.unit_type,

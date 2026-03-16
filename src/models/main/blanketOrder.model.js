@@ -6,18 +6,17 @@ function BlanketOrder(sequelize) {
             type: DataTypes.STRING,
             unique: true
         },
-        buyer_tenant_id: {
-            type: DataTypes.INTEGER,
+        buyer_tenant: {
+            type: DataTypes.STRING,
             allowNull: false
         },
-        vendor_tenant_id: {
-            type: DataTypes.INTEGER,
+        vendor_tenant: {
+            type: DataTypes.STRING,
             allowNull: false
         },
         rfq_quotation_revision_id: {
             type: DataTypes.INTEGER
         },
-
         status: {
             type: DataTypes.ENUM('draft', 'active', 'closed'),
             defaultValue: 'draft'

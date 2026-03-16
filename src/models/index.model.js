@@ -44,6 +44,8 @@ import RFQItem from "./main/rfqItem.model.js";
 import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
 import RfqQuotation from "./main/rfqQuotation.model.js";
 import RfqQuotationRevision from "./main/RfqQuotationRevisions .model.js";
+import BlanketOrder from "./main/blanketOrder.model.js";
+import BlanketOrderItem from "./main/BlanketOrderItems.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -62,6 +64,8 @@ const defineRootModels = (rootSequelize) => {
     RfqQuotationItem(rootSequelize);
     RFQ(rootSequelize);
     RFQItem(rootSequelize);
+    BlanketOrder(rootSequelize);
+    BlanketOrderItem(rootSequelize);
 
     return rootSequelize.models;
 }

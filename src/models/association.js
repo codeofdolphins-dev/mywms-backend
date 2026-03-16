@@ -13,6 +13,8 @@ const defineRootAssociations = (models) => {
         RfqQuotation,
         RfqQuotationRevision,
         RfqQuotationItem,
+        BlanketOrder,
+        BlanketOrderItem,
 
     } = models;
 
@@ -31,6 +33,23 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+    // rfqQuotationRevision ↔ blanketOrder
+    RfqQuotationRevision.hasOne(BlanketOrder, {
+        foreignKey: "rfq_quotation_revision_id",
+        as: "blanketOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(RfqQuotationRevision, {
+        foreignKey: "rfq_quotation_revision_id",
+        as: "rfqQuotationRevision",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
 
     // ********************************************One-To-Many*********************************
     // tenantsName ↔ tenantBusinessFlowMaster
@@ -158,6 +177,57 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+
+    /** ******************* BlanketOrder ************************ */
+    // tenantsName ↔ blanketOrder(Buyer)
+    TenantsName.hasMany(BlanketOrder, {
+        foreignKey: "buyer_tenant",
+        sourceKey: "tenant",
+        as: "buyerBlanketOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        targetKey: "tenant",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // tenantsName ↔ blanketOrder(vendor/supplier)
+    TenantsName.hasMany(BlanketOrder, {
+        foreignKey: "vendor_tenant",
+        sourceKey: "tenant",
+        as: "supplierBlanketOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        targetKey: "tenant",
+        as: "supplier",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* blanketOrderItem ************************ */
+    // blanketOrder ↔ blanketOrderItem
+    BlanketOrder.hasMany(BlanketOrderItem, {
+        foreignKey: "bpo_id",
+        as: "",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrderItem.belongsTo(BlanketOrder, {
+        foreignKey: "bpo_id",
+        as: "",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
 
 

@@ -2,10 +2,11 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { rootDB } from "../db/tenantMenager.service.js"
 import { fetchNodeDetails } from "../helper/helper.js";
+import { generateNo } from "../helper/generate.js";
 
 
 // GET
-export const allRfqQuotationList = asyncHandler(async (req, res) => {
+const allBlanketOrderList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
 
@@ -86,7 +87,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
     }
 });
 
-export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
+const getQuotationWithPaginatedItems = async (req, res) => {
     const { models } = await rootDB();
     const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, RFQItem, TenantsName, Tenant } = models;
 
@@ -118,6 +119,7 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
 
         // 3. Process each vendor's revision and items
         const data = await Promise.all(vendorHeaders.map(async (header) => {
+            console.log(header.toJSON())
             const isTarget = targetVendor && String(header.vendor_tenant) === String(targetVendor);
 
             // Determine which revision to show: 
@@ -137,7 +139,7 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
             // Fetch Items for this specific revision with CONDITIONAL pagination
             const items = await RfqQuotationItem.findAndCountAll({
                 where: { revision_id: revisionRecord.id },
-                include: [{ model: RFQItem, as: "sourceRfqItem", attributes: { exclude: ["qty"] } },],
+                include: [{ model: RFQItem, as: "sourceRfqItem" }],
                 limit: isTarget ? parseInt(limit) : undefined,
                 offset: isTarget ? (parseInt(page) - 1) * parseInt(limit) : undefined,
                 order: [['createdAt', 'ASC']]
@@ -163,103 +165,52 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
         console.log(error)
         return res.status(500).json({ success: false, message: error.message });
     }
-});
-
-export const negotiateRfqQuotation = asyncHandler(async (req, res) => {
-    const { models } = await rootDB();
-    const { RfqQuotation, RfqQuotationRevision } = models;
-
-    try {
-        const { id } = req.body;
-        if (!id) throw new Error("quotation id must required!!!");
-
-        const quotation = await RfqQuotation.findByPk(Number(id));
-        if (!quotation) {
-            return res.status(404).json({ success: false, code: 404, message: 'Quotation record not found!!!' });
-        }
-
-        const current_revision_no = quotation.current_revision_no;
-        if (current_revision_no == 3) {
-            return res.status(405).json({ success: false, code: 405, message: 'Cannot negotiate this quotation!!!' });
-        }
-
-        const quotationRevision = await RfqQuotationRevision.findOne({
-            where: { quotation_id: Number(id) }
-        });
-        if (!quotationRevision) {
-            return res.status(404).json({ success: false, code: 404, message: 'Record not found!!!' });
-        }
-
-        quotationRevision.status = "negotiate";
-        await quotationRevision.save();
-
-        return res.status(200).json({ success: true, code: 200, message: 'Negotiation started successfully!!!' });
-
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({ success: false, message: error.message });
-    }
-});
+};
 
 
 // POST
-export const createRfqQuotation = asyncHandler(async (req, res) => {
+export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
+    // console.log(req.body); return
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
+    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision } = models;
     const rootTransaction = await rootSequelize.transaction();
 
-    const dbName = req.headers["x-tenant-id"];
-    const current_node = req.activeNode;
-
     try {
-        const { rfq_no = "", valid_till = "", grandTotal = "", buyer_name = "", items = "" } = req.body;
-        if (!rfq_no || items?.length < 1) throw new Error("Required fields are missing!!!");
+        const { rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "" } = req.body;
+        if ([rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
-        const rfq = await RFQ.findOne({ where: { rfq_no } });
-        if (!rfq) throw new Error("RFQ record not found!!!");
-
-
-        //  check record already exists or not
-        const isExists = await RfqQuotation.findOne({
-            where: {
-                rfq_id: rfq.id,
-                vendor_tenant: dbName
-            }
-        });
-        if (isExists) {
+        const revision = await RfqQuotationRevision.findByPk(Number(rfq_quotation_revision_id));
+        if (!revision) {
             await rootTransaction.rollback();
-            return res.status(409).json({ success: false, code: 409, message: "Record already created!!!" });
-        }
+            return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
+        };
 
-        const nodeDetails = await fetchNodeDetails(req.dbModels, current_node);
+        revision.status = "confirmed";
+        await revision.save({ transaction: rootTransaction });
 
-        const rfqQuotation = await RfqQuotation.create({
-            rfq_id: rfq.id,
-            vendor_tenant: dbName,
-            buyer_name: buyer_name?.trim() ?? "",
-            ...(valid_till && { valid_till: new Date(valid_till) }),
-            meta: nodeDetails,
+        const blanketOrder = await BlanketOrder.create({
+            buyer_tenant,
+            vendor_tenant,
+            rfq_quotation_revision_id,
+            status: "active",
+            ...(valid_until && { valid_until: new Date(valid_until) })
         }, { transaction: rootTransaction });
+        if (!blanketOrder) throw new Error("Record not created!!!");
 
-        const revision = await RfqQuotationRevision.create({
-            quotation_id: rfqQuotation.id,
-            grand_total: Number(grandTotal),
-        }, { transaction: rootTransaction });
-
+        blanketOrder.bpo_no = generateNo("BPO", blanketOrder.id);
+        await blanketOrder.save({ transaction: rootTransaction });
 
         for (const item of items) {
-            const { rfq_item_id = "", offer_price = "", qty = "" } = item;
-            if (!rfq_item_id || !offer_price) throw new Error("Required fields are missing in items array!!!");
+            const { buyer_product_id = "", unit_price = "", total_contracted_qty = "" } = item;
 
-            const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
-            if (!rfqItem) throw new Error("RFQ items record not found!!!");
+            if ([buyer_product_id, unit_price, total_contracted_qty].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
 
-            await RfqQuotationItem.create({
-                revision_id: revision.id,
-                rfq_item_id: rfqItem.id,
-                qty,
-                offer_price,
+            await BlanketOrderItem.create({
+                bpo_id: blanketOrder.id,
+                buyer_product_id: buyer_product_id,
+                total_contracted_qty,
+                unit_price,
             }, { transaction: rootTransaction });
         };
 
@@ -275,7 +226,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 
 
 // DELETE
-export const deleteRfqQuotation = asyncHandler(async (req, res) => {
+const deleteBlanketOrder = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { RfqQuotation } = models;
 
@@ -302,7 +253,7 @@ export const deleteRfqQuotation = asyncHandler(async (req, res) => {
 
 
 // PUT
-export const updateRfqQuotation = asyncHandler(async (req, res) => {
+const updateBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
     const { RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;

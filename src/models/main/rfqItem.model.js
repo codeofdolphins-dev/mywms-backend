@@ -8,7 +8,7 @@ function RFQItem(sequelize) {
         },
         product_id: {
             type: DataTypes.INTEGER,
-            allowNull: true,
+            allowNull: false,
         },
         product_name: {
             type: DataTypes.STRING,

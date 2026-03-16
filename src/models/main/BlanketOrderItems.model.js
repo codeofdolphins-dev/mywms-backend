@@ -8,7 +8,7 @@ function BlanketOrderItem(sequelize) {
         buyer_product_id: {
             type: DataTypes.INTEGER,
             allowNull: false
-        }, // Only Buyer ID
+        },
         total_contracted_qty: {
             type: DataTypes.INTEGER
         },
