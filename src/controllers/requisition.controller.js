@@ -479,17 +479,71 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
 
 // DELETE
 export const deleteRequisition = asyncHandler(async (req, res) => {
-    const { Requisition } = req.dbModels;
+    const { Requisition, RequisitionItem } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
     try {
         const { id } = req.params;
 
+        const requisition = await Requisition.findByPk(parseInt(id, 10));
+        if (!requisition) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Requisition not found!!!" });
+        }
+
+        // If the requisition is external, also delete from the root DB
+        if (requisition.type === "external") {
+            const { rootSequelize, models } = await rootDB();
+            const { RFQ } = models;
+            const rootTransaction = await rootSequelize.transaction();
+
+            try {
+                // Find the corresponding RFQ using the pr_reference_code
+                const rfq = await RFQ.findOne({
+                    where: { pr_reference_code: requisition.requisition_no },
+                    transaction: rootTransaction,
+                });
+
+                if (rfq) {
+                    // Delete the RFQ record
+                    await RFQ.destroy({
+                        where: { id: rfq.id },
+                        transaction: rootTransaction,
+                    });
+                }
+
+                // Delete the requisition from tenant DB
+                await Requisition.destroy({
+                    where: { id: parseInt(id, 10) },
+                    transaction,
+                });
+
+                await transaction.commit();
+                await rootTransaction.commit();
+
+                return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
+            } catch (error) {
+                await transaction.rollback();
+                await rootTransaction.rollback();
+                throw error;
+            }
+        }
+
+        // For non-external (internal) requisitions, just delete from tenant DB
         const isDeleted = await Requisition.destroy({
             where: { id: parseInt(id, 10) },
+            transaction,
         });
-        if (!isDeleted) return res.status(503).json({ success: false, code: 503, message: "Deletion failed!!!" });
 
+        if (!isDeleted) {
+            await transaction.rollback();
+            return res.status(503).json({ success: false, code: 503, message: "Deletion failed!!!" });
+        }
+
+        await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
     } catch (error) {
+        if (transaction && !transaction.finished) await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
