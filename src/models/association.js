@@ -179,7 +179,7 @@ const defineRootAssociations = (models) => {
     });
 
 
-    /** ******************* BlanketOrder ************************ */
+    /** ******************* blanketOrder ************************ */
     // tenantsName ↔ blanketOrder(Buyer)
     TenantsName.hasMany(BlanketOrder, {
         foreignKey: "buyer_tenant",
@@ -200,14 +200,14 @@ const defineRootAssociations = (models) => {
     TenantsName.hasMany(BlanketOrder, {
         foreignKey: "vendor_tenant",
         sourceKey: "tenant",
-        as: "supplierBlanketOrders",
+        as: "vendorBlanketOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BlanketOrder.belongsTo(TenantsName, {
         foreignKey: "vendor_tenant",
         targetKey: "tenant",
-        as: "supplier",
+        as: "vendor",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -217,13 +217,13 @@ const defineRootAssociations = (models) => {
     // blanketOrder ↔ blanketOrderItem
     BlanketOrder.hasMany(BlanketOrderItem, {
         foreignKey: "bpo_id",
-        as: "",
+        as: "blanketOrderItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BlanketOrderItem.belongsTo(BlanketOrder, {
         foreignKey: "bpo_id",
-        as: "",
+        as: "blanketOrder",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -296,7 +296,6 @@ const defineTenantAssociations = (models) => {
         Category,
         Permission,
         Product,
-        NodeBatch,
         RequisitionItem,
         Requisition,
         HSN,
@@ -315,10 +314,13 @@ const defineTenantAssociations = (models) => {
         BusinessNodeType,
         RequisitionSupplier,
         NodeStockLedger,
+        NodeStockLedgerItem,
         GRN,
         GRNItem,
         RequisitionCategory,
-        ManufacturingUnit
+        ManufacturingUnit,
+        NodeBatch,
+        NodeBatchItems
 
 
     } = models;
@@ -346,7 +348,6 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-
     // child → parent
     BusinessNode.belongsTo(BusinessNode, {
         foreignKey: "parent_node_id",
@@ -356,7 +357,6 @@ const defineTenantAssociations = (models) => {
     });
 
     // ********************************************One-To-One*********************************
-
     // product ↔ requisitionItem
     Product.hasOne(RequisitionItem, {
         foreignKey: "product_id",
@@ -738,20 +738,34 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    /************* manufacturingUnit ********************/
-    // nodeBatch <-> manufacturingUnit
-    NodeBatch.belongsTo(ManufacturingUnit, {
-        foreignKey: "mfg_unit_id",
-        as: "vendorCategory",
+    // nodeBatchItems <-> nodeBatch
+    NodeBatchItems.belongsTo(NodeBatch, {
+        foreignKey: "batch_id",
+        as: "batch",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    ManufacturingUnit.hasMany(NodeBatch, {
-        foreignKey: "mfg_unit_id",
-        as: "vendor",
+    NodeBatch.hasMany(NodeBatchItems, {
+        foreignKey: "batch_id",
+        as: "batchItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+    // nodeBatchItems <-> product
+    NodeBatchItems.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "batchProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(NodeBatchItems, {
+        foreignKey: "product_id",
+        as: "nodeBatchItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
     // ********************************************Many-To-One*********************************
 
@@ -813,42 +827,30 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // product ↔ nodeBatch
-    Product.hasMany(NodeBatch, {
-        foreignKey: "product_id",
-        as: "batch",
+
+    /************* nodeStockLedger ********************/
+    // nodeStockLedger ↔ nodeStockLedgerItem
+    NodeStockLedger.hasMany(NodeStockLedgerItem, {
+        foreignKey: "ledger_id",
+        as: "ledgerItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    NodeBatch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "product",
+    NodeStockLedgerItem.belongsTo(NodeStockLedger, {
+        foreignKey: "ledger_id",
+        as: "ledger",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
-    // businessNode ↔ nodeBatch
-    BusinessNode.hasMany(NodeBatch, {
-        foreignKey: "business_node_id",
-        as: "inventoryBatches",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    NodeBatch.belongsTo(BusinessNode, {
-        foreignKey: "business_node_id",
-        as: "inventoryNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product ↔ nodeStockLedger
-    Product.hasMany(NodeStockLedger, {
+    // product ↔ nodeStockLedgerItem
+    Product.hasMany(NodeStockLedgerItem, {
         foreignKey: "product_id",
         as: "stockLedgers",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    NodeStockLedger.belongsTo(Product, {
+    NodeStockLedgerItem.belongsTo(Product, {
         foreignKey: "product_id",
         as: "linkedProduct",
         onDelete: "CASCADE",
@@ -856,47 +858,20 @@ const defineTenantAssociations = (models) => {
     });
 
 
-    // businessNode ↔ nodeStockLedger
-    BusinessNode.hasMany(NodeStockLedger, {
-        foreignKey: "from_node_id",
-        as: "formStockLedgers",
+    // nodeBatch ↔ nodeStockLedgerItem
+    NodeBatch.hasMany(NodeStockLedgerItem, {
+        foreignKey: "batch_id",
+        as: "nodeStockLedgerItem",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    NodeStockLedger.belongsTo(BusinessNode, {
-        foreignKey: "from_node_id",
-        as: "sourceNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // businessNode ↔ nodeStockLedger
-    BusinessNode.hasMany(NodeStockLedger, {
-        foreignKey: "to_node_id",
-        as: "toStockLedgers",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    NodeStockLedger.belongsTo(BusinessNode, {
-        foreignKey: "to_node_id",
-        as: "destinationNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // nodeBatch ↔ nodeStockLedger
-    NodeBatch.hasMany(NodeStockLedger, {
-        foreignKey: "source_batch_id",
-        as: "batchTransactions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    NodeStockLedger.belongsTo(NodeBatch, {
-        foreignKey: "source_batch_id",
+    NodeStockLedgerItem.belongsTo(NodeBatch, {
+        foreignKey: "batch_id",
         as: "sourceBatch",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
 
     // brand <-> requisitionItem
     /*Brand.hasMany(RequisitionItem, {

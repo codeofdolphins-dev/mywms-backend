@@ -46,6 +46,8 @@ import RfqQuotation from "./main/rfqQuotation.model.js";
 import RfqQuotationRevision from "./main/RfqQuotationRevisions .model.js";
 import BlanketOrder from "./main/blanketOrder.model.js";
 import BlanketOrderItem from "./main/BlanketOrderItems.model.js";
+import NodeBatchItems from "./nodeBatchItems.model.js";
+import NodeStockLedgerItem from "./nodeStockLedgerItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -78,7 +80,6 @@ const defineTenantModels = (sequelize) => {
     RolePermissions(sequelize);
     User(sequelize);
     UserRoles(sequelize);
-    NodeBatch(sequelize);
     Requisition(sequelize);
     RequisitionItem(sequelize);
     HSN(sequelize);
@@ -103,6 +104,9 @@ const defineTenantModels = (sequelize) => {
     NodeDetails(sequelize);
     RequisitionSupplier(sequelize);
     NodeStockLedger(sequelize);
+    NodeBatch(sequelize);
+    NodeBatchItems(sequelize);
+    NodeStockLedgerItem(sequelize);
     GRN(sequelize);
     GRNItem(sequelize);
     RequisitionCategory(sequelize);

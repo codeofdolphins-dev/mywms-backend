@@ -1,47 +1,56 @@
 import { DataTypes } from "sequelize";
 
-function NodeStockLedger (sequelize) {
+function NodeStockLedger(sequelize) {
     return sequelize.define("NodeStockLedger", {
-        product_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        from_node_id: {
-            type: DataTypes.INTEGER,
+        ledger_no: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
-        to_node_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
+
+        transaction_type: {
+            type: DataTypes.ENUM("grn_receipt", "material_issue", "production_receipt", "inter_node_transfer", "sales_dispatch", "purchase_return", "sales_return", "stock_adjustment", "others"),
+            allowNull: false,
         },
-        from_mfg_unit_id: {             // for manufacturing units
-            type: DataTypes.INTEGER,
-            allowNull: true,
+        ledger_context: {
+            type: DataTypes.ENUM("mfg_internal", "mfg_inward", "mfg_outward", "node_transfer", "others"),
+            allowNull: false,
         },
-        to_mfg_unit_id: {               // for manufacturing units
-            type: DataTypes.INTEGER,
-            allowNull: true,
+        txn_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: false,
         },
-        source_batch_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        qty: {
+
+        from_location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        transaction_type  : {
-            type: DataTypes.ENUM("inward", "outward", "transfer"),
+        from_location_type: {
+            type: DataTypes.ENUM("mfg_unit", "business_node"),
+            allowNull: true,
+        },
+
+        to_location_id: {
+            type: DataTypes.INTEGER,
             allowNull: false,
         },
+        to_location_type: {
+            type: DataTypes.ENUM("mfg_unit", "business_node"),
+            allowNull: true,
+        },
+
         reference_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
         reference_type: {
-            type: DataTypes.ENUM("po", "grn", "adjustment", "opening"),
+            type: DataTypes.ENUM("production_order", "purchase_order", "grn", "adjustment", "sales_order", "transfer_order"),
             allowNull: true,
-        }
+        },
+
+        created_by: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
     });
 }
 export default NodeStockLedger;

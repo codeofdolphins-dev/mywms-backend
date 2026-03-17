@@ -1,78 +1,75 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { rootDB } from "../db/tenantMenager.service.js"
-import { fetchNodeDetails } from "../helper/helper.js";
+import { rootDB } from "../db/tenantMenager.service.js";
 import { generateNo } from "../helper/generate.js";
 
 
 // GET
-const allBlanketOrderList = asyncHandler(async (req, res) => {
+export const allBlanketOrderList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
+    const { BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
 
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { page = 1, limit = 10, id = "", rfq_no = "" } = req.query;
+        let { page = 1, limit = 10, id = "", bpo_no = "", status = "all", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        let rfq_id = null;
-        if (rfq_no) {
-            const rfq = await RFQ.findOne({
-                where: { rfq_no }
-            });
-            rfq_id = rfq.id;
-        }
-
-        const rfqQuotation = await RfqQuotation.findAndCountAll({
+        const blanketOrder = await BlanketOrder.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
-                ...(rfq_no && { rfq_id }),
-                vendor_tenant: dbName,
+                ...(bpo_no && { bpo_no: bpo_no.trim() }),
+                [Op.or]: [
+                    { buyer_tenant: dbName },
+                    { vendor_tenant: dbName }
+                ],
+                ...(status !== "all" && { status: status.toLowerCase() }),
             },
             include: [
                 {
-                    model: RFQ,
-                    as: "linkedRfq",
-                    // attributes: ["rfq_no"]
+                    model: BlanketOrderItem,
+                    as: "blanketOrderItems",
                 },
                 {
-                    model: RfqQuotationRevision,
-                    as: "quotationRevision",
+                    model: TenantsName,
+                    as: "buyer",
                     include: [
                         {
-                            model: RfqQuotationItem,
-                            as: "revisionItems",
-                            attributes: {
-                                exclude: ["quotation_id", "qty"]
-                            },
-                            include: [
-                                {
-                                    model: RFQItem,
-                                    as: "sourceRfqItem"
-                                }
-                            ]
+                            model: Tenant,
+                            as: "tenantDetails",
+                            // attributes: ["companyName"]
+                        }
+                    ]
+                },
+                {
+                    model: TenantsName,
+                    as: "vendor",
+                    include: [
+                        {
+                            model: Tenant,
+                            as: "tenantDetails",
+                            // attributes: ["companyName"]
                         }
                     ]
                 },
             ],
             limit,
             offset,
-            order: [["createdAt", "DESC"]],
+            ...(!noLimit && { order: [['createdAt', 'DESC']] })
         });
-        if (!rfqQuotation) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+        if (!blanketOrder) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-        const totalItems = rfqQuotation.count;
+        const totalItems = blanketOrder.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: (!rfq_no || !id) ? rfqQuotation?.rows : rfqQuotation?.rows?.[0],
-            ...((!rfq_no || !id) && {
+            data: (id || bpo_no || noLimit) ? blanketOrder?.rows?.[0] : blanketOrder?.rows,
+            ...(!(id || bpo_no || noLimit) && {
                 meta: {
                     totalItems,
                     totalPages,
@@ -80,6 +77,60 @@ const allBlanketOrderList = asyncHandler(async (req, res) => {
                     limit,
                 },
             }),
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+// GET
+export const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { BlanketOrder, BlanketOrderItem } = models;
+    const { Product } = req.dbModels;
+
+    try {
+        const { bpo_no } = req.params;
+        if (!bpo_no) throw new Error("bpo_no is required");
+
+        const blanketOrders = await BlanketOrder.findOne({
+            where: { bpo_no: bpo_no.trim() },
+            include: [
+                {
+                    model: BlanketOrderItem,
+                    as: "blanketOrderItems",
+                }
+            ],
+        });
+        if (!blanketOrders || blanketOrders.length === 0) return res.status(404).json({ success: false, code: 404, message: "Blanket Order not found" });
+
+        const productIds = blanketOrders?.blanketOrderItems?.flatMap(item => item.buyer_product_id);
+
+        if (productIds.length === 0) {
+            return res.status(200).json({
+                success: true,
+                code: 200,
+                message: "Fetched Successfully.",
+                data: blanketOrders,
+            });
+        }
+
+        const products = await Product.findAll({
+            where: { id: { [Op.in]: [...new Set(productIds)] } },
+            attributes: ["id", "name", "sku", "unit_type", "photo"]
+        });
+
+        const productMap = new Map(products.map(p => [p.id, p.toJSON()]));
+
+        const orderJson = blanketOrders.toJSON();
+        orderJson.blanketOrderItems = orderJson.blanketOrderItems.map(item => ({ ...item, product: productMap.get(item.buyer_product_id) || null }));
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: orderJson,
         });
     } catch (error) {
         console.log(error);
