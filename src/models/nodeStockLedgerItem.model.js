@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 function NodeStockLedgerItem(sequelize) {
     return sequelize.define("NodeStockLedgerItem", {
         ledger_id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             allowNull: true,
         },
 

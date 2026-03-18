@@ -2,7 +2,7 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
-const tenantBusinessNodeList = asyncHandler(async (req, res) => {
+export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
     const { BusinessNodeType, TenantBusinessFlow } = req.dbModels;
     try {
         const codes = (await TenantBusinessFlow.findAll({
@@ -22,7 +22,7 @@ const tenantBusinessNodeList = asyncHandler(async (req, res) => {
     }
 });
 
-const allRegisteredNodes = asyncHandler(async (req, res) => {
+export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
         const businessNode = await BusinessNode.findAll({
@@ -53,5 +53,29 @@ const allRegisteredNodes = asyncHandler(async (req, res) => {
 });
 
 
+export const allMfgNodes = asyncHandler(async (req, res) => {
+    const { BusinessNode, NodeDetails } = req.dbModels;
+    try {
+        const businessNode = await BusinessNode.findAll({
+            where: { node_type_code: "L-101" },
+            include: [
+                {
+                    model: NodeDetails,
+                    as: "nodeDetails"
+                },
+            ]
+        });
+        if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
-export { tenantBusinessNodeList, allRegisteredNodes }
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: businessNode
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});

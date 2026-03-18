@@ -11,8 +11,8 @@ function ManufacturingUnit(sequelize) {
             allowNull: false,
             unique: true
         },
-        type: {
-            type: DataTypes.ENUM("rm store", "fg store", "production"),
+        store_type: {
+            type: DataTypes.ENUM("rm_store", "fg_store", "production"),
             allowNull: false,
         },
         location: {
@@ -27,6 +27,11 @@ function ManufacturingUnit(sequelize) {
         isActive: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
+        },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {}
         },
     });
 }
