@@ -58,12 +58,12 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
     try {
         const businessNode = await BusinessNode.findAll({
             where: { node_type_code: "L-101" },
-            include: [
-                {
-                    model: NodeDetails,
-                    as: "nodeDetails"
-                },
-            ]
+            // include: [
+            //     {
+            //         model: NodeDetails,
+            //         as: "nodeDetails"
+            //     },
+            // ]
         });
         if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 

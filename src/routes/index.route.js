@@ -25,6 +25,7 @@ import inwardApi from "./inward.route.js";
 import vendorApi from "./vendor.route.js";
 import requisitionCategoryApi from "./requisitionCategory.route.js";
 import rfqApi from "./rfq.route.js";
+import storeApi from "./store.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -59,6 +60,7 @@ router.use("/bom", bomApi);
 router.use("/unit", unitApi);
 router.use("/package-type", packageTypeApi);
 router.use("/inward", inwardApi);
+router.use("/store", storeApi);
 
 
 
