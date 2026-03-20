@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { allRfqList } from "../controllers/rfq.controller.js";
-import { allRfqQuotationList, createRfqQuotation, deleteRfqQuotation, getQuotationWithPaginatedItems, negotiateRfqQuotation, updateRfqQuotation } from "../controllers/rfqQuotation.controller.js";
+import { allRfqList } from "../controllers/central/rfq.controller.js";
+import { allRfqQuotationList, createRfqQuotation, deleteRfqQuotation, getQuotationWithPaginatedItems, negotiateRfqQuotation, updateRfqQuotation } from "../controllers/central/rfqQuotation.controller.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
-import { allBlanketOrderList, blanketOrderWithProductDetails, createBlanketOrder } from "../controllers/blanketOrder.controller.js";
+import { allBlanketOrderList, blanketOrderWithProductDetails, createBlanketOrder } from "../controllers/central/blanketOrder.controller.js";
 
 const router = Router();
 

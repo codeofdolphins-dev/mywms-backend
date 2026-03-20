@@ -1,22 +1,16 @@
 import { DataTypes } from "sequelize";
 
-function Supplier(sequelize) {
-    return sequelize.define("Supplier", {
+function Vendor(sequelize) {
+    return sequelize.define("Vendor", {
         name: {
             type: DataTypes.JSONB,
             allowNull: false,
             defaultValue: {}
         },
-        // supplier_type: {
-        //     type: DataTypes.ENUM("RAW", "FINISHED"),
-        //     allowNull: false,
-        //     defaultValue: "FINISHED"
-        // },
-        // business_mode: {
-        //     type: DataTypes.ENUM("MANUFACTURING", "TRADING"),
-        //     allowNull: false,
-        //     defaultValue: "TRADING"
-        // },
+        linked_business_node_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
         contact_phone: {
             type: DataTypes.STRING,
             allowNull: true
@@ -43,4 +37,4 @@ function Supplier(sequelize) {
         }
     });
 }
-export default Supplier;
+export default Vendor;

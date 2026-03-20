@@ -303,10 +303,8 @@ const defineTenantAssociations = (models) => {
         QuotationItem,
         PurchasOrder,
         PurchaseOrderItem,
-        Supplier,
         Brand,
         UnitType,
-        SupplierBrand,
         BrandProducts,
         CategoryProducts,
         PackageType,
@@ -320,7 +318,9 @@ const defineTenantAssociations = (models) => {
         RequisitionCategory,
         ManufacturingUnit,
         NodeBatch,
-        NodeBatchItems
+        NodeBatchItems,
+        SalesOrder,
+        SalesOrderItem,
 
 
     } = models;
@@ -738,6 +738,7 @@ const defineTenantAssociations = (models) => {
     });
 
 
+    /************* nodeBatch ********************/
     // nodeBatchItems <-> nodeBatch
     NodeBatchItems.belongsTo(NodeBatch, {
         foreignKey: "batch_id",
@@ -762,6 +763,21 @@ const defineTenantAssociations = (models) => {
     Product.hasMany(NodeBatchItems, {
         foreignKey: "product_id",
         as: "nodeBatchItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // nodeBatchItems <-> product
+    SalesOrderItem.belongsTo(SalesOrder, {
+        foreignKey: "sales_order_id",
+        as: "salesOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrder.hasMany(SalesOrderItem, {
+        foreignKey: "sales_order_id",
+        as: "salesOrderItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -954,30 +970,6 @@ const defineTenantAssociations = (models) => {
         as: "roles",
         foreignKey: "permissionId",
         otherKey: "roleId",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // supplier - brand
-    Supplier.belongsToMany(Brand, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "brands",
-        foreignKey: "supplier_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Supplier, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "suppliers",
-        foreignKey: "brand_id",
-        otherKey: "supplier_id",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

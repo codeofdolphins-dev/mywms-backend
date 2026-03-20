@@ -6,21 +6,40 @@ function PurchasOrder(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
+        // --- NEW BPO LINKAGE FIELDS ---
+        bpo_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true // Only filled if generated from BPO
+        },
+        target_store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true // maps to your L-Code (e.g., L-103) [cite: 18]
+        },
+        priority: {
+            type: DataTypes.ENUM("low", "medium", "high", "urgent"),
+            defaultValue: "medium"
+        },
+        required_by: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        // --- MODIFIED EXISTING FIELDS ---
         quotation_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
-            unique: true
+            allowNull: true, // MUST BE NULLABLE for BPO Indents
+            unique: false    // Remove unique if multiple Indents use same quote terms
         },
         requisition_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true  // BPO Indents don't always have a direct PR 
         },
+        // --- REMAINING FIELDS ---
         from_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
         type: {
-            type: DataTypes.ENUM("internal", "external"),
+            type: DataTypes.ENUM("internal", "external", "bpo_release"), // Added type
             defaultValue: "external"
         },
         to_supplier_id: {
@@ -37,7 +56,6 @@ function PurchasOrder(sequelize) {
         },
         grand_total: {
             type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
             defaultValue: 0.00
         },
         note: {

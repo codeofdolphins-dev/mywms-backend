@@ -6,6 +6,10 @@ function BlanketOrder(sequelize) {
             type: DataTypes.STRING,
             unique: true
         },
+        pr_reference_code: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         buyer_tenant: {
             type: DataTypes.STRING,
             allowNull: false

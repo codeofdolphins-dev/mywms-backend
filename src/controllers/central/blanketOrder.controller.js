@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { rootDB } from "../db/tenantMenager.service.js";
-import { generateNo } from "../helper/generate.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { rootDB } from "../../db/tenantMenager.service.js";
+import { generateNo } from "../../helper/generate.js";
 
 
 // GET
@@ -138,85 +138,6 @@ export const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
     }
 });
 
-const getQuotationWithPaginatedItems = async (req, res) => {
-    const { models } = await rootDB();
-    const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, RFQItem, TenantsName, Tenant } = models;
-
-    try {
-        const { page = 1, limit = 10, reqNo, targetVendor, targetRevision, } = req.query;
-
-        // 1. Get the RFQ Header
-        const rfq = await RFQ.findOne({ where: { pr_reference_code: reqNo } });
-        if (!rfq) return res.status(404).json({ success: false, code: 404, message: "RFQ not found" });
-
-        // 2. Get all Vendor Headers for this RFQ
-        const vendorHeaders = await RfqQuotation.findAll({
-            where: { rfq_id: rfq.id },
-            include: [
-                {
-                    model: TenantsName,
-                    as: "vendorTenant",
-                    attributes: ["id"],
-                    include: [
-                        {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            attributes: ["companyName"]
-                        }
-                    ]
-                },
-            ] // include company names, etc.
-        });
-
-        // 3. Process each vendor's revision and items
-        const data = await Promise.all(vendorHeaders.map(async (header) => {
-            console.log(header.toJSON())
-            const isTarget = targetVendor && String(header.vendor_tenant) === String(targetVendor);
-
-            // Determine which revision to show: 
-            // If it's the target vendor, use targetRevision. Otherwise, use their latest (current_revision_no).
-            const revToFetch = isTarget && targetRevision ? targetRevision : header.current_revision_no;
-
-            // Fetch the specific Revision record
-            const revisionRecord = await RfqQuotationRevision.findOne({
-                where: {
-                    quotation_id: header.id,
-                    revision_no: revToFetch
-                }
-            });
-
-            if (!revisionRecord) return { ...header.toJSON(), revision: null, items: [] };
-
-            // Fetch Items for this specific revision with CONDITIONAL pagination
-            const items = await RfqQuotationItem.findAndCountAll({
-                where: { revision_id: revisionRecord.id },
-                include: [{ model: RFQItem, as: "sourceRfqItem" }],
-                limit: isTarget ? parseInt(limit) : undefined,
-                offset: isTarget ? (parseInt(page) - 1) * parseInt(limit) : undefined,
-                order: [['createdAt', 'ASC']]
-            });
-
-            return {
-                ...header.toJSON(),
-                activeRevision: revisionRecord,
-                requisition: rfq,
-                quotationItems: items.rows,
-                pagination: {
-                    totalItems: items.count,
-                    currentPage: isTarget ? parseInt(page) : 1,
-                    totalPages: isTarget ? Math.ceil(items.count / limit) : 1,
-                    isPaginated: isTarget
-                }
-            };
-        }));
-
-        return res.status(200).json({ success: true, code: 200, data: data });
-
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({ success: false, message: error.message });
-    }
-};
 
 
 // POST
@@ -228,8 +149,8 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const rootTransaction = await rootSequelize.transaction();
 
     try {
-        const { rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "" } = req.body;
-        if ([rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items].some(i => i === "")) throw new Error("Required fields are missing!!!");
+        const { rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
+        if ([rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
         const revision = await RfqQuotationRevision.findByPk(Number(rfq_quotation_revision_id));
         if (!revision) {
@@ -244,6 +165,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
             buyer_tenant,
             vendor_tenant,
             rfq_quotation_revision_id,
+            pr_reference_code,
             status: "active",
             ...(valid_until && { valid_until: new Date(valid_until) })
         }, { transaction: rootTransaction });

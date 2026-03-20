@@ -7,16 +7,24 @@ function SalesOrder(sequelize) {
             allowNull: true,
             unique: true
         },
-        source_po_id: {
+        // Changed to String to capture the Buyer's actual PO Number, not their local DB ID
+        source_po_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        // Link back to the master contract in the Central DB
+        central_bpo_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        from_business_node_id: {
+        // The Central Node ID of the company buying the goods
+        buyer_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        to_supplier_id: {
-            type: DataTypes.INTEGER,
+        // Captures the destination RM Store selected by the buyer
+        delivery_address: {
+            type: DataTypes.JSONB,
             allowNull: true
         },
         type: {

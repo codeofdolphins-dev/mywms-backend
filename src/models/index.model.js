@@ -19,11 +19,9 @@ import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItem from "./purchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
-import Supplier from "./supplier.model.js";
 import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import UnitType from "./unitType.model.js";
-import SupplierBrand from "./supplierBrand.joinModel.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
 import BrandProducts from "./brandProduct.joinModel.js";
 import TenantBusinessFlowMaster from "./main/tenantBusinessFlowMaster.model.js";
@@ -48,6 +46,9 @@ import BlanketOrder from "./main/blanketOrder.model.js";
 import BlanketOrderItem from "./main/BlanketOrderItems.model.js";
 import NodeBatchItems from "./nodeBatchItems.model.js";
 import NodeStockLedgerItem from "./nodeStockLedgerItem.model.js";
+import Vendor from "./vendor.model.js";
+import SalesOrder from "./salesOrder.model.js";
+import SalesOrderItem from "./salesOrderItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -92,8 +93,7 @@ const defineTenantModels = (sequelize) => {
     BillOfMaterial(sequelize);
     Brand(sequelize);
     UnitType(sequelize);
-    Supplier(sequelize);
-    SupplierBrand(sequelize);
+    Vendor(sequelize);
     CategoryProducts(sequelize);
     BrandProducts(sequelize);
     BusinessNodeType(sequelize);
@@ -111,6 +111,8 @@ const defineTenantModels = (sequelize) => {
     GRNItem(sequelize);
     RequisitionCategory(sequelize);
     ManufacturingUnit(sequelize);
+    SalesOrder(sequelize);
+    SalesOrderItem(sequelize);
 
     return sequelize.models;
 }

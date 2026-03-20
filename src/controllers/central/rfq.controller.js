@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { rootDB } from "../db/tenantMenager.service.js"
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { rootDB } from "../../db/tenantMenager.service.js"
 
 
 // GET

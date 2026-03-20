@@ -6,8 +6,8 @@ function SalesOrderItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        product_id: {
-            type: DataTypes.INTEGER,
+        product: {
+            type: DataTypes.JSONB,
             allowNull: false
         },
         qty: {
