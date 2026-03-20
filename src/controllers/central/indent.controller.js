@@ -157,25 +157,27 @@ const createIndent = asyncHandler(async (req, res) => {
     let vendorTransaction = null;
 
     try {
-        const { bpo_no = "", priority = "", required_by = "", target_store_id = "", items = "" } = req.body;
+        const { bpo_no = "", priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = req.body;
         if ([bpo_no, target_store_id, items].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
         const blanketOrder = await BlanketOrder.findOne({ where: { bpo_no: bpo_no.trim() } });
         if (!blanketOrder) throw new Error("Record not found!!!");
 
+        /******************** Verify Store *********************/
         const store = await ManufacturingUnit.findByPk(Number(target_store_id));
         if (!store) throw new Error("Store not found!!!");
 
-        
-        const requisition_no = blanketOrder.pr_reference_code;
 
+        /******************** Verify Requisition *********************/
+        const requisition_no = blanketOrder.pr_reference_code;
         const requisition = await Requisition.findOne({ where: { requisition_no } });
         if (!requisition) throw new Error("Requisition record not found!!!");
 
 
+        /******************** Verify Vendor Tenant *********************/
         const vendorTenant = blanketOrder.vendor_tenant;
         if (!vendorTenant) throw new Error("Vendor tenant not found in blanket order record!!!");
-        
+
         /** get vendor database connection */
         const { sequelize, models: vendorModel } = getTenantConnection(vendorTenant);
         vendorTransaction = await sequelize.transaction();
@@ -191,9 +193,25 @@ const createIndent = asyncHandler(async (req, res) => {
             from_business_node_id: requisition.buyer_business_node_id,
             type: "bpo_release",
             created_by: req.user.id,
+            grand_total,
+            note: instructions
         }, { transaction: buyerTransaction });
+        if (!purchaseOrder) throw new Error("Failed to create purchase order record!!!");
 
+        purchaseOrder.po_no = generateNo("IN", purchaseOrder.id);
+        await purchaseOrder.save({ transaction: buyerTransaction });
 
+        for (const item of items) {
+            const { buyer_product_id = "", qty = "", unit_price = "" } = item;
+            if (!buyer_product_id || !qty || !unit_price) throw new Error("Required fields are missing in items array!!!");
+            
+            const purchaseOrderItemsData = items.map(item => ({
+                purchase_order_id: purchaseOrder.id,
+                buyer_product_id: item.buyer_product_id,
+                qty: item.qty,
+                unit_price: item.unit_price
+            }));
+        }
 
     } catch (error) {
         await rootTransaction.rollback();

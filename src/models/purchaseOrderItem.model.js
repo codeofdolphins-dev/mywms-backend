@@ -8,7 +8,11 @@ function PurchaseOrderItem(sequelize) {
         },
         requisition_item_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
+        },
+        bpo_item_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true // Only filled if generated from BPO
         },
         qty: {
             type: DataTypes.INTEGER,
