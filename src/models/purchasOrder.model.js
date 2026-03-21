@@ -39,8 +39,9 @@ function PurchasOrder(sequelize) {
             allowNull: false
         },
         type: {
-            type: DataTypes.ENUM("internal", "external", "bpo_release"), // Added type
-            defaultValue: "external"
+            type: DataTypes.ENUM("internal", "bpo_release"),
+            allowNull: false,
+            defaultValue: "internal"
         },
         to_supplier_id: {
             type: DataTypes.INTEGER,

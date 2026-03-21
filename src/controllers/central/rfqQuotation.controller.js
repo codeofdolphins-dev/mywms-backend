@@ -263,6 +263,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
             }, { transaction: rootTransaction });
         };
 
+        // console.log(nodeDetails)
+
         await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
 

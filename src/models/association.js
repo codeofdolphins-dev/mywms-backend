@@ -15,6 +15,8 @@ const defineRootAssociations = (models) => {
         RfqQuotationItem,
         BlanketOrder,
         BlanketOrderItem,
+        BpoIndent,
+        BpoIndentItem
 
     } = models;
 
@@ -212,7 +214,6 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-
     /** ******************* blanketOrderItem ************************ */
     // blanketOrder ↔ blanketOrderItem
     BlanketOrder.hasMany(BlanketOrderItem, {
@@ -227,6 +228,87 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+    
+    // blanketOrderItem ↔ bpoIndentItem
+    BlanketOrderItem.hasMany(BpoIndentItem, {
+        foreignKey: "bpo_item_id",
+        as: "linkedBpoIndentItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndentItem.belongsTo(BlanketOrderItem, {
+        foreignKey: "bpo_item_id",
+        as: "parentBlanketOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* bpoIndent ************************ */
+    // blanketOrder ↔ bpoIndent
+    BlanketOrder.hasMany(BpoIndent, {
+        foreignKey: "bpo_id",
+        as: "bpoIndent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndent.belongsTo(BlanketOrder, {
+        foreignKey: "bpo_id",
+        as: "bpo",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    // tenantsName ↔ blanketOrder(Buyer)
+    TenantsName.hasMany(BpoIndent, {
+        foreignKey: "buyer_tenant",
+        sourceKey: "tenant",
+        as: "buyerIndents",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndent.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        targetKey: "tenant",
+        as: "bpoIndentBuyerTenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // tenantsName ↔ blanketOrder(vendor/supplier)
+    TenantsName.hasMany(BpoIndent, {
+        foreignKey: "vendor_tenant",
+        sourceKey: "tenant",
+        as: "vendorIndents",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BpoIndent.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        targetKey: "tenant",
+        as: "bpoIndentVendorTenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    /** ******************* BpoIndentItem ************************ */
+    // bpoIndent ↔ bpoIndentItem
+    BpoIndent.hasMany(BpoIndentItem, {
+        foreignKey: "indent_id",
+        as: "bpoIndentItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndentItem.belongsTo(BpoIndent, {
+        foreignKey: "indent_id",
+        as: "indentParent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
 
 
 
@@ -337,21 +419,6 @@ const defineTenantAssociations = (models) => {
     Category.belongsTo(Category, {
         as: "parent",
         foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // parent → children
-    BusinessNode.hasMany(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "children",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    // child → parent
-    BusinessNode.belongsTo(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "parentNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

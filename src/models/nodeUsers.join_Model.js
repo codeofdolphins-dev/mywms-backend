@@ -16,7 +16,7 @@ function NodeUser(sequelize) {
             allowNull: false
         },
         userRole: {
-            type: DataTypes.ENUM("NODE_ADMIN", "NODE_USER"),
+            type: DataTypes.ENUM("NODE_ADMIN", "NODE_USER", "OWNER"),
             allowNull: false,
             defaultValue: "NODE_USER"
         },

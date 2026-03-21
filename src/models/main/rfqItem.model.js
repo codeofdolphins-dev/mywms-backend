@@ -15,7 +15,7 @@ function RFQItem(sequelize) {
             allowNull: true,
         },
         qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 3),
             allowNull: false,
         },
         uom: {

@@ -183,6 +183,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
                 bpo_id: blanketOrder.id,
                 buyer_product_id: buyer_product_id,
                 total_contracted_qty,
+                remain_contracted_qty: total_contracted_qty,
                 unit_price,
             }, { transaction: rootTransaction });
         };

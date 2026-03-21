@@ -49,6 +49,8 @@ import NodeStockLedgerItem from "./nodeStockLedgerItem.model.js";
 import Vendor from "./vendor.model.js";
 import SalesOrder from "./salesOrder.model.js";
 import SalesOrderItem from "./salesOrderItem.model.js";
+import BpoIndent from "./main/BpoIndent.model.js";
+import BpoIndentItem from "./main/BpoIndentItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -69,6 +71,8 @@ const defineRootModels = (rootSequelize) => {
     RFQItem(rootSequelize);
     BlanketOrder(rootSequelize);
     BlanketOrderItem(rootSequelize);
+    BpoIndent(rootSequelize);
+    BpoIndentItem(rootSequelize);
 
     return rootSequelize.models;
 }

@@ -212,8 +212,8 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
             location,
             address: {
                 address,
-                state: state.name,
-                district: district.name,
+                state: state.name,      // NOTE: this may change
+                district: district.name,    // NOTE: this may change
                 pincode,
                 ...((lat && long) ? { lat, long } : {})
             },

@@ -4,15 +4,11 @@ function BusinessNode(sequelize) {
     return sequelize.define("BusinessNode", {
         node_type_code: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         tenant_business_flow_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        parent_node_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
+            allowNull: true
         },
         name: {
             type: DataTypes.STRING,

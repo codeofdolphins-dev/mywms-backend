@@ -140,12 +140,13 @@ const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
 
 
 // POST
-const createIndent = asyncHandler(async (req, res) => {
-    // console.log(req.body); return
+export const createIndent = asyncHandler(async (req, res) => {
+    console.log(req.body); 
+    // return
 
     /** root DB */
     const { rootSequelize, models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision } = models;
+    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, BpoIndent, BpoIndentItem } = models;
     const rootTransaction = await rootSequelize.transaction();
 
 
@@ -163,7 +164,7 @@ const createIndent = asyncHandler(async (req, res) => {
         const blanketOrder = await BlanketOrder.findOne({ where: { bpo_no: bpo_no.trim() } });
         if (!blanketOrder) throw new Error("Record not found!!!");
 
-        /******************** Verify Store *********************/
+        /******************** Verify Store record *********************/
         const store = await ManufacturingUnit.findByPk(Number(target_store_id));
         if (!store) throw new Error("Store not found!!!");
 
@@ -179,50 +180,25 @@ const createIndent = asyncHandler(async (req, res) => {
         if (!vendorTenant) throw new Error("Vendor tenant not found in blanket order record!!!");
 
         /** get vendor database connection */
-        const { sequelize, models: vendorModel } = getTenantConnection(vendorTenant);
+        const { sequelize, models: vendorModel } = await getTenantConnection(vendorTenant);
         vendorTransaction = await sequelize.transaction();
         const { SalesOrder, SalesOrderItem } = vendorModel;
 
+        await createVendor(req.dbModels, buyerTransaction, vendorModel, vendorTransaction, req.body);
 
-        const purchaseOrder = await PurchasOrder.create({
-            bpo_id: blanketOrder.id,
-            target_store_id: target_store_id,
-            priority: priority.toLowerCase(),
-            ...(required_by && { required_by: new Date(required_by) }),
-            requisition_id: requisition.id,
-            from_business_node_id: requisition.buyer_business_node_id,
-            type: "bpo_release",
-            created_by: req.user.id,
-            grand_total,
-            note: instructions
-        }, { transaction: buyerTransaction });
-        if (!purchaseOrder) throw new Error("Failed to create purchase order record!!!");
+        // const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req.body);
 
-        purchaseOrder.po_no = generateNo("IN", purchaseOrder.id);
-        await purchaseOrder.save({ transaction: buyerTransaction });
 
-        for (const item of items) {
-            const { buyer_product_id = "", qty = "", unit_price = "" } = item;
-            if (!buyer_product_id || !qty || !unit_price) throw new Error("Required fields are missing in items array!!!");
-            
-            const purchaseOrderItemsData = items.map(item => ({
-                purchase_order_id: purchaseOrder.id,
-                buyer_product_id: item.buyer_product_id,
-                qty: item.qty,
-                unit_price: item.unit_price
-            }));
-        }
+
 
     } catch (error) {
         await rootTransaction.rollback();
         await buyerTransaction.rollback();
-        if (!vendorTransaction) await vendorTransaction.rollback();
+        if (!vendorTransaction) await vendorTransaction?.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
 // DELETE
 const deleteBlanketOrder = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
@@ -248,8 +224,6 @@ const deleteBlanketOrder = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
 // PUT
 const updateBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
@@ -307,3 +281,88 @@ const updateBlanketOrder = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+/******************** helper methods ********************/
+async function createPO_PoItems(models, buyerTransaction, reqBody) {
+
+    const { PurchasOrder, PurchaseOrderItem } = models;
+
+    const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = reqBody;
+
+    try {
+        const purchaseOrder = await PurchasOrder.create({
+            bpo_id: blanketOrder.id,
+            target_store_id: target_store_id,
+            priority: priority.toLowerCase(),
+            ...(required_by && { required_by: new Date(required_by) }),
+            requisition_id: requisition.id,
+            from_business_node_id: requisition.buyer_business_node_id,
+            type: "bpo_release",
+            created_by: req.user.id,
+            grand_total,
+            note: instructions
+        }, { transaction: buyerTransaction });
+        if (!purchaseOrder) throw new Error("Failed to create purchase order record!!!");
+
+        purchaseOrder.po_no = generateNo("PO", purchaseOrder.id);
+        await purchaseOrder.save({ transaction: buyerTransaction });
+
+        for (const item of items) {
+            const { buyer_product_id = "", qty = "", unit_price = "" } = item;
+            if (!buyer_product_id || !qty || !unit_price) throw new Error("Required fields are missing in items array!!!");
+
+            if (item.remaining_qty < item.release_qty) throw new Error("Out of balance qty!!!");
+
+            const purchaseOrderItem = PurchaseOrderItem.create({
+                purchase_order_id: purchaseOrder.id,
+                bpo_item_id: item.bpo_item_id,
+                product_id: item.product.id,
+                qty: item.release_qty,
+                unit_price: item.unit_price,
+                line_total: item.unit_price * item.release_qty,
+            }, { transaction: buyerTransaction });
+            if (!purchaseOrderItem) throw new Error("Failed to create purchase order item record!!!");
+        }
+
+        return purchaseOrder;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function createVendor(buyerModels, buyerTransaction, vendorModels, vendorTransaction, reqBody) {
+
+    const { PurchasOrder, PurchaseOrderItem } = buyerModels;
+    const { User, NodeUser, BusinessNode, NodeDetails } = vendorModels
+
+    const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = reqBody;
+
+    try {
+
+        const vendorDeails = await User.findOne({
+            where: { is_owner: true },
+            attributes: ["email"],
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "userBusinessNode",
+                    through: {
+                        attributes: [],
+                    },
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails",
+                        }
+                    ]
+                }
+            ]
+        });
+
+        // console.log(vendorDeails.toJSON());
+        console.log(vendorDeails.toJSON().userBusinessNode[0]);
+
+    } catch (error) {
+        throw error;
+    }
+}

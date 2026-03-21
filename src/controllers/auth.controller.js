@@ -33,7 +33,7 @@ export const register_company = asyncHandler(async (req, res) => {
     const r_Transaction = req?.transaction?.r_Transaction ?? null;
 
     const transaction = await req.dbObject.transaction();
-    const { Role, User } = req.dbModels;
+    const { Role, User, BusinessNode } = req.dbModels;
 
     let models = null;
     let rootTransaction = null;
@@ -90,7 +90,7 @@ export const register_company = asyncHandler(async (req, res) => {
         } else {
             console.log("update tenant");
 
-            const [affectedRows] = await Tenant.update({
+            await Tenant.update({
                 password,
                 companyName: name,
             }, {
@@ -98,8 +98,15 @@ export const register_company = asyncHandler(async (req, res) => {
                 transaction: rootTransaction
             });
 
-            console.log("affectedRows", affectedRows);
-            console.log("email", email);
+            /** creating Speacial Node for owner */
+            const businessNode = await BusinessNode.create({
+                name
+            }, { transaction });
+
+            await user.addUserBusinessNode(businessNode.id, {
+                through: { userRole: "OWNER" },
+                transaction
+            });
         }
         if (!user) throw new Error("Company Register Failed!!!");
 
@@ -143,7 +150,7 @@ export const registerVendor = asyncHandler(async (req, res) => {
         ) throw new Error("Required fields are missing!!!");
 
         const vendorRole = await Role.findOne({ where: { role: "vendor" } });
-        if(!vendorRole) throw new Error("Role not found. Make sure roles are seeded properly!!!");
+        if (!vendorRole) throw new Error("Role not found. Make sure roles are seeded properly!!!");
 
         const vendorCategory = await VendorCategory.findByPk(Number(vendor_category_id));
         if (!vendorCategory) throw new Error("Category record not found!!!");
