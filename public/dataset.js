@@ -894,14 +894,13 @@ export const districts = [
 ];
 
 export const roles = [
-  { role: "system" },
-  { role: "owner" },
-  { role: "company" },
-  { role: "admin" },
-  { role: "user" },
-  { role: "vendor" },
-  { role: "purchase" },
-  { role: "sales" },
+  { role: "system", inBuilt: true },
+  { role: "owner", inBuilt: true },
+  { role: "company", inBuilt: true },
+  { role: "admin", inBuilt: true },
+  { role: "user", inBuilt: true },
+  { role: "purchase-admin", inBuilt: true },
+  { role: "sales-admin", inBuilt: true },
 ];
 
 export const businessNodeTypes = [

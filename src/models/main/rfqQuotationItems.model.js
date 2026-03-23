@@ -11,7 +11,7 @@ function RfqQuotationItem(sequelize) {
             allowNull: false,
         },
         qty: {
-            type: DataTypes.DECIMAL(10, 3),
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
         offer_price: {

@@ -10,11 +10,11 @@ function BlanketOrderItem(sequelize) {
             allowNull: false
         },
         total_contracted_qty: {
-            type: DataTypes.DECIMAL(10, 3),
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false
         },
         remain_contracted_qty: {
-            type: DataTypes.DECIMAL(10, 3),
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false
         },
         unit_price: {

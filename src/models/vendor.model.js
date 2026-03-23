@@ -25,7 +25,7 @@ function Vendor(sequelize) {
             allowNull: true,
             defaultValue: {}
         },
-        status: {
+        is_active: {
             type: DataTypes.BOOLEAN,
             allowNull: true,
             defaultValue: true

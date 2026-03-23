@@ -37,10 +37,6 @@ function User(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
-        vendor_category_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
         type: {
             type: DataTypes.ENUM("internal", "external"),
             defaultValue: "internal"

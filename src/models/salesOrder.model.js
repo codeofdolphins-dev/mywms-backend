@@ -17,6 +17,10 @@ function SalesOrder(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        priority: {
+            type: DataTypes.ENUM("low", "medium", "high", "urgent"),
+            defaultValue: "medium"
+        },
         // The Central Node ID of the company buying the goods
         buyer_business_node_id: {
             type: DataTypes.INTEGER,
@@ -27,17 +31,21 @@ function SalesOrder(sequelize) {
             type: DataTypes.JSONB,
             allowNull: true
         },
+        required_by: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
         type: {
             type: DataTypes.ENUM("internal", "external"),
             defaultValue: "external"
         },
         status: {
-            type: DataTypes.ENUM("released", "approve", "closed", "cancelled"),
-            defaultValue: "released"
+            type: DataTypes.ENUM("pending", "closed"),
+            defaultValue: "pending"
         },
         created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         grand_total: {
             type: DataTypes.DECIMAL(10, 2),

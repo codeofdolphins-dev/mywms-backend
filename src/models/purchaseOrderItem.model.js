@@ -19,7 +19,7 @@ function PurchaseOrderItem(sequelize) {
             allowNull: false // Must know what product this line item represents
         },
         qty: {
-            type: DataTypes.DECIMAL(10, 3), // 3 decimal places for RM precision (e.g., 1.500 kg)
+            type: DataTypes.DECIMAL(10, 2), // 3 decimal places for RM precision (e.g., 1.500 kg)
             allowNull: false,
             defaultValue: 0.000
         },

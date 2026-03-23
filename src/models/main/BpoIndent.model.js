@@ -4,7 +4,7 @@ function BpoIndent(sequelize) {
     return sequelize.define("BpoIndent", {
         indent_no: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
             unique: true
         },
         bpo_id: {
@@ -34,6 +34,10 @@ function BpoIndent(sequelize) {
         },
         created_by: {
             type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        grand_total: {
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false
         }
     });

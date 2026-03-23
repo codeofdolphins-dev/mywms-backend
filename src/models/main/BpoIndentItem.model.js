@@ -11,7 +11,7 @@ function BpoIndentItem(sequelize) {
             allowNull: false // Links to BlanketOrderItems
         },
         release_qty: {
-            type: DataTypes.DECIMAL(10, 3), // RM precision
+            type: DataTypes.DECIMAL(10, 2), // RM precision
             allowNull: false
         },
         unit_price: {

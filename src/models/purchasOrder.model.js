@@ -27,7 +27,6 @@ function PurchasOrder(sequelize) {
         quotation_id: {
             type: DataTypes.INTEGER,
             allowNull: true, // MUST BE NULLABLE for BPO Indents
-            unique: false    // Remove unique if multiple Indents use same quote terms
         },
         requisition_id: {
             type: DataTypes.INTEGER,
@@ -48,8 +47,8 @@ function PurchasOrder(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("released", "approve", "closed", "cancelled"),
-            defaultValue: "released"
+            type: DataTypes.ENUM("pending", "approve", "closed", "cancelled"),
+            defaultValue: "pending"
         },
         created_by: {
             type: DataTypes.INTEGER,
