@@ -659,13 +659,13 @@ const defineTenantAssociations = (models) => {
 
     // purchasOrder - businessNode
     PurchasOrder.belongsTo(BusinessNode, {
-        foreignKey: "form_business_node_id",
-        as: "poFormBusinessNode",
+        foreignKey: "from_business_node_id",
+        as: "poFromBusinessNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BusinessNode.hasMany(PurchasOrder, {
-        foreignKey: "form_business_node_id",
+        foreignKey: "from_business_node_id",
         as: "fromPurchaseOrders",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",

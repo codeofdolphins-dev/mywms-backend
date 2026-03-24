@@ -20,7 +20,6 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
         const purchasOrder = await PurchasOrder.findAndCountAll({
             where: {
                 ...(poNo?.trim() && { po_no: { [Op.iLike]: `${poNo?.trim()}%` } }),
-                // [isOwn ? 'form_business_node_id' : 'to_business_node_id']: current_node
                 from_business_node_id: current_node
             },
             distinct: true,
@@ -32,7 +31,7 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
                 },
                 {
                     model: BusinessNode,
-                    as: "poFormBusinessNode",
+                    as: "poFromBusinessNode",
                     include: [
                         {
                             model: NodeDetails,
@@ -97,7 +96,7 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
                 },
                 {
                     model: BusinessNode,
-                    as: "poFormBusinessNode",
+                    as: "poFromBusinessNode",
                     include: [
                         {
                             model: NodeDetails,
@@ -240,7 +239,7 @@ export const createPurchasOrder = asyncHandler(async (req, res) => {
             po_no: "0",
             quotation_id: quotation.id,
             requisition_id: Number(requisitionId),
-            form_business_node_id: Number(current_node),
+            from_business_node_id: Number(current_node),
             to_business_node_id: Number(businessNodeId),
             status: "released",
             po_date: new Date(),

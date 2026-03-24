@@ -34,7 +34,7 @@ const currentUser = asyncHandler(async (req, res) => {
                         exclude: ["parent_node_id"]
                     },
                     through: {
-                        attributes: ["userRole"]
+                        attributes: ["isNodeAdmin", "department"]
                     },
                     include: [
                         {

@@ -391,6 +391,8 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         const userDetails = req.user;
         const current_node = req.activeNode;
 
+        // console.log(current_node); return
+
         if (!title || items?.length < 1) throw new Error("Required fields are missing!!!");
 
         const rCat = await RequisitionCategory.findByPk(Number(requisition_category_id));

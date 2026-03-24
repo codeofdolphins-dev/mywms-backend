@@ -26,10 +26,10 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
         const businessNode = await BusinessNode.findAll({
-            where: {
-                node_type_code: { [Op.ne]: null },
-                tenant_business_flow_id: { [Op.ne]: null },
-            },
+            // where: {
+            //     node_type_code: { [Op.ne]: null },
+            //     tenant_business_flow_id: { [Op.ne]: null },
+            // },
             include: [
                 {
                     model: BusinessNodeType,

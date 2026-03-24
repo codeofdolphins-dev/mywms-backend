@@ -316,7 +316,7 @@ async function createVendor(buyerModels, buyerTransaction, VendorModels) {
  */
 async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, bpo_id, requisition) {
 
-    const { PurchasOrder, PurchaseOrderItem } = buyerModels;
+    const { PurchasOrder, PurchaseOrderItem, User } = buyerModels;
     const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = req.body;
 
     try {

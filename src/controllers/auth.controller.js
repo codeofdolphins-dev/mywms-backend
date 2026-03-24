@@ -213,7 +213,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { email = "", password = "", full_name = "", phone_no = "", node = "", node_type = "" } = req.body;
+        let { email = "", password = "", full_name = "", phone_no = "", node = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
 
         if (
@@ -263,7 +263,10 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         /** link user with node if node available */
         if (node) {
             await user.addUserBusinessNode(node.id, {
-                through: { userRole: node_type },
+                through: {
+                    ...(dept && { department: dept }),
+                    ...(isNodeAdmin && {isNodeAdmin: Boolean(isNodeAdmin)})
+                },
                 transaction
             });
         }

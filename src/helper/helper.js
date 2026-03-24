@@ -23,13 +23,31 @@ export function removeFirstWord(sentence) {
  */
 export async function fetchNodeDetails(dbObject, nodeId) {
     try {
-        const { NodeDetails } = dbObject;
+        const { BusinessNode, NodeDetails, User } = dbObject;
 
-        if(!NodeDetails) return null;
+        if (!NodeDetails) return null;
 
-        return await NodeDetails.findOne({
-            where: { business_node_id: Number(nodeId) }
+        let node = await BusinessNode.findByPk(Number(nodeId), {
+            include: [
+                {
+                    model: NodeDetails,
+                    as: "nodeDetails"
+                },
+                {
+                    model: User,
+                    where: { is_owner: true },
+                    attributes: ["id", "name", "meta", "email", "phone_no", 'address', "company_name"],
+                    as: "businessNodeUser",
+                    through: {
+                        attributes: ["isNodeAdmin", "department"]
+                    },
+                },
+            ]
         });
+        node = node.toJSON();
+        node.businessNodeUser = node.businessNodeUser[0];
+
+        return node;
 
     } catch (error) {
         throw error;
