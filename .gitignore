@@ -32,3 +32,6 @@ public/user/*
 # ERD diagram
 mywms*.*
 !mywms.mwb
+
+# bun
+bun.*
