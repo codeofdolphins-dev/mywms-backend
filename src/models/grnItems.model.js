@@ -15,22 +15,22 @@ function GRNItem(sequelize) {
             allowNull: false
         },
         ordered_qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
             defaultValue: 0
         },
         shortage_qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
             defaultValue: 0
         },
         damage_qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
             defaultValue: 0
         },
         received_qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
             defaultValue: 0
         },

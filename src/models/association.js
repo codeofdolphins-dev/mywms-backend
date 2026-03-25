@@ -228,7 +228,7 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
     // blanketOrderItem ↔ bpoIndentItem
     BlanketOrderItem.hasMany(BpoIndentItem, {
         foreignKey: "bpo_item_id",
@@ -482,16 +482,16 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // requisitionItem ↔ purchaseOrderItem
-    RequisitionItem.hasOne(PurchaseOrderItem, {
-        foreignKey: "requisition_item_id",
-        as: "linkedPurchaseOrderItem",
+    // product ↔ purchaseOrderItem
+    Product.hasOne(PurchaseOrderItem, {
+        foreignKey: "product_id",
+        as: "linkedPoi_product",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    PurchaseOrderItem.belongsTo(RequisitionItem, {
-        foreignKey: "requisition_item_id",
-        as: "poi_sourceRequisitionItem",
+    PurchaseOrderItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "poi_product",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

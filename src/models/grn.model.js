@@ -9,7 +9,7 @@ function GRN(sequelize) {
         },
         purchase_order_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         from_node_id: {
             type: DataTypes.INTEGER,

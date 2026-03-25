@@ -4,7 +4,7 @@ import { generateNo } from "../helper/generate.js";
 
 // GET
 export const allPurchasOrderList = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, Vendor } = req.dbModels;
     const current_node = req.activeNode;
 
     // console.log(current_node)
@@ -29,16 +29,16 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
                     as: "POcreatedBy",
                     attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
                 },
-                {
-                    model: BusinessNode,
-                    as: "poFromBusinessNode",
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails"
-                        }
-                    ]
-                },
+                // {
+                //     model: BusinessNode,
+                //     as: "poFromBusinessNode",
+                //     include: [
+                //         {
+                //             model: NodeDetails,
+                //             as: "nodeDetails"
+                //         }
+                //     ]
+                // },
                 {
                     model: PurchaseOrderItem,
                     as: "purchasOrderItems",
@@ -53,12 +53,33 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
         const totalItems = purchasOrder.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        const rows = await Promise.all(purchasOrder.rows.map(async po => {
+            const poJson = po.toJSON();
+
+            if (poJson.type === 'internal') {
+                poJson.poVendor = await BusinessNode.findOne({
+                    where: { id: poJson.to_supplier_id },
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails"
+                        }
+                    ]
+                })
+            } else if (poJson.type === 'bpo_release') {
+                poJson.poVendor = await Vendor.findOne({
+                    where: { id: poJson.to_supplier_id }
+                })
+            }
+            return poJson;
+        }));
+
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: purchasOrder.rows,
-            meta: {
+            data: rows,
+            pagination: {
                 totalItems,
                 totalPages,
                 currentPage: page,
@@ -73,7 +94,7 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
 });
 
 export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, RequisitionItem, Product } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, RequisitionItem, Product, Vendor } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, poNo = "", noLimit = false } = req.query;
@@ -94,29 +115,36 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
                     as: "POcreatedBy",
                     attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
                 },
-                {
-                    model: BusinessNode,
-                    as: "poFromBusinessNode",
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails"
-                        }
-                    ]
-                },
-                {
-                    model: BusinessNode,
-                    as: "poToBusinessNode",
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails"
-                        }
-                    ]
-                },
+                // {
+                //     model: BusinessNode,
+                //     as: "poFromBusinessNode",
+                //     include: [
+                //         {
+                //             model: NodeDetails,
+                //             as: "nodeDetails"
+                //         }
+                //     ]
+                // }
             ],
         });
         if (!purchasOrder) throw new Error("Record not found!!!");
+
+        const poJson = purchasOrder.toJSON();
+        if (poJson.type === 'internal') {
+            poJson.poVendor = await BusinessNode.findOne({
+                where: { id: poJson.to_supplier_id },
+                include: [
+                    {
+                        model: NodeDetails,
+                        as: "nodeDetails"
+                    }
+                ]
+            });
+        } else if (poJson.type === 'bpo_release') {
+            poJson.poVendor = await Vendor.findOne({
+                where: { id: poJson.to_supplier_id }
+            });
+        }
 
         const { rows, count } = await PurchaseOrderItem.findAndCountAll({
             where: {
@@ -125,20 +153,25 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
             ...(!noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
             include: [
+                // {
+                //     model: RequisitionItem,
+                //     as: "poi_sourceRequisitionItem",
+                //     attributes: {
+                //         exclude: ["priceLimit", "qty", "remarks", "requisition_id", "createdAt", "updatedAt"]
+                //     },
+                //     include: [
+                //         {
+                //             model: Product,
+                //             as: "product",
+                //             attributes: ["name", "barcode"]
+                //         }
+                //     ]
+                // }
                 {
-                    model: RequisitionItem,
-                    as: "poi_sourceRequisitionItem",
-                    attributes: {
-                        exclude: ["priceLimit", "qty", "remarks", "requisition_id", "createdAt", "updatedAt"]
-                    },
-                    include: [
-                        {
-                            model: Product,
-                            as: "product",
-                            attributes: ["name", "barcode"]
-                        }
-                    ]
-                }
+                    model: Product,
+                    as: "poi_product",
+                    // attributes: ["name", "barcode"]
+                }   
             ]
         });
 
@@ -150,11 +183,11 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: {
-                ...purchasOrder.toJSON(),
+                ...poJson,
                 items: rows
             },
             ...(!noLimit && {
-                meta: {
+                pagination: {
                     totalItems,
                     totalPages,
                     currentPage: page,
@@ -168,6 +201,8 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 // POST
 export const createPurchasOrder = asyncHandler(async (req, res) => {
@@ -236,11 +271,10 @@ export const createPurchasOrder = asyncHandler(async (req, res) => {
 
         // PO creation
         const purchasOrder = await PurchasOrder.create({
-            po_no: "0",
             quotation_id: quotation.id,
             requisition_id: Number(requisitionId),
             from_business_node_id: Number(current_node),
-            to_business_node_id: Number(businessNodeId),
+            to_supplier_id: Number(businessNodeId),
             status: "released",
             po_date: new Date(),
             created_by: Number(userDetails.id),

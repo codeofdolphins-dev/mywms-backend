@@ -6,10 +6,6 @@ function PurchaseOrderItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        requisition_item_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
         bpo_item_id: {
             type: DataTypes.INTEGER,
             allowNull: true // Only filled if generated from BPO
