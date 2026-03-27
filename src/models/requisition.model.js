@@ -19,7 +19,7 @@ function Requisition(sequelize) {
             allowNull: true
         },
         grandTotal: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true
         },
         requisition_category_id: {

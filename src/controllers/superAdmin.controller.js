@@ -238,6 +238,7 @@ const registerBusinessNode = asyncHandler(async (req, res) => {
     }
 });
 
+
 const updateCompanyDetails = asyncHandler(async (req, res) => {
     const { User, CompanyDetails } = req.dbModels;
     try {

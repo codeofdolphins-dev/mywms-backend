@@ -11,7 +11,7 @@ function QuotationItem(sequelize) {
             allowNull: false
         },
         offer_price: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(14, 2),
             allowNull: false
         },
         tax_percent: {
@@ -19,7 +19,7 @@ function QuotationItem(sequelize) {
             defaultValue: 0.00
         },
         total_price: {
-            type: DataTypes.DECIMAL(12, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         note: {

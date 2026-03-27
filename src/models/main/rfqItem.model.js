@@ -23,7 +23,7 @@ function RFQItem(sequelize) {
             allowNull: true,
         },
         price_limit: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             defaultValue: 0.00,
             allowNull: true
         }

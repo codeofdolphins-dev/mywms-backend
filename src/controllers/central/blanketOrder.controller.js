@@ -145,7 +145,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     // console.log(req.body); return
 
-    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision } = models;
+    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     try {
@@ -157,6 +157,14 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
             await rootTransaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         };
+
+        const quotation = await RfqQuotation.findByPk(revision.quotation_id);
+        if (!quotation) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Quotation record not found!!!" });
+        }
+        quotation.status = "accept";
+        await quotation.save({ transaction: rootTransaction });
 
         revision.status = "confirmed";
         await revision.save({ transaction: rootTransaction });

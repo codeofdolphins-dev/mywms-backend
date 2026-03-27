@@ -86,6 +86,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
     }
 });
 
+
 export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, RFQItem, TenantsName, Tenant } = models;
@@ -132,7 +133,18 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
                 }
             });
 
-            if (!revisionRecord) return { ...header.toJSON(), revision: null, items: [] };
+            // Fetch all revisions for remarks history
+            const remarksHistory = await RfqQuotationRevision.findAll({
+                where: {
+                    quotation_id: header.id,
+                    remarks: { [Op.not]: null }
+                },
+                attributes: ['revision_no', 'remarks'],
+                order: [['revision_no', 'ASC']]
+            });
+
+
+            if (!revisionRecord) return { ...header.toJSON(), revision: null, items: [], remarksHistory };
 
             // Fetch Items for this specific revision with CONDITIONAL pagination
             const items = await RfqQuotationItem.findAndCountAll({
@@ -147,6 +159,7 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
                 ...header.toJSON(),
                 activeRevision: revisionRecord,
                 requisition: rfq,
+                remarksHistory,
                 quotationItems: items.rows,
                 pagination: {
                     totalItems: items.count,
@@ -165,35 +178,22 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
     }
 });
 
-export const negotiateRfqQuotation = asyncHandler(async (req, res) => {
+
+export const appliedRfqList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RfqQuotation, RfqQuotationRevision } = models;
+    const { RfqQuotation } = models;
+
+    const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { id } = req.body;
-        if (!id) throw new Error("quotation id must required!!!");
-
-        const quotation = await RfqQuotation.findByPk(Number(id));
-        if (!quotation) {
-            return res.status(404).json({ success: false, code: 404, message: 'Quotation record not found!!!' });
-        }
-
-        const current_revision_no = quotation.current_revision_no;
-        if (current_revision_no == 3) {
-            return res.status(405).json({ success: false, code: 405, message: 'Cannot negotiate this quotation!!!' });
-        }
-
-        const quotationRevision = await RfqQuotationRevision.findOne({
-            where: { quotation_id: Number(id) }
+        const appliedRfqs = await RfqQuotation.findAll({
+            where: { vendor_tenant: dbName },
+            attributes: ["rfq_id"]
         });
-        if (!quotationRevision) {
-            return res.status(404).json({ success: false, code: 404, message: 'Record not found!!!' });
-        }
 
-        quotationRevision.status = "negotiate";
-        await quotationRevision.save();
+        const rfqIds = appliedRfqs.map(q => q.rfq_id);
 
-        return res.status(200).json({ success: true, code: 200, message: 'Negotiation started successfully!!!' });
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: rfqIds });
 
     } catch (error) {
         console.log(error)
@@ -326,9 +326,23 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
             return res.status(405).json({ success: false, code: 405, message: "Cannot update this quotation!!!" });
         };
 
+        /** update current revision status */
+        await RfqQuotationRevision.update(
+            { status: "pending" },
+            {
+                where: {
+                    quotation_id: quotation.id,
+                    revision_no: current_revision_no
+                },
+                transaction: rootTransaction
+            }
+        );
+
+        /** update the quotation record */
         quotation.current_revision_no = current_revision_no + 1;
         await quotation.save({ transaction: rootTransaction });
 
+        /** create new revision */
         const revision = await RfqQuotationRevision.create({
             quotation_id: quotation.id,
             grand_total: Number(grandTotal),
@@ -358,5 +372,42 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
         await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const negotiateRfqQuotation = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RfqQuotation, RfqQuotationRevision } = models;
+
+    try {
+        const { id = "", remarks = "" } = req.body;
+        if (!id) throw new Error("quotation id must required!!!");
+
+        const quotation = await RfqQuotation.findByPk(Number(id));
+        if (!quotation) {
+            return res.status(404).json({ success: false, code: 404, message: 'Quotation record not found!!!' });
+        }
+
+        const current_revision_no = quotation.current_revision_no;
+        if (current_revision_no == 3) {
+            return res.status(405).json({ success: false, code: 405, message: 'Cannot negotiate this quotation!!!' });
+        }
+
+        const quotationRevision = await RfqQuotationRevision.findOne({
+            where: { quotation_id: Number(id) }
+        });
+        if (!quotationRevision) {
+            return res.status(404).json({ success: false, code: 404, message: 'Record not found!!!' });
+        }
+
+        quotationRevision.status = "negotiate";
+        quotationRevision.remarks = remarks.trim();
+        await quotationRevision.save();
+
+        return res.status(200).json({ success: true, code: 200, message: 'Negotiation started successfully!!!' });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: error.message });
     }
 });

@@ -14,6 +14,10 @@ function RfqQuotation(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        status: {
+            type: DataTypes.ENUM("accept", "reject"),
+            allowNull: true,
+        },
         current_revision_no: {
             type: DataTypes.INTEGER,
             defaultValue: 1,

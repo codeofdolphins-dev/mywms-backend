@@ -15,7 +15,7 @@ function PurchaseInvoiceItems(sequelize) {
             allowNull: false
         },
         unit_price: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true
         },
         tax_percent: {
@@ -23,7 +23,7 @@ function PurchaseInvoiceItems(sequelize) {
             allowNull: true,
         },
         line_total: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         }

@@ -48,7 +48,7 @@ function SalesOrder(sequelize) {
             allowNull: true
         },
         grand_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true,
             defaultValue: 0.00
         },

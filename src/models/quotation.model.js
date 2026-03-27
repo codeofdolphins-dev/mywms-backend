@@ -42,7 +42,7 @@ function Quotation(sequelize) {
             defaultValue: 0
         },
         grandTotal: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             defaultValue: 0
         },
         note: {

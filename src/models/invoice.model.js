@@ -32,7 +32,7 @@ function Invoice(sequelize) {
             allowNull: true
         },
         total: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18, 2),
             defaultValue: 0.00,
             allowNull: true
         }

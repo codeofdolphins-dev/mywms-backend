@@ -15,11 +15,11 @@ function BpoIndentItem(sequelize) {
             allowNull: false
         },
         unit_price: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false // Locked in from the BPO
         },
         line_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         }
     });

@@ -11,11 +11,15 @@ function RfqQuotationRevision (sequelize) {
             defaultValue: 1,
         },
         status: {
-            type: DataTypes.ENUM("draft", "sent", "negotiate", "confirmed", "closed", "cancelled"),
+            type: DataTypes.ENUM("draft", "sent", "negotiate", "confirmed", "pending", "closed", "cancelled"),
             defaultValue: "sent",
         },
         grand_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: true,
+        },
+        remarks: {
+            type: DataTypes.TEXT,
             allowNull: true,
         },
     });

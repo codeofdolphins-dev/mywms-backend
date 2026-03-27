@@ -41,7 +41,7 @@ import RFQ from "./main/rfq.model.js";
 import RFQItem from "./main/rfqItem.model.js";
 import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
 import RfqQuotation from "./main/rfqQuotation.model.js";
-import RfqQuotationRevision from "./main/RfqQuotationRevisions .model.js";
+import RfqQuotationRevision from "./main/rfqQuotationRevisions.model.js";
 import BlanketOrder from "./main/blanketOrder.model.js";
 import BlanketOrderItem from "./main/BlanketOrderItems.model.js";
 import NodeBatchItems from "./nodeBatchItems.model.js";

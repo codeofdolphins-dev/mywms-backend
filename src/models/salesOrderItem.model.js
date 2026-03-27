@@ -16,11 +16,11 @@ function SalesOrderItem(sequelize) {
             defaultValue: 0
         },
         unit_price: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         line_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true,
             defaultValue: 0.00
         }

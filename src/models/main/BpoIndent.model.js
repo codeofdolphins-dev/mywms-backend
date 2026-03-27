@@ -37,7 +37,7 @@ function BpoIndent(sequelize) {
             allowNull: false
         },
         grand_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         }
     });

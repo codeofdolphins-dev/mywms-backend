@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { allRfqList } from "../controllers/central/rfq.controller.js";
-import { allRfqQuotationList, createRfqQuotation, deleteRfqQuotation, getQuotationWithPaginatedItems, negotiateRfqQuotation, updateRfqQuotation } from "../controllers/central/rfqQuotation.controller.js";
+import { allRfqQuotationList, appliedRfqList, createRfqQuotation, deleteRfqQuotation, getQuotationWithPaginatedItems, negotiateRfqQuotation, updateRfqQuotation } from "../controllers/central/rfqQuotation.controller.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -15,6 +15,7 @@ router.route("/list").get(allRfqList);
 // private routes
 router.use(defineUserScope, defineDbObject, verifyJWT);
 
+router.route("/applied-rfq-list").get(appliedRfqList);
 
 
 /** RFQ quotation */

@@ -15,7 +15,7 @@ function GRNItem(sequelize) {
             allowNull: false
         },
         ordered_qty: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
             defaultValue: 0
         },
