@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET - All Sales Order List
 export const allSalesOrderList = asyncHandler(async (req, res) => {
-    const { SalesOrder, SalesOrderItem, User, BusinessNode, NodeDetails } = req.dbModels;
+    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails, Vendor } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, soNo = "" } = req.query;
@@ -19,21 +19,6 @@ export const allSalesOrderList = asyncHandler(async (req, res) => {
             distinct: true,
             include: [
                 {
-                    model: User,
-                    as: "soCreatedBy",
-                    attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
-                },
-                {
-                    model: BusinessNode,
-                    as: "soBuyerBusinessNode",
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails"
-                        }
-                    ]
-                },
-                {
                     model: SalesOrderItem,
                     as: "salesOrderItems",
                 },
@@ -47,12 +32,33 @@ export const allSalesOrderList = asyncHandler(async (req, res) => {
         const totalItems = salesOrder.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        const rows = await Promise.all(salesOrder.rows.map(async so => {
+            const soJson = so.toJSON();
+
+            if (soJson.type === 'internal') {
+                soJson.poBuyer = await BusinessNode.findOne({
+                    where: { id: soJson.buyer_business_node_id },
+                    include: [
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails"
+                        }
+                    ]
+                })
+            } else if (soJson.type === 'external') {
+                soJson.poBuyer = await Vendor.findOne({
+                    where: { id: soJson.buyer_business_node_id }
+                })
+            }
+            return soJson;
+        }));
+
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: salesOrder.rows,
-            meta: {
+            data: rows,
+            pagination: {
                 totalItems,
                 totalPages,
                 currentPage: page,
@@ -68,7 +74,7 @@ export const allSalesOrderList = asyncHandler(async (req, res) => {
 
 // GET - Sales Order Item Details
 export const salesOrderItemDetails = asyncHandler(async (req, res) => {
-    const { SalesOrder, SalesOrderItem, User, BusinessNode, NodeDetails } = req.dbModels;
+    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, soNo = "", noLimit = false } = req.query;
@@ -85,13 +91,8 @@ export const salesOrderItemDetails = asyncHandler(async (req, res) => {
             },
             include: [
                 {
-                    model: User,
-                    as: "soCreatedBy",
-                    attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
-                },
-                {
                     model: BusinessNode,
-                    as: "soBuyerBusinessNode",
+                    as: "soSellerBusinessNode",
                     include: [
                         {
                             model: NodeDetails,

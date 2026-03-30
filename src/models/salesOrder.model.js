@@ -21,11 +21,24 @@ function SalesOrder(sequelize) {
             type: DataTypes.ENUM("low", "medium", "high", "urgent"),
             defaultValue: "medium"
         },
-        // The Central Node ID of the company buying the goods
+
+        
+        // Internal Node ID of the company/location selling the goods
+        seller_business_node_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        // Central/Internal Node ID of the company/location buying the goods
         buyer_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "external"
+        },
+
+        
         // Captures the destination RM Store selected by the buyer
         delivery_address: {
             type: DataTypes.JSONB,
@@ -35,17 +48,9 @@ function SalesOrder(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
-        type: {
-            type: DataTypes.ENUM("internal", "external"),
-            defaultValue: "external"
-        },
         status: {
             type: DataTypes.ENUM("pending", "closed"),
             defaultValue: "pending"
-        },
-        created_by: {
-            type: DataTypes.INTEGER,
-            allowNull: true
         },
         grand_total: {
             type: DataTypes.DECIMAL(18, 2),

@@ -849,30 +849,16 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // salesOrder <-> user
-    SalesOrder.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "soCreatedBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(SalesOrder, {
-        foreignKey: "created_by",
-        as: "createdSalesOrders",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // salesOrder <-> businessNode (buyer)
+    // salesOrder <-> businessNode (seller)
     SalesOrder.belongsTo(BusinessNode, {
-        foreignKey: "buyer_business_node_id",
-        as: "soBuyerBusinessNode",
+        foreignKey: "seller_business_node_id",
+        as: "soSellerBusinessNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BusinessNode.hasMany(SalesOrder, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyerSalesOrders",
+        foreignKey: "seller_business_node_id",
+        as: "sellerSo",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

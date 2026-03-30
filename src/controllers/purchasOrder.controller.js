@@ -29,16 +29,6 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
                     as: "POcreatedBy",
                     attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
                 },
-                // {
-                //     model: BusinessNode,
-                //     as: "poFromBusinessNode",
-                //     include: [
-                //         {
-                //             model: NodeDetails,
-                //             as: "nodeDetails"
-                //         }
-                //     ]
-                // },
                 {
                     model: PurchaseOrderItem,
                     as: "purchasOrderItems",

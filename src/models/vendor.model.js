@@ -9,7 +9,14 @@ function Vendor(sequelize) {
         },
         linked_business_node_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: false,
+            comment: "BusinessNode.id from the vendor's own tenant DB — cross-tenant reference, not a local FK"
+        },
+        type: {
+            type: DataTypes.ENUM("vendor", "buyer"),
+            allowNull: false,
+            defaultValue: "vendor",
+            comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer"
         },
         contact_phone: {
             type: DataTypes.STRING,

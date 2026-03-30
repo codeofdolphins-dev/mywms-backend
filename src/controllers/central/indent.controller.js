@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { getTenantConnection, rootDB } from "../../db/tenantMenager.service.js";
 import { generateNo } from "../../helper/generate.js";
@@ -146,7 +146,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
     /** root DB */
     const { rootSequelize, models } = await rootDB();
-    const { BlanketOrder, BpoIndent, BpoIndentItem } = models;
+    const { BlanketOrder, BlanketOrderItem, BpoIndent, BpoIndentItem } = models;
     const rootTransaction = await rootSequelize.transaction();
 
 
@@ -191,8 +191,12 @@ export const createIndent = asyncHandler(async (req, res) => {
         /******************** create PO record on buyer side *********************/
         const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition);
 
+
+        /******************** create buyer record on vendor side *********************/
+        const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, "buyer");
+
         /******************** create SO record on vendor/supplier side *********************/
-        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder);
+        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer);
 
 
         const indent = await BpoIndent.create({
@@ -208,10 +212,15 @@ export const createIndent = asyncHandler(async (req, res) => {
         indent.indent_no = generateNo("EX-Indent", indent.id);
         await indent.save({ transaction: rootTransaction });
 
+        /** create indent items and update blanket order items */
         for (const item of items) {
             const { bpo_item_id = "", release_qty = "", unit_price = "" } = item;
             if (!bpo_item_id) throw new Error("bpo_item_id must required!!!");
 
+            const blanketOrderItem = await BlanketOrderItem.findByPk(Number(bpo_item_id));
+            if (!blanketOrderItem) throw new Error("Blanket order item not found!!!");
+
+            /** create indent items */
             await BpoIndentItem.create({
                 indent_id: indent.id,
                 bpo_item_id: Number(bpo_item_id),
@@ -219,7 +228,14 @@ export const createIndent = asyncHandler(async (req, res) => {
                 unit_price,
                 line_total: release_qty * unit_price
             }, { transaction: rootTransaction });
+
+            /** update blanket order items */
+            await BlanketOrderItem.update({
+                unsettled_qty: Sequelize.literal(`unsettled_qty + ${release_qty}`),
+                remain_contracted_qty: Sequelize.literal(`remain_contracted_qty - ${release_qty}`)
+            }, { where: { id: Number(bpo_item_id) }, transaction: rootTransaction });
         };
+
 
         await rootTransaction.commit();
         await buyerTransaction.commit();
@@ -237,17 +253,16 @@ export const createIndent = asyncHandler(async (req, res) => {
 });
 
 
-
-
 /******************** helper methods ********************/
 /**
  * 
- * @param {object} buyerModels buyer model
- * @param {object} buyerTransaction buyer models transaction
- * @param {object} VendorModels vendor/supplier models
+ * @param {object} buyerModels buyer/vendor models
+ * @param {object} buyerTransaction buyer/vendor models transaction
+ * @param {object} VendorModels vendor/buyer models
+ * @param {string} type when passed "buyer" then create buyer record on vendor side
  * @returns buyer side vendor local data record
  */
-async function createVendor(buyerModels, buyerTransaction, VendorModels) {
+async function createVendor(buyerModels, buyerTransaction, VendorModels, type = "") {
 
     const { User, BusinessNode, NodeDetails } = VendorModels;
     const { Vendor } = buyerModels;
@@ -285,6 +300,7 @@ async function createVendor(buyerModels, buyerTransaction, VendorModels) {
             defaults: {
                 name: node.name,
                 linked_business_node_id: node.id,
+                ...(type && { type }),
                 contact_email: formatedDetails.email,
                 contact_phone: formatedDetails.email,
                 address: node.address,
@@ -371,7 +387,7 @@ async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, b
  * @param {object} purchaseOrder buyer PO record
  * @returns salse order record
  */
-async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder) {
+async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer) {
     const { SalesOrder, SalesOrderItem } = VendorModels;
     const { grand_total, instructions, priority, required_by, items } = reqBody;
 
@@ -386,8 +402,11 @@ async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, re
         const salesOrder = await SalesOrder.create({
             source_po_no: purchaseOrder.po_no,
             central_bpo_id: purchaseOrder.bpo_id,
-            buyer_business_node_id: purchaseOrder.from_business_node_id,
             priority: priority,
+
+            seller_business_node_id: seller.linked_business_node_id,
+            buyer_business_node_id: buyer.id,
+            
             ...(required_by && { required_by: new Date(required_by) }),
             delivery_address: {
                 ...manufacturingUnit.address,

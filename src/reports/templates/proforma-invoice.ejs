@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Proforma Invoice - <%= data.indent_no %>
+    </title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            color: #222;
+        }
+
+        .container {
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Header */
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 14px;
+        }
+
+        .doc-header h2 {
+            font-size: 22px;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-number {
+            color: #555;
+            margin-top: 4px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-confirmed {
+            background: #e6f4ea;
+            color: #1e7e34;
+            border: 1px solid #b7dfbf;
+        }
+
+        .status-draft {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .status-fulfilled {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Party Info - Buyer / Vendor */
+        .party-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .party-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .party-box-title {
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .party-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .party-email {
+            font-size: 12px;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        /* Meta Info */
+        .meta-section {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-table td {
+            padding: 5px 8px;
+            vertical-align: top;
+            font-size: 12px;
+        }
+
+        .info-table td.label {
+            width: 140px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        /* Items table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .items-table th,
+        .items-table td {
+            border-bottom: 1px solid #e5e5e5;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        .items-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #444;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        /* Total Section */
+        .total-section {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .total-table {
+            width: 260px;
+            border-collapse: collapse;
+        }
+
+        .total-table td {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        .total-table .grand-total td {
+            font-weight: bold;
+            font-size: 15px;
+            border-top: 2px solid #333;
+            padding-top: 10px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature {
+            margin-top: 50px;
+            width: 200px;
+            border-top: 1px solid #999;
+            text-align: center;
+            padding-top: 6px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .note {
+            margin-top: 30px;
+            padding: 10px 14px;
+            background: #fafafa;
+            border-left: 3px solid #ccc;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="doc-header">
+            <div>
+                <h2>Proforma Invoice</h2>
+                <div class="doc-number">
+                    #<%= data.indent_no %>
+                </div>
+            </div>
+
+            <div style="text-align: right;">
+                <div class="status-badge status-<%= data.status %>">
+                    <%= data.status?.toUpperCase() %>
+                </div>
+                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                    Date: <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Buyer & Vendor Section -->
+        <div class="party-section">
+            <div class="party-box">
+                <div class="party-box-title">Bill To (Buyer)</div>
+                <div class="party-name">
+                    <%= data.bpoIndentBuyerTenant?.tenantDetails?.companyName || data.buyer_tenant %>
+                </div>
+                <div class="party-email">
+                    <%= data.bpoIndentBuyerTenant?.tenantDetails?.email || '-' %>
+                </div>
+            </div>
+
+            <div class="party-box">
+                <div class="party-box-title">From (Vendor / Supplier)</div>
+                <div class="party-name">
+                    <%= data.bpoIndentVendorTenant?.tenantDetails?.companyName || data.vendor_tenant %>
+                </div>
+                <div class="party-email">
+                    <%= data.bpoIndentVendorTenant?.tenantDetails?.email || '-' %>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Meta Info -->
+        <div class="meta-section">
+            <table class="info-table">
+                <tr>
+                    <td class="label">BPO Reference:</td>
+                    <td><%= data.bpo?.bpo_no || '-' %></td>
+
+                    <td class="label">PR Reference:</td>
+                    <td><%= data.bpo?.pr_reference_code || '-' %></td>
+                </tr>
+                <tr>
+                    <td class="label">Indent No:</td>
+                    <td><%= data.indent_no || '-' %></td>
+
+                    <td class="label">BPO Valid Until:</td>
+                    <td><%= data.bpo?.valid_until ? new Date(data.bpo.valid_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : '-' %></td>
+                </tr>
+                <tr>
+                    <td class="label">Created On:</td>
+                    <td>
+                        <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %>
+                    </td>
+
+                    <td class="label">Grand Total:</td>
+                    <td style="font-weight: bold;">
+                        ₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+        <!-- Items -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th class="right">Release Qty</th>
+                    <th class="right">Unit Price (₹)</th>
+                    <th class="right">Line Total (₹)</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <% let subTotal = 0; %>
+                <% data.bpoIndentItem?.forEach((item, index) => { %>
+                    <% subTotal += Number(item.line_total || 0); %>
+                    <tr>
+                        <td><%= index + 1 %></td>
+                        <td>
+                            <% if (item.product) { %>
+                                <strong><%= item.product.name %></strong>
+                                <% if (item.product.sku) { %><br><span style="color: #666; font-size: 11px;">SKU: <%= item.product.sku %></span><% } %>
+                            <% } else { %>
+                                ID: <%= item.bpo_item_id %>
+                            <% } %>
+                        </td>
+                        <td class="right"><%= Number(item.release_qty).toFixed(2) %></td>
+                        <td class="right"><%= Number(item.unit_price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                        <td class="right"><%= Number(item.line_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+
+        <!-- Total -->
+        <div class="total-section">
+            <table class="total-table">
+                <tr>
+                    <td>Sub Total:</td>
+                    <td class="right">₹ <%= subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                </tr>
+                <tr class="grand-total">
+                    <td>Grand Total:</td>
+                    <td class="right">₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                </tr>
+            </table>
+        </div>
+
+
+        <!-- Note -->
+        <div class="note">
+            This is a <strong>Proforma Invoice</strong> generated against Blanket Purchase Order
+            <strong><%= data.bpo?.bpo_no || '' %></strong>.
+            This is not a tax invoice and is for reference purposes only.
+        </div>
+
+
+        <!-- Footer / Signatures -->
+        <div class="footer">
+            <div class="signature">Prepared By</div>
+            <div class="signature">Authorized Signatory</div>
+        </div>
+
+    </div>
+</body>
+
+</html>
