@@ -16,6 +16,10 @@ function Product(sequelize) {
             allowNull: true,
             unique: true,
         },
+        brand_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         barcode: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -24,7 +28,7 @@ function Product(sequelize) {
         product_type: {
             type: DataTypes.ENUM("raw", "finished"),
             defaultValue: "raw",
-            allowNull: false
+            allowNull: true
         },
         package_type: {
             type: DataTypes.STRING,

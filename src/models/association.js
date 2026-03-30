@@ -387,7 +387,7 @@ const defineTenantAssociations = (models) => {
         PurchaseOrderItem,
         Brand,
         UnitType,
-        BrandProducts,
+        // BrandProducts,
         CategoryProducts,
         PackageType,
         BusinessNode,
@@ -434,22 +434,6 @@ const defineTenantAssociations = (models) => {
     RequisitionItem.belongsTo(Product, {
         foreignKey: "product_id",
         as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // hsn ↔ product
-    HSN.hasOne(Product, {
-        foreignKey: "hsn_code",
-        sourceKey: "hsn_code",
-        as: "product", // singular, since it's a hasOne relationship
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.belongsTo(HSN, {
-        foreignKey: "hsn_code",
-        targetKey: "hsn_code",
-        as: "hsn", // or just "hsn" if not already used
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -539,6 +523,36 @@ const defineTenantAssociations = (models) => {
     });
 
     // ********************************************One-To-Many*********************************
+
+    // brand ↔ product
+    Product.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Brand.hasMany(Product, {
+        foreignKey: "brand_id",
+        as: "products",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // hsn ↔ product (1:M Relationship)
+    Product.belongsTo(HSN, {
+        foreignKey: "hsn_code",
+        targetKey: "hsn_code",
+        as: "hsn",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    HSN.hasMany(Product, {
+        foreignKey: "hsn_code",
+        sourceKey: "hsn_code",
+        as: "products",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
     /************* requisition (PR) ********************/
     // requisition <-> requisitionItem
@@ -1056,28 +1070,28 @@ const defineTenantAssociations = (models) => {
     });
 
     // product - brand
-    Product.belongsToMany(Brand, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "productBrands",
-        foreignKey: "product_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Product, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "brandProducts",
-        foreignKey: "brand_id",
-        otherKey: "product_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
+    // Product.belongsToMany(Brand, {
+    //     through: {
+    //         model: BrandProducts,
+    //         unique: false,
+    //     },
+    //     as: "productBrands",
+    //     foreignKey: "product_id",
+    //     otherKey: "brand_id",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+    // Brand.belongsToMany(Product, {
+    //     through: {
+    //         model: BrandProducts,
+    //         unique: false,
+    //     },
+    //     as: "brandProducts",
+    //     foreignKey: "brand_id",
+    //     otherKey: "product_id",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
 
     // product - category
     Product.belongsToMany(Category, {

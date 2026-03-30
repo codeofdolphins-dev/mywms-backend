@@ -23,7 +23,7 @@ import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import UnitType from "./unitType.model.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
-import BrandProducts from "./brandProduct.joinModel.js";
+// import BrandProducts from "./brandProduct.joinModel.js";
 import TenantBusinessFlowMaster from "./main/tenantBusinessFlowMaster.model.js";
 import TenantBusinessFlow from "./businessModels/tenantBusinessFlow.model.js";
 import BusinessNode from "./businessModels/businessNode.model.js";
@@ -99,7 +99,7 @@ const defineTenantModels = (sequelize) => {
     UnitType(sequelize);
     Vendor(sequelize);
     CategoryProducts(sequelize);
-    BrandProducts(sequelize);
+    // BrandProducts(sequelize);
     BusinessNodeType(sequelize);
     TenantBusinessFlow(sequelize);
     BusinessNode(sequelize);
