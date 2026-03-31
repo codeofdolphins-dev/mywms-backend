@@ -355,15 +355,15 @@ async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, b
         await purchaseOrder.save({ transaction: buyerTransaction });
 
         for (const item of items) {
-            const { product = "", release_qty = "", unit_price = "", bpo_item_id = "", remaining_qty = "" } = item;
-            if ([product, unit_price, release_qty, remaining_qty, bpo_item_id].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
+            const { buyer_product_id = "", release_qty = "", unit_price = "", bpo_item_id = "", remaining_qty = "" } = item;
+            if ([buyer_product_id, unit_price, release_qty, remaining_qty, bpo_item_id].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
 
             if (Number(remaining_qty) < Number(release_qty)) throw new Error("Request qty out of balance!!!");
 
             const purchaseOrderItem = PurchaseOrderItem.create({
                 purchase_order_id: purchaseOrder.id,
                 bpo_item_id: bpo_item_id,
-                product_id: product.id,
+                buyer_product_id: Number(buyer_product_id),
                 qty: release_qty,
                 unit_price: unit_price,
                 line_total: unit_price * release_qty,
@@ -406,7 +406,7 @@ async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, re
 
             seller_business_node_id: seller.linked_business_node_id,
             buyer_business_node_id: buyer.id,
-            
+
             ...(required_by && { required_by: new Date(required_by) }),
             delivery_address: {
                 ...manufacturingUnit.address,
@@ -422,11 +422,11 @@ async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, re
         await salesOrder.save({ transaction: VendorTransaction });
 
         for (const item of items) {
-            const { product = "", release_qty = "", unit_price = "" } = item;
+            const { vendor_product_id = "", release_qty = "", unit_price = "" } = item;
 
             await SalesOrderItem.create({
                 sales_order_id: salesOrder.id,
-                product,
+                vendor_product_id: Number(vendor_product_id),
                 qty: release_qty,
                 unit_price,
                 line_total: release_qty * unit_price,

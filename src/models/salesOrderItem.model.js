@@ -6,14 +6,14 @@ function SalesOrderItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        product: {
-            type: DataTypes.JSONB,
+        vendor_product_id: {
+            type: DataTypes.INTEGER,
             allowNull: false
         },
         qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
-            defaultValue: 0
+            defaultValue: 0.00
         },
         unit_price: {
             type: DataTypes.DECIMAL(18, 2),

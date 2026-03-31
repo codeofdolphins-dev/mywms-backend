@@ -105,16 +105,6 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
                     as: "POcreatedBy",
                     attributes: ["email", "name", "phone_no", "profile_image", "company_name", "address"]
                 },
-                // {
-                //     model: BusinessNode,
-                //     as: "poFromBusinessNode",
-                //     include: [
-                //         {
-                //             model: NodeDetails,
-                //             as: "nodeDetails"
-                //         }
-                //     ]
-                // }
             ],
         });
         if (!purchasOrder) throw new Error("Record not found!!!");
@@ -143,25 +133,10 @@ export const purchasOrderItemDetails = asyncHandler(async (req, res) => {
             ...(!noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
             include: [
-                // {
-                //     model: RequisitionItem,
-                //     as: "poi_sourceRequisitionItem",
-                //     attributes: {
-                //         exclude: ["priceLimit", "qty", "remarks", "requisition_id", "createdAt", "updatedAt"]
-                //     },
-                //     include: [
-                //         {
-                //             model: Product,
-                //             as: "product",
-                //             attributes: ["name", "barcode"]
-                //         }
-                //     ]
-                // }
                 {
                     model: Product,
                     as: "poi_product",
-                    // attributes: ["name", "barcode"]
-                }   
+                }
             ]
         });
 

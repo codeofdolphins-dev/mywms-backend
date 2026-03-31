@@ -206,7 +206,7 @@ export const appliedRfqList = asyncHandler(async (req, res) => {
 export const createRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const dbName = req.headers["x-tenant-id"];
@@ -249,21 +249,29 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 
 
         for (const item of items) {
-            const { rfq_item_id = "", offer_price = "", qty = "" } = item;
-            if (!rfq_item_id || !offer_price) throw new Error("Required fields are missing in items array!!!");
+            const { rfq_item_id = "", offer_price = "", qty = "", supplier_product_id = "" } = item;
+            if (!rfq_item_id || !offer_price || !supplier_product_id) throw new Error("Required fields are missing in items array!!!");
 
             const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
             if (!rfqItem) throw new Error("RFQ items record not found!!!");
 
+            /** create product maping records */
+            const productMapping = await ProductMapping.create({
+                buyer_node: rfq.buyer_tenant,
+                vendor_node: dbName,
+                buyer_product_id: rfqItem.product_id,
+                vendor_product_id: Number(supplier_product_id),
+            }, { transaction: rootTransaction });
+
+            /** create rfq quotation item records */
             await RfqQuotationItem.create({
                 revision_id: revision.id,
                 rfq_item_id: rfqItem.id,
+                product_map_id: productMapping.id,
                 qty,
                 offer_price,
             }, { transaction: rootTransaction });
         };
-
-        // console.log(nodeDetails)
 
         await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
@@ -307,7 +315,7 @@ export const deleteRfqQuotation = asyncHandler(async (req, res) => {
 export const updateRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     try {
@@ -318,6 +326,12 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
         if (!quotation) {
             await rootTransaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Quotation record not found!!!" });
+        }
+
+        const rfq = await RFQ.findByPk(Number(quotation.rfq_id));
+        if (!rfq) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "RFQ record not found!!!" });
         }
 
         const current_revision_no = quotation.current_revision_no;
@@ -357,9 +371,24 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
             const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
             if (!rfqItem) throw new Error("RFQ items record not found!!!");
 
+            /** fetch product maping records */
+            const productMapping = await ProductMapping.findOne({
+                where: {
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: quotation.vendor_tenant,
+                    buyer_product_id: rfqItem.product_id,
+                }
+            });
+            if (!productMapping) {
+                await rootTransaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Product Mapping record not found!!!" });
+            }
+
+            /** create rfq quotation item records */
             await RfqQuotationItem.create({
                 revision_id: revision.id,
                 rfq_item_id: rfqItem.id,
+                product_map_id: productMapping.id,
                 qty,
                 offer_price,
             }, { transaction: rootTransaction });

@@ -47,8 +47,7 @@ export const allProductList = asyncHandler(async (req, res) => {
                 },
                 {
                     model: Brand,
-                    as: "productBrands",
-                    through: { attributes: [] },
+                    as: "brand",
                     // attributes: ["name"]
                 },
                 {
@@ -107,20 +106,19 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
     try {
         let {
-            name = "", categories = "", brands = "",
+            name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "",
             package_type_id = "", unit_type_id = "", measure = "",
             description = "", reorder_level = ""
         } = req.body;
 
-        if ([name, hsn_id, barcode, package_type_id, unit_type_id, brands, categories].some(item => item === "")) {
+        if ([name, hsn_id, barcode, package_type_id, unit_type_id, brand_id, categories].some(item => item === "")) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
 
         // convert string
-        brands = JSON.parse(brands);
         categories = JSON.parse(categories);
 
         const isExists = await Product.findOne({ where: { barcode } })
@@ -144,11 +142,11 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
         }
 
-        const existingBrands = await Brand.findOne({ where: { id: Number(brands) } });
-        if (!existingBrands) {
+        const existingBrand = await Brand.findOne({ where: { id: Number(brand_id) } });
+        if (!existingBrand) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Brands not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
         }
 
         const existingCategories = await Category.findAll({
@@ -183,6 +181,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             hsn_code: hsn.hsn_code,
             sku,
             barcode,
+            brand_id: Number(brand_id),
             // gst_rate: Number(gst_rate),
             // is_taxable: is_taxable,
             package_type: packageType.name,
@@ -196,7 +195,6 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
         if (!product) throw new Error("Insertion failed!!!");
         // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(product)));
-        await product.addProductBrands(existingBrands, { transaction });
         await product.addProductCategories(existingCategories, { transaction });
 
         await transaction.commit();
@@ -307,7 +305,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
     try {
         let {
-            id = "", name = "", categories = "", brands = "",
+            id = "", name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "", package_type_id = "",
             unit_type_id = "", measure = "",
             description = "", reorder_level = "", is_active = ""
@@ -351,16 +349,16 @@ export const updateProduct = asyncHandler(async (req, res) => {
             };
             product.setProductCategories(category);
         }
-        if (brands) {
+        if (brand_id) {
             const brand = await Brand.findOne({
-                where: { id: Number(brands) }
+                where: { id: Number(brand_id) }
             })
             if (!brand) {
                 if (profile_image) await deleteImage(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Some brands were not found!!!" });
             };
-            product.setProductBrands(brand);
+            product.brand_id = brand.id;
         }
         if (hsn_id) {
             const hsn = await HSN.findByPk(Number(hsn_id));

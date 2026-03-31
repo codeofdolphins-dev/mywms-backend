@@ -145,7 +145,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     // console.log(req.body); return
 
-    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation } = models;
+    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     try {
@@ -183,13 +183,20 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         await blanketOrder.save({ transaction: rootTransaction });
 
         for (const item of items) {
-            const { buyer_product_id = "", unit_price = "", total_contracted_qty = "" } = item;
+            const { buyer_product_id = "", unit_price = "", total_contracted_qty = "", product_map_id = "" } = item;
 
-            if ([buyer_product_id, unit_price, total_contracted_qty].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
+            if ([buyer_product_id, unit_price, total_contracted_qty, product_map_id].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
+
+            const productMapping = await ProductMapping.findByPk(Number(product_map_id));
+            if (!productMapping) {
+                await rootTransaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Product Mapping record not found!!!" });
+            }
 
             await BlanketOrderItem.create({
                 bpo_id: blanketOrder.id,
                 buyer_product_id: buyer_product_id,
+                vendor_product_id: productMapping.vendor_product_id,
                 total_contracted_qty,
                 remain_contracted_qty: total_contracted_qty,
                 unit_price,

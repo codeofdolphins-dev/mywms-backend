@@ -74,7 +74,7 @@ export const allSalesOrderList = asyncHandler(async (req, res) => {
 
 // GET - Sales Order Item Details
 export const salesOrderItemDetails = asyncHandler(async (req, res) => {
-    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails } = req.dbModels;
+    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails, Vendor, Product, Brand, Category } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, soNo = "", noLimit = false } = req.query;
@@ -89,20 +89,28 @@ export const salesOrderItemDetails = asyncHandler(async (req, res) => {
                     [Op.iLike]: soNo?.trim()
                 }
             },
-            include: [
-                {
-                    model: BusinessNode,
-                    as: "soSellerBusinessNode",
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails"
-                        }
-                    ]
-                },
-            ],
         });
         if (!salesOrder) throw new Error("Record not found!!!");
+
+        const soJson = salesOrder.toJSON();
+
+        // console.log(soJson)
+
+        if (soJson.type === 'internal') {
+            soJson.soBuyer = await BusinessNode.findOne({
+                where: { id: soJson.buyer_business_node_id },
+                include: [
+                    {
+                        model: NodeDetails,
+                        as: "nodeDetails"
+                    }
+                ]
+            });
+        } else if (soJson.type === 'external') {
+            soJson.soBuyer = await Vendor.findOne({
+                where: { id: soJson.buyer_business_node_id }
+            });
+        }
 
         const { rows, count } = await SalesOrderItem.findAndCountAll({
             where: {
@@ -110,6 +118,29 @@ export const salesOrderItemDetails = asyncHandler(async (req, res) => {
             },
             ...(!noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
+            include: [
+                {
+                    model: Product,
+                    as: "soi_product",
+                    include: [
+                        {
+                            model: Brand,
+                            as: "brand"
+                        },
+                        {
+                            model: Category,
+                            as: "productCategories",
+                            through: { attributes: [] },
+                            include: [
+                                {
+                                    model: Category,
+                                    as: "subcategories",
+                                },
+                            ]
+                        },
+                    ]
+                }
+            ]
         });
 
         const totalItems = count;
@@ -120,11 +151,11 @@ export const salesOrderItemDetails = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: {
-                ...salesOrder.toJSON(),
+                ...soJson,
                 items: rows
             },
             ...(!noLimit && {
-                meta: {
+                pagination: {
                     totalItems,
                     totalPages,
                     currentPage: page,

@@ -10,14 +10,14 @@ function PurchaseOrderItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true // Only filled if generated from BPO
         },
-        product_id: {
+        buyer_product_id: {
             type: DataTypes.INTEGER,
-            allowNull: false // Must know what product this line item represents
+            allowNull: false
         },
         qty: {
-            type: DataTypes.DECIMAL(10, 2), // 3 decimal places for RM precision (e.g., 1.500 kg)
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
-            defaultValue: 0.000
+            defaultValue: 0.00
         },
         unit_price: {
             type: DataTypes.DECIMAL(18, 2),

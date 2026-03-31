@@ -10,6 +10,10 @@ function RfqQuotationItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        product_map_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,

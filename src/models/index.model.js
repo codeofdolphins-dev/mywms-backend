@@ -51,6 +51,7 @@ import SalesOrder from "./salesOrder.model.js";
 import SalesOrderItem from "./salesOrderItem.model.js";
 import BpoIndent from "./main/BpoIndent.model.js";
 import BpoIndentItem from "./main/BpoIndentItem.model.js";
+import ProductMapping from "./main/productMapping.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -73,6 +74,7 @@ const defineRootModels = (rootSequelize) => {
     BlanketOrderItem(rootSequelize);
     BpoIndent(rootSequelize);
     BpoIndentItem(rootSequelize);
+    ProductMapping(rootSequelize);
 
     return rootSequelize.models;
 }
