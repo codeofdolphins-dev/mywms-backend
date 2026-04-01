@@ -38,7 +38,7 @@ function PurchasOrder(sequelize) {
             allowNull: false
         },
         type: {
-            type: DataTypes.ENUM("internal", "bpo_release"),
+            type: DataTypes.ENUM("internal", "external", "bpo_release"),
             allowNull: false,
             defaultValue: "internal"
         },
@@ -47,8 +47,8 @@ function PurchasOrder(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("pending", "approve", "closed", "cancelled"),
-            defaultValue: "pending"
+            type: DataTypes.ENUM("draft", "sent_to_supplier", "waiting_for_poi", "poi_received", "approved", "picking_in_progress", "closed", "cancelled"),
+            defaultValue: "draft"
         },
         created_by: {
             type: DataTypes.INTEGER,

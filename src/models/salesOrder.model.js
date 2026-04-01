@@ -34,7 +34,7 @@ function SalesOrder(sequelize) {
             allowNull: false
         },
         type: {
-            type: DataTypes.ENUM("internal", "external"),
+            type: DataTypes.ENUM("internal", "external", "bpo_release"),
             defaultValue: "external"
         },
 
@@ -49,8 +49,8 @@ function SalesOrder(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("pending", "closed"),
-            defaultValue: "pending"
+            type: DataTypes.ENUM("draft", "waiting_for_approval", "approved", "closed", "cancelled"),
+            defaultValue: "draft"
         },
         grand_total: {
             type: DataTypes.DECIMAL(18, 2),

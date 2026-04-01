@@ -2,6 +2,7 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { generatePDF } from "../pdf.service.js";
 import { rootDB, getTenantConnection } from "../../db/tenantMenager.service.js";
 import { Op } from "sequelize";
+import { updatePOStatus, updateSOStatus } from "../../services/updateStatus.service.js";
 
 export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
 
@@ -92,6 +93,11 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         }
 
         const pdf = await generatePDF("proforma-invoice", templateData);
+
+
+        /** update PO & SO status */
+        await updatePOStatus(indent, "poi_received");
+        await updateSOStatus(indent, "waiting_for_approval");
 
         const pdfBuffer = Buffer.from(pdf);
 
