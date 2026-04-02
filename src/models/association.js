@@ -419,6 +419,8 @@ const defineTenantAssociations = (models) => {
         SalesOrder,
         SalesOrderItem,
         Vendor,
+        Outward,
+        OutwardItem
 
 
     } = models;
@@ -920,6 +922,109 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+
+    /************* outward ********************/
+    // salesOrder <-> outward
+    Outward.belongsTo(SalesOrder, {
+        foreignKey: "sales_order_id",
+        as: "outwardSalesOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrder.hasMany(Outward, {
+        foreignKey: "sales_order_id",
+        as: "outwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // outward <-> businessNode (seller)
+    Outward.belongsTo(BusinessNode, {
+        foreignKey: "seller_business_node_id",
+        as: "sellerOutwardNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Outward, {
+        foreignKey: "seller_business_node_id",
+        as: "sellerOutwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // outward <-> manufacturingUnit
+    Outward.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "outwardStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(Outward, {
+        foreignKey: "store_id",
+        as: "outwardStores",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+
+    /************* outwardItems ********************/
+    // outwardItems <-> outward
+    OutwardItem.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "outward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Outward.hasMany(OutwardItem, {
+        foreignKey: "outward_id",
+        as: "outwardItemList",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // outwardItems <-> outward
+    OutwardItem.belongsTo(SalesOrderItem, {
+        foreignKey: "sales_order_item_id",
+        as: "outwardSalesOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrderItem.hasMany(OutwardItem, {
+        foreignKey: "sales_order_item_id",
+        as: "outwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // outwardItems <-> product
+    OutwardItem.belongsTo(Product, {
+        foreignKey: "vendor_product_id",
+        as: "outwardProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(OutwardItem, {
+        foreignKey: "vendor_product_id",
+        as: "productOutwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // outwardItems <-> nodeBatch
+    OutwardItem.belongsTo(NodeBatch, {
+        foreignKey: "batch_id",
+        as: "outwardBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeBatch.hasMany(OutwardItem, {
+        foreignKey: "batch_id",
+        as: "batchOutwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
 
     // ********************************************Many-To-One*********************************

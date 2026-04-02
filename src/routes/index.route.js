@@ -28,6 +28,7 @@ import rfqApi from "./rfq.route.js";
 import storeApi from "./store.route.js";
 import indentApi from "./indent.route.js";
 import salesOrderApi from "./salesOrder.route.js";
+import outwardApi from "./outward.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -65,6 +66,7 @@ router.use("/inward", inwardApi);
 router.use("/store", storeApi);
 router.use("/indent", indentApi);
 router.use("/sales-order", salesOrderApi);
+router.use("/outward", outwardApi);
 
 
 

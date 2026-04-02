@@ -52,6 +52,8 @@ import SalesOrderItem from "./salesOrderItem.model.js";
 import BpoIndent from "./main/BpoIndent.model.js";
 import BpoIndentItem from "./main/BpoIndentItem.model.js";
 import ProductMapping from "./main/productMapping.model.js";
+import Outward from "./outward.model.js";
+import OutwardItem from "./outwardItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -119,6 +121,8 @@ const defineTenantModels = (sequelize) => {
     ManufacturingUnit(sequelize);
     SalesOrder(sequelize);
     SalesOrderItem(sequelize);
+    Outward(sequelize);
+    OutwardItem(sequelize);
 
     return sequelize.models;
 }

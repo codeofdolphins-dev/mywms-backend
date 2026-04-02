@@ -1,38 +1,35 @@
 import { rootDB } from "../db/tenantMenager.service.js";
+import { generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Op } from "sequelize";
 const { models } = await rootDB();
 const { Vehicle, Driver } = models;
 
 
-const allOutward = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItems, Warehouse, User, Product, Batch } = req.dbModels;
+export const allOutward = asyncHandler(async (req, res) => {
+    const { Outward, OutwardItem, Warehouse, User, Product, Batch } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", outward_ref = "" } = req.query;
+        let { page = 1, limit = 10, id = "", outward_no = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const outward = await Outward.findAndCountAll({
-            where: (id || outward_ref) ? { [Op.or]: [{ id: parseInt(id, 10) || null }, { outward_ref }] } : undefined,
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(outward_no && { outward_no })
+            },
             include: [
                 {
-                    model: OutwardItems,
-                    as: "outwardItems",
+                    model: OutwardItem,
+                    as: "outwardItemList",
                     include: [
                         {
                             model: Product,
                             as: "outwardProduct"
-                        },
-                        {
-                            model: Batch,
-                            as: "outwardBatch"
                         }
                     ]
-                },
-                { model: Warehouse, as: "hostWarehouse" },
-                { model: Warehouse, as: "targetWarehouse" },
-                { model: User, as: "outwardBy" }
+                }
             ],
             limit,
             offset,
@@ -43,30 +40,12 @@ const allOutward = asyncHandler(async (req, res) => {
         const totalItems = outward.count;
         const totalPages = Math.ceil(totalItems / limit);
 
-        const data = outward.rows;
-
-        await Promise.all(data.map(async (item) => {
-            const vehicle = await Vehicle.findByPk(item.vehicle_id, {
-                attributes: {
-                    exclude: ["owned_by", "createdAt", "updatedAt"]
-                }
-            });
-            const driver = await Driver.findByPk(item.driver_id, {
-                attributes: {
-                    exclude: ["owned_by", "createdAt", "updatedAt"]
-                }
-            });
-
-            item.dataValues.vehicle = vehicle || null;
-            item.dataValues.driver = driver || null;
-        }));
-
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: data.rows,
-            meta: {
+            data: outward.rows,
+            pagination: {
                 totalItems,
                 totalPages,
                 currentPage: page,
@@ -80,14 +59,16 @@ const allOutward = asyncHandler(async (req, res) => {
     }
 });
 
-const createOutward = asyncHandler(async (req, res) => {
-    const { Outward, Warehouse, Product } = req.dbModels;
+
+export const createOutward = asyncHandler(async (req, res) => {
+    const { Outward, OutwardItem, Product, SalesOrder, SalesOrderItem, ManufacturingUnit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+
     try {
-        const { host_warehouse_id = "", target_warehouse_id = "", outward_date = "", outward_type = "", vehicle_id = "", driver_id = "", status = "", note = "", items = [] } = req.body;
-        const userDetails = req.user;
+        const { sales_order_id = "", store_id = "", priority = "", note = "", items = "" } = req.body;
+
         let total = 0;
-        if ([host_warehouse_id, outward_date, vehicle_id, driver_id].some(i => i === "")) {
+        if ([sales_order_id, store_id].some(i => i === "")) {
             await transaction.rollback()
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
@@ -96,71 +77,62 @@ const createOutward = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "Items fields are should not be empty!!!" });
         };
 
-        const host_warehouse = await Warehouse.findByPk(host_warehouse_id);
-        if (!host_warehouse) {
+        const salesOrder = await SalesOrder.findByPk(Number(sales_order_id));
+        if (!salesOrder) {
             await transaction.rollback()
-            return res.status(404).json({ success: false, code: 404, message: "Host warehouse not found!!!" });
+            return res.status(404).json({ success: false, code: 404, message: "Sales Order not found!!!" });
         };
-        if (target_warehouse_id) {
-            const target_warehouse = await Warehouse.findByPk(target_warehouse_id);
-            if (!target_warehouse) {
-                await transaction.rollback()
-                return res.status(404).json({ success: false, code: 404, message: "Target warehouse not found!!!" });
+
+        const store = await ManufacturingUnit.findOne({
+            where: {
+                id: Number(store_id),
+                store_type: "fg_store"
             }
-        };
-        const vehicle = await Vehicle.findByPk(vehicle_id);
-        if (!vehicle) {
+        });
+        if (!store) {
             await transaction.rollback()
-            return res.status(404).json({ success: false, code: 404, message: "Vehicle not found!!!" });
-        };
-        const driver = await Driver.findByPk(driver_id);
-        if (!driver) {
-            await transaction.rollback()
-            return res.status(404).json({ success: false, code: 404, message: "Driver not found!!!" });
-        };
+            return res.status(404).json({ success: false, code: 404, message: "FG Store not found!!!" });
+        }
 
         // Step 1: Create Outward header
         const outward = await Outward.create({
-            host_warehouse_id: parseInt(host_warehouse_id, 10),
-            target_warehouse_id: target_warehouse_id === "" ? undefined : parseInt(target_warehouse_id, 10),
-            outward_date: new Date(outward_date),
-            outward_type: outward_type === "" ? undefined : outward_type.toLowercase(),
-            outward_by: userDetails.id,
-            vehicle_id: parseInt(vehicle_id, 10),
-            driver_id: parseInt(driver_id, 10),
-            status: status === "" ? undefined : status.toLowercase(),
-            note
+            sales_order_id: salesOrder.id,
+
+            seller_business_node_id: salesOrder.seller_business_node_id,
+            ...(store_id && { store_id: store.id }),
+            buyer_business_node_id: salesOrder.buyer_business_node_id,
+
+            type: store_id ? "external" : "internal",
+            priority,
+            required_by: salesOrder.required_by,
+            dispatch_date: new Date(),
+            note,
         }, { transaction });
 
-        // Step 2: Loop through products and do FIFO deduction
+        outward.outward_no = generateNo("OUT", outward.id);
+        await outward.save({ transaction });
+
+        // Step 2: create outward items
         for (const item of items) {
-            const product = await Product.findOne({ where: { barcode: parseInt(item.barcode, 10) } });
+            const { sales_order_item_id = "", vendor_product_id = "", requested_qty = "", unit_price = "" } = item;
+
+            const product = await Product.findOne({ where: { id: Number(vendor_product_id) } });
             if (!product) {
                 await transaction.rollback()
                 return res.status(404).json({ success: false, code: 404, message: "Product not found!!!" });
             };
 
-            total += (item.qty * item.rate);
-
-            await fifoOutward({
+            await OutwardItem.create({
                 outward_id: outward.id,
-                product_id: product.id,
-                warehouse_id: parseInt(host_warehouse_id, 10),
-                outward_qty: parseInt(item.qty, 10),
-                uom,
-                rate: parseFloat(rate),
-                transaction,
-                req
-            });
-        }
-
-        // Step 3: Update status
-        outward.status = "dispatched";
-        outward.total = total;
-        await outward.save({ transaction });
+                sales_order_item_id: Number(sales_order_item_id),
+                vendor_product_id: product.id,
+                requested_qty: Number(requested_qty),
+                unit_price: Number(unit_price),
+            }, { transaction });
+        };
 
         await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Outward Successfully." });
+        return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
 
     } catch (error) {
         await transaction.rollback();
@@ -168,6 +140,7 @@ const createOutward = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 const deleteOutward = asyncHandler(async (req, res) => {
     const { Outward } = req.dbModels;
@@ -185,6 +158,7 @@ const deleteOutward = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 const updateOutward = asyncHandler(async (req, res) => {
     const { Outward, Warehouse } = req.dbModels;
@@ -224,10 +198,10 @@ const updateOutward = asyncHandler(async (req, res) => {
         const { isUpdate } = await Outward.update(
             updateOption,
             {
-                where: { [Op.or]: [ { id: parseInt(id, 10) || null }, { outward_ref } ] }
+                where: { [Op.or]: [{ id: parseInt(id, 10) || null }, { outward_ref }] }
             }
         );
-        if(!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
+        if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Updation failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Update successfully." });
     } catch (error) {
@@ -236,17 +210,18 @@ const updateOutward = asyncHandler(async (req, res) => {
     }
 });
 
+
 const updateOutwardItem = asyncHandler(async (req, res) => {
     const { Outward, OutwardItems, Product } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
         const { id = "", barcode = "", qty = "", uom = "", rate = "" } = req.body;
-        if(!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
+        if (!id) return res.status(400).json({ success: false, code: 400, message: "Id must required!!!" });
 
         const outwardItem = await OutwardItems.findByPk(parseInt(id, 10));
-        if(!outwardItem) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
+        if (!outwardItem) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         const outward = await Outward.findByPk(outwardItem.outward_id);
-        if(!outward) return res.status(404).json({ success: false, code: 404, message: "Something wrong, parent record not found!!!" });
+        if (!outward) return res.status(404).json({ success: false, code: 404, message: "Something wrong, parent record not found!!!" });
 
         let newQty = parseInt(qty, 10) || outwardItem.qty;
         let newUom = uom || outwardItem.uom;
@@ -260,9 +235,9 @@ const updateOutwardItem = asyncHandler(async (req, res) => {
             rate: newRate,
             total_amount: newTotal
         };
-        if(barcode){
+        if (barcode) {
             const product = await Product.findOne({ where: { barcode } });
-            if(!product) return res.status(404).json({ success: false, code: 404, message: "Product record not found!!!" });
+            if (!product) return res.status(404).json({ success: false, code: 404, message: "Product record not found!!!" });
             updateOption.barcode = barcode;
         };
 
@@ -285,75 +260,3 @@ const updateOutwardItem = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-export { allOutward, createOutward, deleteOutward, updateOutward, updateOutwardItem };
-
-// ****************** helper methods **********************
-async function fifoOutward({
-    product_id,
-    warehouse_id,
-    outward_qty,
-    outward_id, // id of StockOutward record
-    uom,
-    rate,
-    transaction,  // optional for DB transaction
-    req
-}) {
-    const { Batch, Inventory, OutwardItems } = req.dbModels;
-
-    // Step 1: fetch batches sorted FIFO (expiry or oldest entry)
-    const batches = await Batch.findAll({
-        where: {
-            product_id,
-            warehouse_id,
-            qty: { [Op.gt]: 0 }
-        },
-        order: [['expiry_date', 'ASC'], ['createdAt', 'ASC']],
-        transaction
-    });
-
-    let remaining = outward_qty;
-    let outwardItems = [];
-
-    for (const batch of batches) {
-        if (remaining <= 0) break;
-
-        const availableInBatch = batch.qty;
-        const deductQty = Math.min(remaining, availableInBatch);
-
-        // Step 2: Deduct from this batch
-        batch.qty = availableInBatch - deductQty;
-        await batch.save({ transaction });
-
-        // Step 3: Record outward item
-        const outwardItem = await OutwardItems.create({
-            outward_id,
-            product_id,
-            batch_id: batch.id,
-            qty: deductQty,
-            uom,
-            rate,
-            total_amount: deductQty * rate
-        }, { transaction });
-
-        outwardItems.push(outwardItem);
-
-        remaining -= deductQty;
-    }
-
-    // Step 4: Check if stock was sufficient
-    if (remaining > 0) {
-        await transaction.rollback();
-        throw new Error(`Insufficient stock for product_id ${product_id}. Short by ${remaining}`);
-    }
-
-    // Step 5: Update inventory total
-    const inventory = await Inventory.findOne({
-        where: { product_id, warehouse_id },
-        transaction
-    });
-    inventory.available_qty -= outward_qty;
-    await inventory.save({ transaction });
-
-    return outwardItems;
-};

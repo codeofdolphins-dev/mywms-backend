@@ -1,6 +1,6 @@
 /**
  * 
- * @param {string} prefix code eg: REQ, PO
+ * @param {string} prefix code eg: RFQ, PO
  * @param {Number} suffixId that record id
  * @returns {String} String
  */
