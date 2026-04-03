@@ -6,8 +6,8 @@ const { models } = await rootDB();
 const { Vehicle, Driver } = models;
 
 
-export const allOutward = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Warehouse, User, Product, Batch } = req.dbModels;
+export const allOutwardList = asyncHandler(async (req, res) => {
+    const { Outward, OutwardItem, Product } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "", outward_no = "" } = req.query;
         page = parseInt(page);
@@ -55,7 +55,55 @@ export const allOutward = asyncHandler(async (req, res) => {
 
     } catch (error) {
         console.log(error);
-        req.status(500).json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const outwardItem = asyncHandler(async (req, res) => {
+    const { Outward, OutwardItem, Product, NodeBatch, NodeBatchItems } = req.dbModels;
+    try {
+        const { outward_no = "" } = req.params;
+        if (!outward_no) throw new Error("Outward No is required!!!");
+
+        const outward = await Outward.findOne({
+            where: { outward_no: outward_no.trim() },
+            include: [
+                {
+                    model: OutwardItem,
+                    as: "outwardItemList"
+                }
+            ]
+        });
+        if (!outward) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        const jsonOutward = outward.toJSON();
+        for (const item of jsonOutward.outwardItemList) {
+            const nodeBatchItems = await NodeBatch.findAll({
+                where: {
+                    product_id: item.vendor_product_id,
+                    available_qty: { [Op.gt]: 0 }
+                },
+                include: [
+                    {
+                        model: NodeBatchItems,
+                        as: "batchItems"
+                    }
+                ]
+            });
+            item.nodeBatchItems = nodeBatchItems;
+        }
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: outward
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
