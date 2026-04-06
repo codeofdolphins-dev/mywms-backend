@@ -8,7 +8,6 @@ import RolePermissions from "./rolePermissions.joinModel.js";
 import State from "./main/state.model.js";
 import User from "./user.model.js";
 import UserRoles from "./userRoles.joinModel.js";
-import NodeBatch from "./nodeBatch.model.js";
 import TenantsName from "./main/tenantsName.model.js";
 import Requisition from "./requisition.model.js";
 import RequisitionItem from "./requisitionItem.model.js";
@@ -43,7 +42,6 @@ import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
 import RfqQuotation from "./main/rfqQuotation.model.js";
 import RfqQuotationRevision from "./main/rfqQuotationRevisions.model.js";
 import BlanketOrder from "./main/blanketOrder.model.js";
-import NodeBatchItems from "./nodeBatchItems.model.js";
 import NodeStockLedgerItem from "./nodeStockLedgerItem.model.js";
 import Vendor from "./vendor.model.js";
 import SalesOrder from "./salesOrder.model.js";
@@ -54,6 +52,8 @@ import ProductMapping from "./main/productMapping.model.js";
 import Outward from "./outward.model.js";
 import OutwardItem from "./outwardItem.model.js";
 import BlanketOrderItem from "./main/blanketOrderItem.model.js";
+import Batch from "./batch.model.js";
+import OutwardAllocation from "./outwardAllocation.joinModel.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -112,8 +112,7 @@ const defineTenantModels = (sequelize) => {
     NodeDetails(sequelize);
     RequisitionSupplier(sequelize);
     NodeStockLedger(sequelize);
-    NodeBatch(sequelize);
-    NodeBatchItems(sequelize);
+    Batch(sequelize);
     NodeStockLedgerItem(sequelize);
     GRN(sequelize);
     GRNItem(sequelize);
@@ -123,6 +122,7 @@ const defineTenantModels = (sequelize) => {
     SalesOrderItem(sequelize);
     Outward(sequelize);
     OutwardItem(sequelize);
+    OutwardAllocation(sequelize);
 
     return sequelize.models;
 }

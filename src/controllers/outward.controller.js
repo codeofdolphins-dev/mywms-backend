@@ -61,7 +61,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
 
 
 export const outwardItem = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, NodeBatch, NodeBatchItems } = req.dbModels;
+    const { Outward, OutwardItem, Product, Batch } = req.dbModels;
     try {
         const { outward_no = "" } = req.params;
         if (!outward_no) throw new Error("Outward No is required!!!");
@@ -79,26 +79,23 @@ export const outwardItem = asyncHandler(async (req, res) => {
 
         const jsonOutward = outward.toJSON();
         for (const item of jsonOutward.outwardItemList) {
-            const nodeBatchItems = await NodeBatch.findAll({
+            const batch = await Batch.findAll({
                 where: {
                     product_id: item.vendor_product_id,
-                    available_qty: { [Op.gt]: 0 }
-                },
-                include: [
-                    {
-                        model: NodeBatchItems,
-                        as: "batchItems"
-                    }
-                ]
+                    is_active: true,
+                    batch_status: "active",
+                    location_id: outward.seller_business_node_id,
+                    ...(outward.store_id && { store_id: outward.store_id })
+                }
             });
-            item.nodeBatchItems = nodeBatchItems;
+            item.batch = batch || [];
         }
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: outward
+            data: jsonOutward
         });
 
     } catch (error) {

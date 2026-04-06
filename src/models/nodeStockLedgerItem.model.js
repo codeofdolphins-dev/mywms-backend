@@ -17,7 +17,7 @@ function NodeStockLedgerItem(sequelize) {
         },
 
         qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
         unit_type: {
@@ -33,8 +33,8 @@ function NodeStockLedgerItem(sequelize) {
             allowNull: false,
         },
 
-        balance_after: {
-            type: DataTypes.ENUM("mfg_unit", "business_node"),
+        balance_qty: {
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
         },
     });

@@ -20,7 +20,6 @@ import unitApi from "./unit.route.js";
 import supplierApi from "./supplier.route.js";
 import businessApi from "./business.route.js";
 import packageTypeApi from "./packageType.route.js";
-import pdfApi from "../reports/routes/index.route.js";
 import inwardApi from "./inward.route.js";
 import vendorApi from "./vendor.route.js";
 import requisitionCategoryApi from "./requisitionCategory.route.js";
@@ -29,6 +28,7 @@ import storeApi from "./store.route.js";
 import indentApi from "./indent.route.js";
 import salesOrderApi from "./salesOrder.route.js";
 import outwardApi from "./outward.route.js";
+import downloadApi from "../download/routes/index.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -46,7 +46,7 @@ router.use("/vendor", vendorApi);
 router.use("/rfq", rfqApi);
 
 router.use(defineUserScope, defineDbObject);
-router.use("/pdf", pdfApi);
+router.use("/download", downloadApi);
 
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);

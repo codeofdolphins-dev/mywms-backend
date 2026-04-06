@@ -27,7 +27,7 @@ function BlanketOrderItem(sequelize) {
             allowNull: false
         },
         unit_price: {
-            type: DataTypes.DECIMAL(14, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         }
     });

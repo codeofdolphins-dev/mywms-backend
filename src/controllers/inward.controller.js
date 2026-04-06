@@ -70,9 +70,11 @@ const getInward = asyncHandler(async (req, res) => {
     }
 });
 
+
+
 // POST
 const createInward = asyncHandler(async (req, res) => {
-    const { PurchasOrder, Product, NodeBatch, NodeBatchItems, GRN, GRNItem, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
+    const { PurchasOrder, Product, Batch, GRN, GRNItem, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
     const transaction = await req.dbObject.transaction();
     try {
         const { po_no = "", batch = "", received_date = "", items = [] } = req.body;
@@ -82,7 +84,7 @@ const createInward = asyncHandler(async (req, res) => {
         if (items.length == 0) throw new Error("items should not empty!!!");
 
         if (batch) {
-            const isBatchExists = await NodeBatch.findOne({ where: { batch_no: batch } });
+            const isBatchExists = await Batch.findOne({ where: { batch_no: batch } });
             if (isBatchExists) throw new Error("Batch no already exists!!!");
         }
 
@@ -148,39 +150,32 @@ const createInward = asyncHandler(async (req, res) => {
             }, { transaction });
 
             /** create batch record */
-            const nodeBatch = await NodeBatch.create({
+            const newBatch = await Batch.create({
+                product_id: product.id,
                 location_id: po.from_business_node_id,
                 location_type: "business_node",
                 ...(batch && { batch_no: batch }),
-                purchase_price: purchaseOrderItem.unit_price,
+                available_qty: Number(r_qty || 0),
+                reserved_qty: 0,
+                unit_price: purchaseOrderItem.unit_price || 0,
                 batch_status: "active",
                 received_date: received_date ? new Date(received_date) : new Date(),
                 reference_id: grn.id,
                 reference_type: "grn",
+                ...(m_date && { mfg_date: new Date(m_date) }),
+                ...(e_date && { expiry_date: new Date(e_date) }),
             }, { transaction });
 
             if (!batch) {
-                const batchNo = generateBatch(nodeBatch.id);
-                await nodeBatch.update({ batch_no: batchNo }, { transaction });
+                const batchNo = generateBatch(newBatch.id);
+                await newBatch.update({ batch_no: batchNo }, { transaction });
             }
-
-            /** create nodeBatchItems record */
-            await NodeBatchItems.create({
-                batch_id: nodeBatch.id,
-                product_id: product.id,
-                available_qty: Number(r_qty || 0),
-                // NOTE: Providing fallback values to satisfy strict Enum constraints present in current model typo
-                reserved_qty: "business_node",
-                mfg_date: m_date ? new Date(m_date).getFullYear() : null,
-                expiry_date: "grn",
-                unit_price: "active"
-            }, { transaction });
 
             /** create nodeStockLedgerItem record */
             await NodeStockLedgerItem.create({
                 ledger_id: nodeStockLedger.id,
                 product_id: product.id,
-                batch_id: nodeBatch.id,
+                batch_id: newBatch.id,
                 qty: Number(r_qty || 0),
                 unit_type: product.unit_type || "pcs",
                 unit_price: purchaseOrderItem.unit_price,
@@ -197,6 +192,8 @@ const createInward = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 // DELETE
 const deleteInward = asyncHandler(async (req, res) => {
@@ -215,6 +212,8 @@ const deleteInward = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 // PUT
 const updateInward = asyncHandler(async (req, res) => {

@@ -14,10 +14,6 @@ function OutwardItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        batch_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
         requested_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
