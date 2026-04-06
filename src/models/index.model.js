@@ -43,17 +43,17 @@ import RfqQuotationItem from "./main/rfqQuotationItems.model.js";
 import RfqQuotation from "./main/rfqQuotation.model.js";
 import RfqQuotationRevision from "./main/rfqQuotationRevisions.model.js";
 import BlanketOrder from "./main/blanketOrder.model.js";
-import BlanketOrderItem from "./main/BlanketOrderItems.model.js";
 import NodeBatchItems from "./nodeBatchItems.model.js";
 import NodeStockLedgerItem from "./nodeStockLedgerItem.model.js";
 import Vendor from "./vendor.model.js";
 import SalesOrder from "./salesOrder.model.js";
 import SalesOrderItem from "./salesOrderItem.model.js";
-import BpoIndent from "./main/BpoIndent.model.js";
-import BpoIndentItem from "./main/BpoIndentItem.model.js";
+import BpoIndent from "./main/bpoIndent.model.js";
+import BpoIndentItem from "./main/bpoIndentItem.model.js";
 import ProductMapping from "./main/productMapping.model.js";
 import Outward from "./outward.model.js";
 import OutwardItem from "./outwardItem.model.js";
+import BlanketOrderItem from "./main/blanketOrderItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
