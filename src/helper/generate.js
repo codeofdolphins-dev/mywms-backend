@@ -19,10 +19,11 @@ export function generateNo(prefix, suffixId) {
 
 /**
  * 
+ * @param {string} prefix code eg: BAT
  * @param {Number} id record id
  * @returns {string} generated batch no
  */
-export function generateBatch(id) {
+export function generateBatch(prefix, id) {
     try {
         if (!id) throw new Error("id must required!!!");
 
@@ -35,7 +36,7 @@ export function generateBatch(id) {
 
         const YYYYMMDD = `${year}${month}${day}`;
 
-        return `${YYYYMMDD}-000${id}`;
+        return `${prefix}-${YYYYMMDD}-00${id}`;
 
     } catch (error) {
         throw error;

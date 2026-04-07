@@ -32,7 +32,7 @@ export const manufacturingUnitList = asyncHandler(async (req, res) => {
     const { ManufacturingUnit, BusinessNode, BusinessNodeType } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, id = "", name = "", store_type = "", noLimit = false, isAdmin = false } = req.query;
+        let { page = 1, limit = 10, id = "", name = "", store_type = "", noLimit = false, isAdmin = false, location_id = "" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -43,6 +43,7 @@ export const manufacturingUnitList = asyncHandler(async (req, res) => {
                 ...(name && { name: { [Op.iLike]: `%${name}%` } }),
                 ...(store_type && { store_type: store_type.toLowerCase() }),
                 ...(!isAdmin && { business_node_id: req.user.userBusinessNode.id }),
+                ...(location_id && { business_node_id: Number(location_id) }),
             },
             include: [
                 {

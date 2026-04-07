@@ -2,13 +2,16 @@ import { asyncHandler } from "../../../utils/asyncHandler.js";
 import ExcelJS from "exceljs";
 
 export const sampleOpeningStock = asyncHandler(async (req, res) => {
-    const { Product, BussinessNode, BusinessNodeType, ManufacturingUnit } = req.dbModels;
+    const { Product, BusinessNode, BusinessNodeType, ManufacturingUnit } = req.dbModels;
+
+    // console.log(req.body); return;
+
     try {
         const { locationId = "", storeId = "", type = "" } = req.body;
 
         if (!locationId) throw new Error("location id must required!!!");
 
-        const location = await BussinessNode.findByPk(
+        const location = await BusinessNode.findByPk(
             Number(locationId), {
             include: [
                 {
@@ -33,13 +36,14 @@ export const sampleOpeningStock = asyncHandler(async (req, res) => {
                 product_type: type.toLowerCase().trim()
             }
         });
-        console.log(products);
+        if(!products.length) throw new Error(`No ${type} products found in master table!!!`);
 
         const productList = products.map(product => {
             return {
-                location: location.name,
-                store: store ? store.name : "",
-                product_type: product.product_type,
+                location: location.id,
+                store: store ? store.id : "",
+                name: product.name,
+                barcode: product.barcode,
                 sku: product.sku,
             }
         });
@@ -48,15 +52,16 @@ export const sampleOpeningStock = asyncHandler(async (req, res) => {
         const sheet = workBook.addWorksheet("Opening Stock");
 
         sheet.columns = [
-            { header: "Location", key: "location", width: 20 },
-            { header: "Store", key: "store", width: 20 },
+            { header: "Location", key: "location" },
+            { header: "Store", key: "store" },
             { header: "Product Name", key: "name", width: 20 },
+            { header: "Barcode", key: "barcode", width: 20 },
             { header: "SKU", key: "sku", width: 20 },
-            { header: "Opening Qty", key: "qty", width: 20 },
-            { header: "Batch Number", key: "batch", width: 20 },
+            { header: "Opening Qty*", key: "qty", width: 20 },
+            { header: "Batch Number*", key: "batch", width: 20 },
             { header: "Manufacturing Date", key: "mfg_date", width: 20 },
             { header: "Expiry Date", key: "expiry_date", width: 20 },
-            { header: 'Unit Cost', key: 'cost', width: 20 }
+            { header: 'Unit Price*', key: 'cost', width: 20 }
         ];
 
         productList.forEach(product => {
@@ -64,12 +69,8 @@ export const sampleOpeningStock = asyncHandler(async (req, res) => {
                 location: product.location,
                 store: product.store,
                 name: product.name,
-                sku: product.sku,
-                // qty: "",
-                // batch: "",
-                // mfg_date: "",
-                // expiry_date: "",
-                // cost: ""
+                barcode: product.barcode,
+                sku: product.sku
             });
         });
 

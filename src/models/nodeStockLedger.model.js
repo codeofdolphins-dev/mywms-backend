@@ -8,21 +8,17 @@ function NodeStockLedger(sequelize) {
         },
 
         transaction_type: {
-            type: DataTypes.ENUM("grn_receipt", "material_issue", "production_receipt", "inter_node_transfer", "sales_dispatch", "purchase_return", "sales_return", "stock_adjustment", "others"),
-            allowNull: false,
-        },
-        ledger_context: {
-            type: DataTypes.ENUM("mfg_internal", "mfg_inward", "mfg_outward", "node_transfer", "others"),
+            type: DataTypes.ENUM("opening_stock", "internal_transfer", "external_transfer", "others"),
             allowNull: false,
         },
         txn_date: {
-            type: DataTypes.DATEONLY,
+            type: DataTypes.DATE,
             allowNull: false,
         },
 
         from_location_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         from_location_type: {
             type: DataTypes.ENUM("mfg_unit", "business_node"),
@@ -31,7 +27,7 @@ function NodeStockLedger(sequelize) {
 
         to_location_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         to_location_type: {
             type: DataTypes.ENUM("mfg_unit", "business_node"),
@@ -43,13 +39,12 @@ function NodeStockLedger(sequelize) {
             allowNull: true,
         },
         reference_type: {
-            type: DataTypes.ENUM("production_order", "purchase_order", "grn", "adjustment", "sales_order", "transfer_order"),
+            type: DataTypes.ENUM("transfer_order", "grn", "sales_order", "others"),
             allowNull: true,
         },
-
         created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
     });
 }
