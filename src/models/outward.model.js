@@ -57,6 +57,11 @@ function Outward(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {}
+        },
         note: {
             type: DataTypes.TEXT,
             allowNull: true

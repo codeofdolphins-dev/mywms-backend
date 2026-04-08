@@ -5,15 +5,17 @@ function OutwardAllocation(sequelize) {
         outward_item_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            // References the OutwardItem table
+        },
+        product_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
         },
         batch_id: {
-            type: DataTypes.INTEGER, 
+            type: DataTypes.INTEGER,
             allowNull: false,
-            // References the unified InventoryBatch table
         },
         allocated_qty: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
         status: {

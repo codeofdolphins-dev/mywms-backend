@@ -61,6 +61,11 @@ function SalesOrder(sequelize) {
             type: DataTypes.TEXT,
             allowNull: true
         },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {}
+        },
     });
 }
 export default SalesOrder;

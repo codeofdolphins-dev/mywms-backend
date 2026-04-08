@@ -153,7 +153,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
 
     /** buyer DB */
-    const { ManufacturingUnit, Requisition } = req.dbModels;
+    const { ManufacturingUnit, Requisition, BusinessNode } = req.dbModels;
     const buyerTransaction = await req.dbObject.transaction();
 
     /** supplier DB */
@@ -167,7 +167,15 @@ export const createIndent = asyncHandler(async (req, res) => {
         if (!blanketOrder) throw new Error("Record not found!!!");
 
         /******************** Verify Store record *********************/
-        const store = await ManufacturingUnit.findByPk(Number(target_store_id));
+        const store = await ManufacturingUnit.findByPk(Number(target_store_id), {
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "parentBusinessNode",
+                    attributes: ["name"]
+                }
+            ]
+        });
         if (!store) throw new Error("Store not found!!!");
 
 
@@ -198,7 +206,7 @@ export const createIndent = asyncHandler(async (req, res) => {
         const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, "buyer");
 
         /******************** create SO record on vendor/supplier side *********************/
-        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer);
+        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store);
 
 
         const indent = await BpoIndent.create({

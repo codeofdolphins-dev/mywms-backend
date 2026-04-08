@@ -1161,6 +1161,22 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+    
+
+    /******************** manufacturingUnit ********************/
+    // manufacturingUnit ↔ nodeUser
+    ManufacturingUnit.hasMany(NodeUser, {
+        foreignKey: "store_id",
+        as: "storeUser",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    NodeUser.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "store",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
 
 
     // brand <-> requisitionItem

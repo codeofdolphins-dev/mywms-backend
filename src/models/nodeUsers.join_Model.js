@@ -15,6 +15,10 @@ function NodeUser(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
+        store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
         department: {
             type: DataTypes.ENUM("purchase", "sales", "both"),
             defaultValue: null,

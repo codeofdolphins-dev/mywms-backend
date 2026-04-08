@@ -134,7 +134,7 @@ export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendo
  * @param {object} purchaseOrder buyer PO record
  * @returns salse order record
  */
-export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer) {
+export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer, store) {
     const { SalesOrder, SalesOrderItem } = VendorModels;
     const { grand_total, instructions, priority, required_by, items } = reqBody;
 
@@ -163,7 +163,8 @@ export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerMod
             type: "external",
             status: "waiting_for_approval",
             grand_total,
-            note: instructions
+            note: instructions,
+            meta: store
         }, { transaction: VendorTransaction });
 
         salesOrder.so_no = generateNo("EX-SO", salesOrder.id);

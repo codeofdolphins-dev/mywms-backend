@@ -6,8 +6,10 @@ const { models } = await rootDB();
 const { Vehicle, Driver } = models;
 
 
+// GET
 export const allOutwardList = asyncHandler(async (req, res) => {
     const { Outward, OutwardItem, Product } = req.dbModels;
+    console.log(req.user);
     try {
         let { page = 1, limit = 10, id = "", outward_no = "" } = req.query;
         page = parseInt(page);
@@ -59,9 +61,8 @@ export const allOutwardList = asyncHandler(async (req, res) => {
     }
 });
 
-
 export const outwardItem = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, Batch } = req.dbModels;
+    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetail, Vendor } = req.dbModels;
     try {
         const { outward_no = "" } = req.params;
         if (!outward_no) throw new Error("Outward No is required!!!");
@@ -71,21 +72,48 @@ export const outwardItem = asyncHandler(async (req, res) => {
             include: [
                 {
                     model: OutwardItem,
-                    as: "outwardItemList"
+                    as: "outwardItemList",
+                    include: [
+                        {
+                            model: Product,
+                            as: "outwardProduct"
+                        }
+                    ]
                 }
             ]
         });
         if (!outward) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
         const jsonOutward = outward.toJSON();
+
+        /** buyer details */
+        if (jsonOutward.type === "internal") {
+            jsonOutward.buyer = await BusinessNode.findOne({
+                where: { id: jsonOutward.buyer_business_node_id },
+                include: [
+                    {
+                        model: NodeDetail,
+                        as: "nodeDetails"
+                    }
+                ]
+            })
+        } else if (jsonOutward.type === "external") {
+            jsonOutward.buyer = await Vendor.findOne({
+                where: { id: jsonOutward.buyer_business_node_id }
+            })
+            jsonOutward.buyer.meta = jsonOutward.meta;
+            delete jsonOutward.meta;
+        }
+
+        /** batch details */
         for (const item of jsonOutward.outwardItemList) {
             const batch = await Batch.findAll({
                 where: {
                     product_id: item.vendor_product_id,
                     is_active: true,
                     batch_status: "active",
-                    location_id: outward.seller_business_node_id,
-                    ...(outward.store_id && { store_id: outward.store_id })
+                    location_id: jsonOutward.seller_business_node_id,
+                    ...(jsonOutward.store_id && { store_id: jsonOutward.store_id })
                 }
             });
             item.batch = batch || [];
@@ -105,6 +133,7 @@ export const outwardItem = asyncHandler(async (req, res) => {
 });
 
 
+// POST
 export const createOutward = asyncHandler(async (req, res) => {
     const { Outward, OutwardItem, Product, SalesOrder, SalesOrderItem, ManufacturingUnit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
@@ -112,7 +141,6 @@ export const createOutward = asyncHandler(async (req, res) => {
     try {
         const { sales_order_id = "", store_id = "", priority = "", note = "", items = "" } = req.body;
 
-        let total = 0;
         if ([sales_order_id, store_id].some(i => i === "")) {
             await transaction.rollback()
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
@@ -143,14 +171,14 @@ export const createOutward = asyncHandler(async (req, res) => {
         const outward = await Outward.create({
             sales_order_id: salesOrder.id,
 
-            seller_business_node_id: salesOrder.seller_business_node_id,
+            seller_business_node_id: store_id ? store.business_node_id : salesOrder.seller_business_node_id,
             ...(store_id && { store_id: store.id }),
             buyer_business_node_id: salesOrder.buyer_business_node_id,
 
             type: store_id ? "external" : "internal",
             priority,
             required_by: salesOrder.required_by,
-            dispatch_date: new Date(),
+            meta: store_id ? salesOrder.meta : null,
             note,
         }, { transaction });
 
@@ -174,6 +202,110 @@ export const createOutward = asyncHandler(async (req, res) => {
                 requested_qty: Number(requested_qty),
                 unit_price: Number(unit_price),
             }, { transaction });
+        };
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+// PUT
+export const confirmAllocation = asyncHandler(async (req, res) => {
+    const { Outward, OutwardItem, Product, SalesOrder, SalesOrderItem, ManufacturingUnit, Batch } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    try {
+        const { outward_no = "", items = "" } = req.body;
+
+        if ([outward_no, items].some(i => i === "")) {
+            await transaction.rollback()
+            return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
+        };
+
+        const outward = await Outward.findOne({ where: { outward_no } });
+        if (!outward) {
+            await transaction.rollback()
+            return res.status(404).json({ success: false, code: 404, message: "Outward not found!!!" });
+        };
+
+        /** update outward record */
+        outward.dispatch_date = new Date();
+        outward.status = "dispatched";
+        await outward.save({ transaction });
+
+        /** update outward items */
+        for (const item of items) {
+            const { product_id = "", batches = "" } = item;
+
+            if (!product_id || batches?.length <= 0) {
+                await transaction.rollback()
+                return res.status(400).json({ success: false, code: 400, message: "Required fields are missing in items!!!" });
+            };
+
+            /** check product is valid or not */
+            const product = await Product.findOne({ where: { id: Number(product_id) } });
+            if (!product) {
+                await transaction.rollback()
+                return res.status(404).json({ success: false, code: 404, message: "Product not found!!!" });
+            };
+
+            /** check outward item is valid or not */
+            const outwardItem = await OutwardItem.findOne({
+                where: {
+                    outward_id: outward.id,
+                    vendor_product_id: Number(product_id)
+                }
+            });
+            const requested_qty = outwardItem.requested_qty;
+
+            /** batch allocation */
+            let total_allocated = 0;
+            for (const batch_no of batches) {
+                if (requested_qty === total_allocated) break;
+
+                const batchRecord = await Batch.findOne({ where: { batch_no: batch_no } });
+                if (!batchRecord) {
+                    await transaction.rollback();
+                    return res.status(404).json({ success: false, code: 404, message: "Batch not found!!!" });
+                }
+
+                const remaining_qty = Number(requested_qty) - total_allocated;
+                const available = Number(batchRecord.available_qty);
+
+                if (remaining_qty >= available) {
+                    // Consume the entire batch
+                    batchRecord.available_qty = 0;
+                    batchRecord.batch_status = "consumed";
+                    batchRecord.is_active = false;
+                    await batchRecord.save({ transaction });
+
+                    total_allocated += available;
+                }
+                else {
+                    // Consume only a part of the batch
+                    batchRecord.available_qty = available - remaining_qty;
+                    // Batch remains 'active' since it still has some quantity left
+                    await batchRecord.save({ transaction });
+
+                    total_allocated += remaining_qty;
+                }
+
+                /** create outward allocation record */
+                const allocated_qty = remaining_qty >= available ? available : remaining_qty;
+                await OutwardAllocation.create({
+                    outward_item_id: outwardItem.id,
+                    product_id: product.id,
+                    batch_id: batchRecord.id,
+                    allocated_qty,
+                    status: "dispatched"
+                }, { transaction });
+            }
         };
 
         await transaction.commit();
