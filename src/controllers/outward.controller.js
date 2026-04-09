@@ -62,7 +62,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
 });
 
 export const outwardItem = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetail, Vendor } = req.dbModels;
+    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetail, Vendor, OutwardAllocation } = req.dbModels;
     try {
         const { outward_no = "" } = req.params;
         if (!outward_no) throw new Error("Outward No is required!!!");
@@ -105,18 +105,37 @@ export const outwardItem = asyncHandler(async (req, res) => {
             delete jsonOutward.meta;
         }
 
-        /** batch details */
-        for (const item of jsonOutward.outwardItemList) {
-            const batch = await Batch.findAll({
-                where: {
-                    product_id: item.vendor_product_id,
-                    is_active: true,
-                    batch_status: "active",
-                    location_id: jsonOutward.seller_business_node_id,
-                    ...(jsonOutward.store_id && { store_id: jsonOutward.store_id })
-                }
-            });
-            item.batch = batch || [];
+        if (jsonOutward.status !== "dispatched") {
+            /** batch details */
+            for (const item of jsonOutward.outwardItemList) {
+                const batch = await Batch.findAll({
+                    where: {
+                        product_id: item.vendor_product_id,
+                        is_active: true,
+                        batch_status: "active",
+                        location_id: jsonOutward.seller_business_node_id,
+                        ...(jsonOutward.store_id && { store_id: jsonOutward.store_id })
+                    }
+                });
+                item.batch = batch || [];
+            }
+        } else {
+            /** batch details */
+            for (const item of jsonOutward.outwardItemList) {
+                const outwardAllocation = await OutwardAllocation.findAll({
+                    where: {
+                        outward_item_id: item.id
+                    },
+                    include: [
+                        {
+                            model: Batch,
+                            as: "batch",
+                            attributes: ["id", "batch_no"]
+                        }
+                    ]
+                });
+                item.alloted_batch = outwardAllocation || [];
+            }
         }
 
         return res.status(200).json({
@@ -217,13 +236,16 @@ export const createOutward = asyncHandler(async (req, res) => {
 
 // PUT
 export const confirmAllocation = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, SalesOrder, SalesOrderItem, ManufacturingUnit, Batch } = req.dbModels;
+    const { Outward, OutwardItem, Product, OutwardAllocation, Batch } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
-    try {
-        const { outward_no = "", items = "" } = req.body;
+    // console.log(req.body.items); return
+    // console.log(req.body); return
 
-        if ([outward_no, items].some(i => i === "")) {
+    try {
+        const { outward_no = "", items = [] } = req.body;
+
+        if (!outward_no || !Array.isArray(items) || items.length === 0) {
             await transaction.rollback()
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
@@ -241,9 +263,9 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
         /** update outward items */
         for (const item of items) {
-            const { product_id = "", batches = "" } = item;
+            const { product_id = "", batches = [] } = item;
 
-            if (!product_id || batches?.length <= 0) {
+            if (!product_id || !Array.isArray(batches) || batches.length === 0 || batches.some(b => !b)) {
                 await transaction.rollback()
                 return res.status(400).json({ success: false, code: 400, message: "Required fields are missing in items!!!" });
             };
