@@ -30,6 +30,7 @@ import salesOrderApi from "./salesOrder.route.js";
 import outwardApi from "./outward.route.js";
 import downloadApi from "../download/routes/index.route.js";
 import batchApi from "./batch.route.js";
+import adminApi from "./admin.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -49,6 +50,7 @@ router.use("/rfq", rfqApi);
 router.use(defineUserScope, defineDbObject);
 router.use("/download", downloadApi);
 
+router.use("/admin", adminApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);

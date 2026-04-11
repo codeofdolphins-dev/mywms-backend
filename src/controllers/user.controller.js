@@ -127,7 +127,7 @@ const allUserList = asyncHandler(async (req, res) => {
                     model: BusinessNode,
                     as: "userBusinessNode",
                     through: {
-                        attributes: ["userRole"]
+                        attributes: ["isNodeAdmin", "department"]
                     },
                     include: [
                         {
@@ -286,6 +286,7 @@ const delete_employee = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 
 export { currentUser, allUserList, updateEmployeeDetails, delete_employee };
