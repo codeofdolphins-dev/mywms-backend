@@ -213,7 +213,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { email = "", password = "", full_name = "", phone_no = "", node = "", isNodeAdmin = "", dept = "" } = req.body;
+        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
 
         if (
@@ -224,8 +224,6 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
-
-        if (node) node = JSON.parse(node);
 
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
@@ -261,13 +259,13 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
 
         /** link user with node if node available */
-        if (node) {
-            await user.addUserBusinessNode(node.id, {
+        if (node_id) {
+            await user.addUserBusinessNode(node_id, {
                 through: {
                     ...(dept && { department: dept }),
-                    ...(isNodeAdmin && {isNodeAdmin: Boolean(isNodeAdmin)})
+                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) })
                 },
-                transaction
+                transaction 
             });
         }
 

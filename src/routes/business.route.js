@@ -13,5 +13,6 @@ router.use(defineUserScope, defineDbObject, verifyJWT);
 router.route("/node-list").get(verifyPermission("business-node: read"), tenantBusinessNodeList);
 router.route("/registered-node-list").get(verifyPermission("registered-node: read"), allRegisteredNodes);
 router.route("/manufacturing-node-list").get(allMfgNodes);
+// router.route("/nodes").get(allNodes);
 
 export default router;

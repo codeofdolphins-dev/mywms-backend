@@ -22,41 +22,61 @@ export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
     }
 });
 
-export const allRegisteredNodes = asyncHandler(async (req, res) => {
-    const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
-    try {
-        const businessNode = await BusinessNode.findAll({
-            // where: {
-            //     node_type_code: { [Op.ne]: null },
-            //     tenant_business_flow_id: { [Op.ne]: null },
-            // },
-            include: [
-                {
-                    model: BusinessNodeType,
-                    as: "type"
-                },
-                {
-                    model: NodeDetails,
-                    as: "nodeDetails"
-                },
-            ]
-        });
-        if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+// export const allRegisteredNodes = asyncHandler(async (req, res) => {
+//     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
+//     try {
+//         let { page = 1, limit = 10, noLimit = false, search = "" } = req.query;
 
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Fetched Successfully.",
-            data: businessNode
-        });
+//         page = Number(page);
+//         limit = Number(limit);
+//         const offset = (page - 1) * limit;
 
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
+//         const businessNode = await BusinessNode.findAndCountAll({
+//             // where: {
+//             //     node_type_code: { [Op.ne]: null },
+//             //     tenant_business_flow_id: { [Op.ne]: null },
+//             // },
+//             include: [
+//                 {
+//                     model: BusinessNodeType,
+//                     as: "type"
+//                 },
+//                 {
+//                     model: NodeDetails,
+//                     as: "nodeDetails"
+//                 },
+//             ],
+//             ...(noLimit ? {} : { limit, offset }),
+//             order: [["createdAt", "ASC"]]
+//         });
+//         if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+//         const totalItems = businessNode.count;
+//         const totalPages = Math.ceil(totalItems / limit);
+
+//         return res.status(200).json({
+//             success: true,
+//             code: 200,
+//             message: "Fetched Successfully.",
+//             data: businessNode.rows,
+//             ...(noLimit ? {} : {
+//                 meta: {
+//                     totalItems,
+//                     totalPages,
+//                     currentPage: page,
+//                     limit
+//                 }
+//             })
+//         });
+
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ success: false, code: 500, message: error.message });
+//     }
+// });
 
 
+/** for store */
 export const allMfgNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, NodeDetails } = req.dbModels;
     try {
@@ -76,6 +96,69 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: businessNode
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const allRegisteredNodes = asyncHandler(async (req, res) => {
+    const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
+    try {
+        let { page = 1, limit = 10, noLimit = false, search = "", isAllowOwner = false } = req.query;
+
+        page = Number(page);
+        limit = Number(limit);
+        const offset = (page - 1) * limit;
+
+        const businessNode = await NodeDetails.findAndCountAll({
+            ...(search ? {
+                where: {
+                    [Op.or]: [
+                        { name: { [Op.iLike]: `%${search}%` } },
+                        { location: { [Op.iLike]: `%${search}%` } },
+                        { gst_no: { [Op.like]: `%${search}%` } },
+                        { license_no: { [Op.like]: `%${search}%` } }
+                    ]
+                }
+            } : {}),
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "businessNode",
+                    ...(isAllowOwner ? {} : { where: { node_type_code: { [Op.ne]: null } } }),
+                    include: [
+                        {
+                            model: BusinessNodeType,
+                            as: "type"
+                        }
+                    ]
+                }
+            ],
+            ...(noLimit ? {} : { limit, offset }),
+            order: [["createdAt", "ASC"]]
+        });
+        if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        const totalItems = businessNode.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: businessNode.rows,
+            ...(noLimit ? {} : {
+                pagination: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    limit
+                }
+            })
         });
 
     } catch (error) {
