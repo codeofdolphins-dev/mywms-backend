@@ -108,23 +108,24 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
 export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
-        let { page = 1, limit = 10, noLimit = false, search = "", isAllowOwner = false } = req.query;
+        let { page = 1, limit = 10, id = "", noLimit = false, search = "", isAllowOwner = false } = req.query;
 
         page = Number(page);
         limit = Number(limit);
         const offset = (page - 1) * limit;
 
         const businessNode = await NodeDetails.findAndCountAll({
-            ...(search ? {
-                where: {
+            where: {
+                ...(id ? { id: Number(id) } : {}),
+                ...(search ? {
                     [Op.or]: [
                         { name: { [Op.iLike]: `%${search}%` } },
                         { location: { [Op.iLike]: `%${search}%` } },
                         { gst_no: { [Op.like]: `%${search}%` } },
                         { license_no: { [Op.like]: `%${search}%` } }
                     ]
-                }
-            } : {}),
+                } : {})
+            },
             include: [
                 {
                     model: BusinessNode,
@@ -138,7 +139,7 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
                     ]
                 }
             ],
-            ...(noLimit ? {} : { limit, offset }),
+            ...((noLimit || id) ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]]
         });
         if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -150,8 +151,8 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: businessNode.rows,
-            ...(noLimit ? {} : {
+            data: id ? businessNode.rows[0] : businessNode.rows,
+            ...((noLimit || id) ? {} : {
                 pagination: {
                     totalItems,
                     totalPages,

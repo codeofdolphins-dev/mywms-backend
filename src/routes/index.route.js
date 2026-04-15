@@ -43,6 +43,7 @@ router.use("/user", userApi);
 router.use("/product", productApi);
 router.use("/brand", brandApi);
 router.use("/super-admin", superAdminApi);
+router.use("/admin", adminApi);
 router.use("/business", businessApi);
 router.use("/vendor", vendorApi);
 router.use("/rfq", rfqApi);
@@ -50,7 +51,6 @@ router.use("/rfq", rfqApi);
 router.use(defineUserScope, defineDbObject);
 router.use("/download", downloadApi);
 
-router.use("/admin", adminApi);
 router.use("/role", roleApi);
 router.use("/permission", permissionApi);
 router.use("/manage-permission", managePermissionApi);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { all_company, allBusinessNodes, delete_company, registerBusinessNode, registerNewTenant, tenantBusinessFlow, updateCompanyDetails, updateTenantBusinessFlow } from "../controllers/superAdmin.controller.js"
+import { all_company, allBusinessNodes, delete_company, registerNewTenant, tenantBusinessFlow, updateCompanyDetails, updateTenantBusinessFlow } from "../controllers/superAdmin.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -8,9 +8,6 @@ import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 
 const router = Router();
 
-
-// private APIs
-router.route("/register-node").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNode);
 
 
 router.use(defineUserScope, defineDbObject, verifyJWT);
