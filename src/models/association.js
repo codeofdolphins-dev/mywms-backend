@@ -419,7 +419,8 @@ const defineTenantAssociations = (models) => {
         Vendor,
         Outward,
         OutwardItem,
-        OutwardAllocation
+        OutwardAllocation,
+        GRNItemBatch
 
 
     } = models;
@@ -778,42 +779,30 @@ const defineTenantAssociations = (models) => {
 
     // grn <-> purchasOrder
     GRN.belongsTo(PurchasOrder, {
-        foreignKey: "purchase_order_id",
+        foreignKey: "purchase_order",
         as: "grnPurchaseOrder",
+        targetKey: "po_no",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     PurchasOrder.hasMany(GRN, {
-        foreignKey: "purchase_order_id",
+        foreignKey: "purchase_order",
         as: "grns",
+        sourceKey: "po_no",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
     // grn <-> businessNode
     GRN.belongsTo(BusinessNode, {
-        foreignKey: "from_node_id",
-        as: "fromNode",
+        foreignKey: "receiver_id",
+        as: "receiverNode",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BusinessNode.hasMany(GRN, {
-        foreignKey: "from_node_id",
-        as: "fromGrns",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // grn <-> businessNode
-    GRN.belongsTo(BusinessNode, {
-        foreignKey: "to_node_id",
-        as: "toNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(GRN, {
-        foreignKey: "to_node_id",
-        as: "toGrns",
+        foreignKey: "receiver_id",
+        as: "receivedGrns",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -859,6 +848,34 @@ const defineTenantAssociations = (models) => {
     Product.hasMany(GRNItem, {
         foreignKey: "product_id",
         as: "grnItemsForProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* grnItemBatch ********************/
+    GRNItemBatch.belongsTo(GRNItem, {
+        foreignKey: "grn_item_id",
+        as: "grnItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    GRNItem.hasMany(GRNItemBatch, {
+        foreignKey: "grn_item_id",
+        as: "grnItemBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    GRNItemBatch.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "grnItemBatchProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(GRNItemBatch, {
+        foreignKey: "product_id",
+        as: "grnItemBatchesForProduct",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -1161,7 +1178,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
 
     /******************** manufacturingUnit ********************/
     // manufacturingUnit ↔ nodeUser

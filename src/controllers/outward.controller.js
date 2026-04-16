@@ -1,5 +1,6 @@
 import { rootDB } from "../db/tenantMenager.service.js";
 import { generateNo } from "../helper/generate.js";
+import { createGrn_items } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Op } from "sequelize";
 const { models } = await rootDB();
@@ -236,7 +237,7 @@ export const createOutward = asyncHandler(async (req, res) => {
 
 // PUT
 export const confirmAllocation = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, OutwardAllocation, Batch } = req.dbModels;
+    const { Outward, OutwardItem, Product, OutwardAllocation, Batch, SalesOrder, Vendor } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     // console.log(req.body.items); return
@@ -330,6 +331,17 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             }
         };
 
+        
+        
+        
+        
+        const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
+        await createGrn_items(salesOrder);
+
+
+
+
+
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
 
@@ -339,6 +351,9 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+
 
 
 const deleteOutward = asyncHandler(async (req, res) => {

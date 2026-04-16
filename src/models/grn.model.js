@@ -7,15 +7,19 @@ function GRN(sequelize) {
             unique: true,
             allowNull: true
         },
-        purchase_order_id: {
-            type: DataTypes.INTEGER,
+        purchase_order: {
+            type: DataTypes.STRING,
             allowNull: true
         },
-        from_node_id: {
+        grn_type: {
+            type: DataTypes.ENUM("purchase", "transfer", "return"),
+            allowNull: false
+        },
+        sender_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        to_node_id: {
+        receiver_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -25,7 +29,7 @@ function GRN(sequelize) {
         },
         received_date: {
             type: DataTypes.DATEONLY,
-            allowNull: false
+            allowNull: true
         },
         status: {
             type: DataTypes.ENUM("draft", "accepted", "cancelled"),

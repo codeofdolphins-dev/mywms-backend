@@ -54,6 +54,7 @@ import OutwardItem from "./outwardItem.model.js";
 import BlanketOrderItem from "./main/blanketOrderItem.model.js";
 import Batch from "./batch.model.js";
 import OutwardAllocation from "./outwardAllocation.joinModel.js";
+import GRNItemBatch from "./grnItemBatch.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -123,6 +124,7 @@ const defineTenantModels = (sequelize) => {
     Outward(sequelize);
     OutwardItem(sequelize);
     OutwardAllocation(sequelize);
+    GRNItemBatch(sequelize);
 
     return sequelize.models;
 }

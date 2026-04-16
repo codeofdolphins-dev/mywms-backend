@@ -7,6 +7,10 @@ function Vendor(sequelize) {
             allowNull: false,
             defaultValue: {}
         },
+        tenant: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         linked_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false,

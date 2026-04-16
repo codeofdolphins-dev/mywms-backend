@@ -155,6 +155,7 @@ export const createIndent = asyncHandler(async (req, res) => {
     /** buyer DB */
     const { ManufacturingUnit, Requisition, BusinessNode } = req.dbModels;
     const buyerTransaction = await req.dbObject.transaction();
+    const dbName = req.headers["x-tenant-id"];
 
     /** supplier DB */
     let VendorTransaction = null;
@@ -186,35 +187,19 @@ export const createIndent = asyncHandler(async (req, res) => {
 
 
         /******************** Verify Vendor Tenant *********************/
-        const vendorTenant = blanketOrder.vendor_tenant;
-        if (!vendorTenant) throw new Error("Vendor tenant not found in blanket order record!!!");
+        const vendorDbName = blanketOrder.vendor_tenant;
+        if (!vendorDbName) throw new Error("Vendor tenant not found in blanket order record!!!");
 
         /** get vendor database connection */
-        const { sequelize, models: VendorModels } = await getTenantConnection(vendorTenant);
+        const { sequelize, models: VendorModels } = await getTenantConnection(vendorDbName);
         VendorTransaction = await sequelize.transaction();
 
-
-
-        /******************** create vendor record on buyer side *********************/
-        const vendor = await createVendor(req.dbModels, buyerTransaction, VendorModels);
-
-        /******************** create PO record on buyer side *********************/
-        const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition);
-
-
-        /******************** create buyer record on vendor side *********************/
-        const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, "buyer");
-
-        /******************** create SO record on vendor/supplier side *********************/
-        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store);
 
 
         const indent = await BpoIndent.create({
             bpo_id: blanketOrder.id,
             buyer_tenant: blanketOrder.buyer_tenant,
             vendor_tenant: blanketOrder.vendor_tenant,
-            buyer_po_id: purchaseOrder.id,
-            supplier_so_id: salesOrder.id,
             created_by: req.user.id,
             grand_total: Number(grand_total),
         }, { transaction: rootTransaction });
@@ -245,6 +230,28 @@ export const createIndent = asyncHandler(async (req, res) => {
                 remain_contracted_qty: Sequelize.literal(`remain_contracted_qty - ${release_qty}`)
             }, { where: { id: Number(bpo_item_id) }, transaction: rootTransaction });
         };
+
+
+
+        /******************** create vendor record on buyer side *********************/
+        const vendor = await createVendor(req.dbModels, buyerTransaction, VendorModels, vendorDbName);
+
+        /******************** create PO record on buyer side *********************/
+        const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition, indent.id);
+
+
+        /******************** create buyer record on vendor side *********************/
+        const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, dbName, "buyer");
+
+        /******************** create SO record on vendor/supplier side *********************/
+        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store, indent.id);
+
+        
+        await indent.update({
+            buyer_po_id: purchaseOrder.id,
+            supplier_so_id: salesOrder.id,
+        }, { transaction: rootTransaction });
+
 
 
         await rootTransaction.commit();

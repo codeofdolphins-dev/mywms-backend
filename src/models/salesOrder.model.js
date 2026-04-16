@@ -17,11 +17,15 @@ function SalesOrder(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        central_indent_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
         priority: {
             type: DataTypes.ENUM("low", "medium", "high", "urgent"),
             defaultValue: "medium"
         },
-
         
         // Internal Node ID of the company/location selling the goods
         seller_business_node_id: {

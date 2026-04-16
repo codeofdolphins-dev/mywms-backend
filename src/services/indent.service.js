@@ -5,10 +5,11 @@ import { generateNo } from "../helper/generate.js";
  * @param {object} buyerModels buyer/vendor models
  * @param {object} buyerTransaction buyer/vendor models transaction
  * @param {object} VendorModels vendor/buyer models
+ * @param {string} tenant tenant name
  * @param {string} type when passed "buyer" then create buyer record on vendor side
  * @returns buyer side vendor local data record
  */
-export async function createVendor(buyerModels, buyerTransaction, VendorModels, type = "") {
+export async function createVendor(buyerModels, buyerTransaction, VendorModels, tenant, type = "") {
 
     const { User, BusinessNode, NodeDetails } = VendorModels;
     const { Vendor } = buyerModels;
@@ -41,11 +42,13 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
             where: {
                 contact_email: formatedDetails.email,
                 linked_business_node_id: node.id,
+                tenant: tenant,
                 is_active: true
             },
             defaults: {
                 name: node.name,
                 linked_business_node_id: node.id,
+                tenant: tenant,
                 ...(type && { type }),
                 contact_email: formatedDetails.email,
                 contact_phone: formatedDetails.email,
@@ -76,14 +79,15 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
  * @param {object} requisition requisition details
  * @returns purchase order record
  */
-export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, bpo_id, requisition) {
+export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, bpo_id, requisition, indent_id) {
 
     const { PurchasOrder, PurchaseOrderItem, User } = buyerModels;
     const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = req.body;
 
     try {
         const purchaseOrder = await PurchasOrder.create({
-            bpo_id: bpo_id,
+            central_bpo_id: bpo_id,
+            central_indent_id: indent_id,
             target_store_id: target_store_id,
             priority: priority.toLowerCase(),
             ...(required_by && { required_by: new Date(required_by) }),
@@ -134,21 +138,21 @@ export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendo
  * @param {object} purchaseOrder buyer PO record
  * @returns salse order record
  */
-export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer, store) {
+export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer, store, indent_id) {
     const { SalesOrder, SalesOrderItem } = VendorModels;
     const { grand_total, instructions, priority, required_by, items } = reqBody;
 
     const { ManufacturingUnit } = BuyerModels;
 
     try {
-
         const manufacturingUnit = await ManufacturingUnit.findByPk(Number(purchaseOrder.target_store_id));
         if (!manufacturingUnit) throw new Error("Target store not found!!!");
 
 
         const salesOrder = await SalesOrder.create({
             source_po_no: purchaseOrder.po_no,
-            central_bpo_id: purchaseOrder.bpo_id,
+            central_bpo_id: purchaseOrder.central_bpo_id,
+            central_indent_id: indent_id,
             priority: priority,
 
             seller_business_node_id: seller.linked_business_node_id,

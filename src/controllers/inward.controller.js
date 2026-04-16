@@ -1,9 +1,7 @@
 import { Op } from "sequelize";
-import { rootDB } from "../db/tenantMenager.service.js";
+import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 import { generateBatch, generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-const { models } = await rootDB();
-const { Vehicle, Driver } = models;
 
 
 // GET
@@ -358,4 +356,133 @@ const updateInwardItems = asyncHandler(async (req, res) => {
     }
 });
 
-export { getInward, createInward, deleteInward, updateInward, updateInwardItems };
+
+
+export const grnList = asyncHandler(async (req, res) => {
+    const { GRN, GRNItem, GRNItemBatch, Product, PurchasOrder, BusinessNode } = req.dbModels;
+
+    try {
+        let { page = 1, limit = 10, id = "", grn_no = "", status = "", sortBy = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await GRN.findAndCountAll({
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(grn_no && { grn_no }),
+                ...(status && { status }),
+                ...(sortBy && {
+                    [Op.or]: [
+                        { status: sortBy.toLowerCase() },
+                        { grn_type: sortBy.toLowerCase() },
+                    ],
+                }),
+            },
+            // include: [
+            //     {
+            //         model: PurchasOrder,
+            //         as: "grnPurchaseOrder",
+            //         required: false,
+            //     },
+            //     {
+            //         model: BusinessNode,
+            //         as: "receiverNode",
+            //         required: false,
+            //     },
+            // ],
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+            distinct: true, // Needed when using includes with hasMany
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: rows,
+            pagination: {
+                totalItems: count,
+                totalPages,
+                currentPage: page,
+                limit,
+            },
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
+
+    /****************** buyer db models ******************/
+    const { GRN, GRNItem, GRNItemBatch, Product, PurchasOrder, BusinessNode } = req.dbModels;
+
+    /****************** central db models ******************/
+    const { models } = await rootDB();
+    const { BpoIndent } = models;
+
+
+    try {
+        let { po_no } = req.params;
+
+        const po = await PurchasOrder.findOne({
+            where: { po_no },
+        });
+
+        /** Get indent record from CENTRAL */
+        const bpoIndent = await BpoIndent.findOne({
+            where: { buyer_po_id: po.id },
+        });
+
+
+        /****************** supplier db models ******************/
+        const { models: supplierModels } = await getTenantConnection(bpoIndent.vendor_tenant);
+        const { Outward, OutwardItem, OutwardAllocation, Batch } = supplierModels;
+
+        const outward = await Outward.findOne({
+            where: {
+                sales_order_id: bpoIndent.supplier_so_id,
+                status: "dispatched",
+            },
+            order: [["createdAt", "DESC"]],
+            limit: 1,
+            include: [
+                {
+                    model: OutwardItem,
+                    as: "outwardItemList",
+                    include: [
+                        {
+                            model: OutwardAllocation,
+                            as: "outwardItemAllocations",
+                            include: [
+                                {
+                                    model: Batch,
+                                    as: "batch"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: outward,
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});

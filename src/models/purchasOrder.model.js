@@ -4,16 +4,23 @@ function PurchasOrder(sequelize) {
     return sequelize.define("PurchasOrder", {
         po_no: {
             type: DataTypes.STRING,
-            allowNull: true
+            allowNull: true,
+            unique: true
         },
+
         // --- NEW BPO LINKAGE FIELDS ---
-        bpo_id: {
+        central_bpo_id: {
             type: DataTypes.INTEGER,
             allowNull: true // Only filled if generated from BPO
         },
+        central_indent_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true // Only filled if generated from indent
+        },
+
         target_store_id: {
             type: DataTypes.INTEGER,
-            allowNull: true // maps to your L-Code (e.g., L-103) [cite: 18]
+            allowNull: true
         },
         priority: {
             type: DataTypes.ENUM("low", "medium", "high", "urgent"),
