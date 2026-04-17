@@ -119,6 +119,9 @@ export const outwardItem = asyncHandler(async (req, res) => {
                     }
                 });
                 item.batch = batch || [];
+                batch.map(item => {
+                    console.log(item.toJSON());
+                })
             }
         } else {
             /** batch details */
@@ -331,10 +334,10 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             }
         };
 
-        
-        
-        
-        
+
+
+
+
         const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
         await createGrn_items(salesOrder);
 

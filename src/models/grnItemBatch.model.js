@@ -6,10 +6,6 @@ function GRNItemBatch(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false           // FK → GRNItem
         },
-        product_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
         batch_no: {
             type: DataTypes.STRING,
             allowNull: true            // supplier's batch number if available

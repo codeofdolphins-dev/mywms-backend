@@ -422,15 +422,15 @@ export const grnList = asyncHandler(async (req, res) => {
 export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
 
     /****************** buyer db models ******************/
-    const { GRN, GRNItem, GRNItemBatch, Product, PurchasOrder, BusinessNode } = req.dbModels;
+    const { PurchasOrder, Product } = req.dbModels;
 
     /****************** central db models ******************/
     const { models } = await rootDB();
-    const { BpoIndent } = models;
+    const { BpoIndent, BpoIndentItem, BlanketOrderItem, ProductMapping } = models;
 
 
     try {
-        let { po_no } = req.params;
+        const { po_no } = req.params;
 
         const po = await PurchasOrder.findOne({
             where: { po_no },
@@ -457,14 +457,17 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
                 {
                     model: OutwardItem,
                     as: "outwardItemList",
+                    attributes: ["id", "vendor_product_id", "requested_qty", "unit_price"],
                     include: [
                         {
                             model: OutwardAllocation,
                             as: "outwardItemAllocations",
+                            attributes: ["batch_id"],
                             include: [
                                 {
                                     model: Batch,
-                                    as: "batch"
+                                    as: "batch",
+                                    attributes: ["batch_no", "expiry_date"]
                                 }
                             ]
                         }
@@ -474,11 +477,83 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
         });
 
 
+        const bpoIndentItems = await BpoIndentItem.findAll({
+            where: { indent_id: bpoIndent.id },
+        });
+
+        const bpoItemIds = bpoIndentItems.map(item => item.bpo_item_id);
+        const blanketOrderItems = await BlanketOrderItem.findAll({
+            where: { id: bpoItemIds }
+        });
+
+        const productMappingMap = {};
+        for (const boItem of blanketOrderItems) {
+            productMappingMap[boItem.vendor_product_id] = boItem.buyer_product_id;
+        }
+
+        // Fallback to ProductMapping just in case
+        const vendorProductIds = outward ? outward.outwardItemList.map(item => item.vendor_product_id) : [];
+        if (vendorProductIds.length > 0) {
+            const mappings = await ProductMapping.findAll({
+                where: {
+                    vendor_product_id: vendorProductIds,
+                    buyer_node: bpoIndent.buyer_tenant,
+                    vendor_node: bpoIndent.vendor_tenant
+                }
+            });
+            for (const map of mappings) {
+                // Only override if not already set, or just override
+                if (!productMappingMap[map.vendor_product_id]) {
+                    productMappingMap[map.vendor_product_id] = map.buyer_product_id;
+                }
+            }
+        }
+
+        let finalData = [];
+        if (outward && outward.outwardItemList) {
+            finalData = outward.outwardItemList.map(item => {
+                const itemData = item.toJSON();
+                itemData.buyer_product_id = productMappingMap[itemData.vendor_product_id] || null;
+                return itemData;
+            });
+        }
+
+        // Gather all the buyer product IDs we mapped
+        const buyerProductIds = [...new Set(finalData.map(item => item.buyer_product_id).filter(Boolean))];
+
+        // Fetch product details for these IDs
+        let buyerProducts = [];
+        if (buyerProductIds.length > 0) {
+            // Need to use Op if it wasn't imported locally, but let's just use regular standard query
+            buyerProducts = await Product.findAll({
+                where: { id: buyerProductIds }
+            });
+        }
+        
+        // Make a map of id -> product object
+        const buyerProductMap = {};
+        for(const prod of buyerProducts) {
+            buyerProductMap[prod.id] = prod.toJSON();
+        }
+
+        finalData.forEach(item => {
+            if (item.outwardItemAllocations) {
+                item.outwardItemAllocations = item.outwardItemAllocations
+                    .filter(allocation => allocation.batch)
+                    .map(allocation => allocation.batch);
+            }
+            if (item.buyer_product_id && buyerProductMap[item.buyer_product_id]) {
+                item.buyer_product_details = buyerProductMap[item.buyer_product_id];
+            } else {
+                item.buyer_product_details = null;
+            }
+        });
+
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: outward,
+            data: finalData,
         });
 
     } catch (error) {
