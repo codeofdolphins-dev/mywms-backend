@@ -32,11 +32,6 @@ function NodeStockLedgerItem(sequelize) {
             type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
         },
-
-        balance_qty: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-        },
     });
 }
 export default NodeStockLedgerItem;

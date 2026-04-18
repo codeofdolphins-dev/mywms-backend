@@ -70,128 +70,6 @@ const getInward = asyncHandler(async (req, res) => {
 
 
 
-// POST
-const createInward = asyncHandler(async (req, res) => {
-    const { PurchasOrder, Product, Batch, GRN, GRNItem, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-    try {
-        const { po_no = "", batch = "", received_date = "", items = [] } = req.body;
-        const userDetails = req.user;
-
-        if (!po_no) throw new Error("po_no required!!!");
-        if (items.length == 0) throw new Error("items should not empty!!!");
-
-        if (batch) {
-            const isBatchExists = await Batch.findOne({ where: { batch_no: batch } });
-            if (isBatchExists) throw new Error("Batch no already exists!!!");
-        }
-
-        const po = await PurchasOrder.findOne({
-            where: {
-                po_no: {
-                    [Op.iLike]: po_no?.trim()
-                }
-            }
-        });
-        if (!po) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Purchase Order record not found!!!" });
-        };
-
-        const grn = await GRN.create({
-            purchase_order_id: po.id,
-            from_node_id: po.from_business_node_id,
-            to_node_id: po.to_supplier_id,
-            received_date: received_date ? new Date(received_date) : new Date(),
-            created_by: userDetails.id
-
-        }, { transaction });
-        const grn_no = generateNo("GRN", grn.id)
-        await grn.update({ grn_no }, { transaction });
-
-        // Create Ledger Header once per Inward
-        const nodeStockLedger = await NodeStockLedger.create({
-            transaction_type: "grn_receipt",
-            ledger_context: "mfg_inward",
-            txn_date: received_date ? new Date(received_date) : new Date(),
-            from_location_id: po.to_supplier_id || po.from_business_node_id,
-            from_location_type: "business_node",
-            to_location_id: po.from_business_node_id,
-            to_location_type: "business_node",
-            reference_id: grn.id,
-            reference_type: "grn",
-            created_by: userDetails.id
-        }, { transaction });
-        const ledger_no = generateNo("LEDG", nodeStockLedger.id);
-        await nodeStockLedger.update({ ledger_no }, { transaction });
-
-        for (const item of items) {
-
-            const { po_item_id, product_id, d_qty, e_date, m_date, r_qty, s_qty } = item;
-            const product = await Product.findByPk(Number(product_id));
-            if (!product) throw new Error(`Product id: ${product_id} not found`);
-
-            const purchaseOrderItem = await PurchaseOrderItem.findByPk(Number(po_item_id));
-            if (!purchaseOrderItem) throw new Error(`Item record not found!!!`);
-
-            /** create GRN item record */
-            await GRNItem.create({
-                grn_id: grn.id,
-                purchase_order_item_id: purchaseOrderItem.id,
-                product_id: product.id,
-                ordered_qty: Number(purchaseOrderItem.qty),
-                shortage_qty: Number(s_qty || 0),
-                damage_qty: Number(d_qty || 0),
-                received_qty: Number(r_qty || 0),
-                ...(m_date && { mfg_date: new Date(m_date) }),
-                ...(e_date && { expiry_date: new Date(e_date) }),
-            }, { transaction });
-
-            /** create batch record */
-            const newBatch = await Batch.create({
-                product_id: product.id,
-                location_id: po.from_business_node_id,
-                location_type: "business_node",
-                ...(batch && { batch_no: batch }),
-                available_qty: Number(r_qty || 0),
-                reserved_qty: 0,
-                unit_price: purchaseOrderItem.unit_price || 0,
-                batch_status: "active",
-                received_date: received_date ? new Date(received_date) : new Date(),
-                reference_id: grn.id,
-                reference_type: "grn",
-                ...(m_date && { mfg_date: new Date(m_date) }),
-                ...(e_date && { expiry_date: new Date(e_date) }),
-            }, { transaction });
-
-            if (!batch) {
-                const batchNo = generateBatch(newBatch.id);
-                await newBatch.update({ batch_no: batchNo }, { transaction });
-            }
-
-            /** create nodeStockLedgerItem record */
-            await NodeStockLedgerItem.create({
-                ledger_id: nodeStockLedger.id,
-                product_id: product.id,
-                batch_id: newBatch.id,
-                qty: Number(r_qty || 0),
-                unit_type: product.unit_type || "pcs",
-                unit_price: purchaseOrderItem.unit_price,
-                total_value: Number(r_qty || 0) * Number(purchaseOrderItem.unit_price || 0)
-            }, { transaction });
-        };
-
-        await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Record Created Successfull" });
-
-    } catch (error) {
-        await transaction.rollback();
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-
 
 // DELETE
 const deleteInward = asyncHandler(async (req, res) => {
@@ -358,8 +236,14 @@ const updateInwardItems = asyncHandler(async (req, res) => {
 
 
 
+
+
+
+
+
+
 export const grnList = asyncHandler(async (req, res) => {
-    const { GRN, GRNItem, GRNItemBatch, Product, PurchasOrder, BusinessNode } = req.dbModels;
+    const { GRN, User, GRNItem } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, id = "", grn_no = "", status = "", sortBy = "" } = req.query;
@@ -379,18 +263,19 @@ export const grnList = asyncHandler(async (req, res) => {
                     ],
                 }),
             },
-            // include: [
-            //     {
-            //         model: PurchasOrder,
-            //         as: "grnPurchaseOrder",
-            //         required: false,
-            //     },
-            //     {
-            //         model: BusinessNode,
-            //         as: "receiverNode",
-            //         required: false,
-            //     },
-            // ],
+            include: [
+                {
+                    model: GRNItem,
+                    as: "grnLineItems",
+                    required: false,
+                },
+                {
+                    model: User,
+                    as: "creator",
+                    required: false,
+                    attributes: ["name", "email", "profile_image"]
+                },
+            ],
             limit,
             offset,
             order: [["createdAt", "DESC"]],
@@ -529,10 +414,10 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
                 where: { id: buyerProductIds }
             });
         }
-        
+
         // Make a map of id -> product object
         const buyerProductMap = {};
-        for(const prod of buyerProducts) {
+        for (const prod of buyerProducts) {
             buyerProductMap[prod.id] = prod.toJSON();
         }
 
@@ -557,6 +442,303 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const getTenantOutwardData = asyncHandler(async (req, res) => {
+
+    /****************** buyer db models ******************/
+    const { PurchasOrder, Product } = req.dbModels;
+
+    /****************** central db models ******************/
+    const { models } = await rootDB();
+    const { BpoIndent, BpoIndentItem, BlanketOrderItem, ProductMapping } = models;
+
+
+    try {
+        const { po_no } = req.params;
+
+        const po = await PurchasOrder.findOne({
+            where: { po_no },
+        });
+
+        /** Get indent record from CENTRAL */
+        const bpoIndent = await BpoIndent.findOne({
+            where: { buyer_po_id: po.id },
+        });
+
+
+        /****************** supplier db models ******************/
+        const { models: supplierModels } = await getTenantConnection(bpoIndent.vendor_tenant);
+        const { Outward, OutwardItem, OutwardAllocation, Batch } = supplierModels;
+
+        const outward = await Outward.findOne({
+            where: {
+                sales_order_id: bpoIndent.supplier_so_id,
+                status: "dispatched",
+            },
+            order: [["createdAt", "DESC"]],
+            limit: 1,
+            include: [
+                {
+                    model: OutwardItem,
+                    as: "outwardItemList",
+                    attributes: ["id", "vendor_product_id", "requested_qty", "unit_price"],
+                    include: [
+                        {
+                            model: OutwardAllocation,
+                            as: "outwardItemAllocations",
+                            attributes: ["batch_id"],
+                            include: [
+                                {
+                                    model: Batch,
+                                    as: "batch",
+                                    attributes: ["batch_no", "expiry_date"]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+
+
+        const bpoIndentItems = await BpoIndentItem.findAll({
+            where: { indent_id: bpoIndent.id },
+        });
+
+        const bpoItemIds = bpoIndentItems.map(item => item.bpo_item_id);
+        const blanketOrderItems = await BlanketOrderItem.findAll({
+            where: { id: bpoItemIds }
+        });
+
+        const productMappingMap = {};
+        for (const boItem of blanketOrderItems) {
+            productMappingMap[boItem.vendor_product_id] = boItem.buyer_product_id;
+        }
+
+        // Fallback to ProductMapping just in case
+        const vendorProductIds = outward ? outward.outwardItemList.map(item => item.vendor_product_id) : [];
+        if (vendorProductIds.length > 0) {
+            const mappings = await ProductMapping.findAll({
+                where: {
+                    vendor_product_id: vendorProductIds,
+                    buyer_node: bpoIndent.buyer_tenant,
+                    vendor_node: bpoIndent.vendor_tenant
+                }
+            });
+            for (const map of mappings) {
+                // Only override if not already set, or just override
+                if (!productMappingMap[map.vendor_product_id]) {
+                    productMappingMap[map.vendor_product_id] = map.buyer_product_id;
+                }
+            }
+        }
+
+        let finalData = [];
+        if (outward && outward.outwardItemList) {
+            finalData = outward.outwardItemList.map(item => {
+                const itemData = item.toJSON();
+                itemData.buyer_product_id = productMappingMap[itemData.vendor_product_id] || null;
+                return itemData;
+            });
+        }
+
+        // Gather all the buyer product IDs we mapped
+        const buyerProductIds = [...new Set(finalData.map(item => item.buyer_product_id).filter(Boolean))];
+
+        // Fetch product details for these IDs
+        let buyerProducts = [];
+        if (buyerProductIds.length > 0) {
+            // Need to use Op if it wasn't imported locally, but let's just use regular standard query
+            buyerProducts = await Product.findAll({
+                where: { id: buyerProductIds }
+            });
+        }
+
+        // Make a map of id -> product object
+        const buyerProductMap = {};
+        for (const prod of buyerProducts) {
+            buyerProductMap[prod.id] = prod.toJSON();
+        }
+
+        finalData.forEach(item => {
+            if (item.outwardItemAllocations) {
+                item.outwardItemAllocations = item.outwardItemAllocations
+                    .filter(allocation => allocation.batch)
+                    .map(allocation => allocation.batch);
+            }
+            if (item.buyer_product_id && buyerProductMap[item.buyer_product_id]) {
+                item.buyer_product_details = buyerProductMap[item.buyer_product_id];
+            } else {
+                item.buyer_product_details = null;
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: finalData,
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+// POST
+export const createInward = asyncHandler(async (req, res) => {
+    const { PurchasOrder, Product, Batch, GRN, GRNItem, GRNItemBatch, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+    try {
+        const { po_no = "", grn_no = "", items = [] } = req.body;
+        const userDetails = req.user;
+
+        if (!grn_no) throw new Error("grn_no required!!!");
+        if (items.length === 0) throw new Error("items should not be empty!!!");
+
+        // Find GRN record
+        const grn = await GRN.findOne({ where: { grn_no } });
+        if (!grn) throw new Error("GRN record not found!!");
+
+        // Optionally find PO (po_no is not mandatory)
+        let po = null;
+        if (po_no) {
+            po = await PurchasOrder.findOne({ where: { po_no } });
+        }
+
+        // Create Ledger Header once per Inward
+        const nodeStockLedger = await NodeStockLedger.create({
+            transaction_type: "external_transfer",
+            txn_date: new Date(),
+
+            from_location_id: po ? po.from_business_node_id : grn.sender_id,
+            from_location_type: po ? "mfg_unit" : "business_node",
+
+            to_location_id: po ? po.from_business_node_id : grn.receiver_id,
+            to_location_type: "business_node",
+
+            reference_id: grn.id,
+            reference_type: "grn",
+            created_by: userDetails.id
+        }, { transaction });
+        const ledger_no = generateNo("LEDG", nodeStockLedger.id);
+        await nodeStockLedger.update({ ledger_no }, { transaction });
+
+        for (const item of items) {
+            const { po_item_id, buyer_product_id, vendor_product_id, allocations = [] } = item;
+
+            // Find product by buyer_product_id
+            const product = await Product.findByPk(Number(buyer_product_id));
+            if (!product) throw new Error(`Product id: ${buyer_product_id} not found`);
+
+            // Optionally find PO item (po_item_id is not mandatory)
+            let purchaseOrderItem = null;
+            if (po_item_id) {
+                purchaseOrderItem = await PurchaseOrderItem.findByPk(Number(po_item_id));
+            }
+
+            // Calculate totals from allocations
+            const totalReceivedQty = allocations.reduce((sum, a) => sum + Number(a.r_qty || 0), 0);
+            const totalDamageQty = allocations.reduce((sum, a) => sum + Number(a.d_qty || 0), 0);
+            const totalShortageQty = allocations.reduce((sum, a) => sum + Number(a.s_qty || 0), 0);
+
+            /** create GRN item record */
+            const grnItem = await GRNItem.create({
+                grn_id: grn.id,
+                ...(purchaseOrderItem && { purchase_order_item_id: purchaseOrderItem.id }),
+                product_id: product.id,
+                ordered_qty: purchaseOrderItem ? Number(purchaseOrderItem.qty) : totalReceivedQty,
+                shortage_qty: totalShortageQty,
+                damage_qty: totalDamageQty,
+                received_qty: totalReceivedQty,
+            }, { transaction });
+
+            /** process each allocation (batch-level) */
+            for (const allocation of allocations) {
+                const { batch_no, d_qty, s_qty, r_qty, e_date } = allocation;
+
+                /** create GRNItemBatch record */
+                await GRNItemBatch.create({
+                    grn_item_id: grnItem.id,
+                    batch_no: batch_no || null,
+                    received_qty: Number(r_qty || 0),
+                    damage_qty: Number(d_qty || 0),
+                    expiry_date: new Date(e_date),
+                }, { transaction });
+
+                /** find existing or create new Batch record */
+                let newBatch;
+                if (batch_no) {
+                    newBatch = await Batch.findOne({
+                        where: {
+                            batch_no,
+                            product_id: product.id,
+                            location_id: po ? po.from_business_node_id : grn.receiver_id,
+                            ...(po?.target_store_id && { store_id: po.target_store_id }),
+                        },
+                        transaction
+                    });
+                }
+
+                if (newBatch) {
+                    // Batch already exists — increment available_qty
+                    await newBatch.update({
+                        available_qty: Number(newBatch.available_qty) + Number(r_qty || 0),
+                    }, { transaction });
+                } else {
+                    // Create a new Batch
+                    newBatch = await Batch.create({
+                        product_id: product.id,
+                        location_id: po ? po.from_business_node_id : grn.receiver_id,
+                        ...(po?.target_store_id && { store_id: po.target_store_id }),
+                        location_type: po?.target_store_id ? "mfg_unit" : "business_node",
+                        ...(batch_no && { batch_no }),
+                        available_qty: Number(r_qty || 0),
+                        reserved_qty: 0,
+                        unit_price: purchaseOrderItem ? (purchaseOrderItem.unit_price || 0) : 0,
+                        batch_status: "active",
+                        received_date: grn.received_date || new Date(),
+                        reference_id: grn.id,
+                        reference_type: "grn",
+                        expiry_date: new Date(e_date),
+                    }, { transaction });
+
+                    // Auto-generate batch_no if not provided
+                    if (!batch_no) {
+                        const generatedBatchNo = generateBatch(newBatch.id);
+                        await newBatch.update({ batch_no: generatedBatchNo }, { transaction });
+                    }
+                }
+
+                /** create NodeStockLedgerItem record */
+                const unitPrice = purchaseOrderItem ? Number(purchaseOrderItem.unit_price || 0) : 0;
+                await NodeStockLedgerItem.create({
+                    ledger_id: nodeStockLedger.id,
+                    product_id: product.id,
+                    batch_id: newBatch.id,
+                    qty: Number(r_qty || 0),
+                    unit_type: product.unit_type || "pcs",
+                    unit_price: unitPrice,
+                    total_value: Number(r_qty || 0) * unitPrice
+                }, { transaction });
+            }
+        }
+
+        grn.status = "accepted";
+        grn.received_date = new Date();
+        grn.created_by = userDetails.id;
+        await grn.save({ transaction });
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully" });
+
+    } catch (error) {
+        await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

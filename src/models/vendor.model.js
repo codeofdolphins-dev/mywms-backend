@@ -36,6 +36,14 @@ function Vendor(sequelize) {
             allowNull: true,
             defaultValue: {}
         },
+        gst_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        license_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             allowNull: true,

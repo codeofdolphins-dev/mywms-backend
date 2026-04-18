@@ -764,6 +764,20 @@ const defineTenantAssociations = (models) => {
 
     /************* grn ********************/
     // grnItem <-> grn
+    GRN.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "creator",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(GRN, {
+        foreignKey: "created_by",
+        as: "grnsCreator",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
+    // grnItem <-> grn
     GRNItem.belongsTo(GRN, {
         foreignKey: "grn_id",
         as: "grn",
@@ -867,18 +881,19 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    GRNItemBatch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "grnItemBatchProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(GRNItemBatch, {
-        foreignKey: "product_id",
-        as: "grnItemBatchesForProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
+    // GRNItemBatch.belongsTo(Product, {
+    //     foreignKey: "product_id",
+    //     as: "grnItemBatchProduct",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+    // Product.hasMany(GRNItemBatch, {
+    //     foreignKey: "product_id",
+    //     as: "grnItemBatchesForProduct",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+
 
 
     /************* batch ********************/
