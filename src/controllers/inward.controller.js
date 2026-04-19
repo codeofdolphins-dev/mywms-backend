@@ -307,138 +307,41 @@ export const grnList = asyncHandler(async (req, res) => {
 export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
 
     /****************** buyer db models ******************/
-    const { PurchasOrder, Product } = req.dbModels;
-
-    /****************** central db models ******************/
-    const { models } = await rootDB();
-    const { BpoIndent, BpoIndentItem, BlanketOrderItem, ProductMapping } = models;
-
+    const { Product, GRN, GRNItem, GRNItemBatch } = req.dbModels;
 
     try {
-        const { po_no } = req.params;
+        const { grn_no } = req.params;
 
-        const po = await PurchasOrder.findOne({
-            where: { po_no },
-        });
-
-        /** Get indent record from CENTRAL */
-        const bpoIndent = await BpoIndent.findOne({
-            where: { buyer_po_id: po.id },
-        });
-
-
-        /****************** supplier db models ******************/
-        const { models: supplierModels } = await getTenantConnection(bpoIndent.vendor_tenant);
-        const { Outward, OutwardItem, OutwardAllocation, Batch } = supplierModels;
-
-        const outward = await Outward.findOne({
-            where: {
-                sales_order_id: bpoIndent.supplier_so_id,
-                status: "dispatched",
-            },
-            order: [["createdAt", "DESC"]],
-            limit: 1,
+        const grn = await GRN.findOne({
+            where: { grn_no },
             include: [
                 {
-                    model: OutwardItem,
-                    as: "outwardItemList",
-                    attributes: ["id", "vendor_product_id", "requested_qty", "unit_price"],
+                    model: GRNItem,
+                    as: "grnLineItems",
+                    required: false,
                     include: [
                         {
-                            model: OutwardAllocation,
-                            as: "outwardItemAllocations",
-                            attributes: ["batch_id"],
-                            include: [
-                                {
-                                    model: Batch,
-                                    as: "batch",
-                                    attributes: ["batch_no", "expiry_date"]
-                                }
-                            ]
-                        }
+                            model: Product,
+                            as: "grnProduct",
+                            required: false,
+                            // attributes: ["id", "name", "sku", "product_type", "unit_type"],
+                        },
+                        {
+                            model: GRNItemBatch,
+                            as: "grnItemBatches",
+                            required: false,
+                        },
                     ]
                 }
-            ]
+            ],
         });
-
-
-        const bpoIndentItems = await BpoIndentItem.findAll({
-            where: { indent_id: bpoIndent.id },
-        });
-
-        const bpoItemIds = bpoIndentItems.map(item => item.bpo_item_id);
-        const blanketOrderItems = await BlanketOrderItem.findAll({
-            where: { id: bpoItemIds }
-        });
-
-        const productMappingMap = {};
-        for (const boItem of blanketOrderItems) {
-            productMappingMap[boItem.vendor_product_id] = boItem.buyer_product_id;
-        }
-
-        // Fallback to ProductMapping just in case
-        const vendorProductIds = outward ? outward.outwardItemList.map(item => item.vendor_product_id) : [];
-        if (vendorProductIds.length > 0) {
-            const mappings = await ProductMapping.findAll({
-                where: {
-                    vendor_product_id: vendorProductIds,
-                    buyer_node: bpoIndent.buyer_tenant,
-                    vendor_node: bpoIndent.vendor_tenant
-                }
-            });
-            for (const map of mappings) {
-                // Only override if not already set, or just override
-                if (!productMappingMap[map.vendor_product_id]) {
-                    productMappingMap[map.vendor_product_id] = map.buyer_product_id;
-                }
-            }
-        }
-
-        let finalData = [];
-        if (outward && outward.outwardItemList) {
-            finalData = outward.outwardItemList.map(item => {
-                const itemData = item.toJSON();
-                itemData.buyer_product_id = productMappingMap[itemData.vendor_product_id] || null;
-                return itemData;
-            });
-        }
-
-        // Gather all the buyer product IDs we mapped
-        const buyerProductIds = [...new Set(finalData.map(item => item.buyer_product_id).filter(Boolean))];
-
-        // Fetch product details for these IDs
-        let buyerProducts = [];
-        if (buyerProductIds.length > 0) {
-            // Need to use Op if it wasn't imported locally, but let's just use regular standard query
-            buyerProducts = await Product.findAll({
-                where: { id: buyerProductIds }
-            });
-        }
-
-        // Make a map of id -> product object
-        const buyerProductMap = {};
-        for (const prod of buyerProducts) {
-            buyerProductMap[prod.id] = prod.toJSON();
-        }
-
-        finalData.forEach(item => {
-            if (item.outwardItemAllocations) {
-                item.outwardItemAllocations = item.outwardItemAllocations
-                    .filter(allocation => allocation.batch)
-                    .map(allocation => allocation.batch);
-            }
-            if (item.buyer_product_id && buyerProductMap[item.buyer_product_id]) {
-                item.buyer_product_details = buyerProductMap[item.buyer_product_id];
-            } else {
-                item.buyer_product_details = null;
-            }
-        });
+        if (!grn) return res.status(404).json({ success: false, code: 404, message: "GRN record not found!!!" });
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: finalData,
+            data: grn,
         });
 
     } catch (error) {
