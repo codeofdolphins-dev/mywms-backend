@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 
-function BillOfMaterial(sequelize) {
-    return sequelize.define("BillOfMaterial", {
-        finished_product_id: {
+function BOMItem(sequelize) {
+    return sequelize.define("BOMItem", {
+        bom_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -10,7 +10,7 @@ function BillOfMaterial(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        quantity_required: {
+        required_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true
         },
@@ -20,4 +20,4 @@ function BillOfMaterial(sequelize) {
         },
     })
 }
-export default BillOfMaterial;
+export default BOMItem;

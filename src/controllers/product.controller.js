@@ -95,6 +95,7 @@ export const allProductList = asyncHandler(async (req, res) => {
     }
 });
 
+
 // POST
 export const createFinishedProduct = asyncHandler(async (req, res) => {
     // console.log(req.body); return
@@ -112,15 +113,16 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             description = "", reorder_level = ""
         } = req.body;
 
-        if ([name, hsn_id, barcode, package_type_id, unit_type_id, brand_id, categories].some(item => item === "")) {
+        if ([name, hsn_id, barcode, package_type_id, unit_type_id].some(item => item === "")) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
 
         // convert string
-        categories = JSON.parse(categories);
+        if (categories) categories = JSON.parse(categories);
 
+        /** check product is exists */
         const isExists = await Product.findOne({ where: { barcode } })
         if (isExists) {
             await deleteImage(photo, dbName);
@@ -128,6 +130,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Product with barcode: ${barcode} already exists!!!` });
         }
 
+        /** check sku is exists */
         const isSKUExists = await Product.findOne({ where: { sku } })
         if (isSKUExists) {
             await deleteImage(photo, dbName);
@@ -135,6 +138,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Product with sku: ${sku} already exists!!!` });
         }
 
+        /** check hsn is exists */
         const hsn = await HSN.findByPk(Number(hsn_id));
         if (!hsn) {
             await deleteImage(photo, dbName);
@@ -142,24 +146,31 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
         }
 
-        const existingBrand = await Brand.findOne({ where: { id: Number(brand_id) } });
-        if (!existingBrand) {
-            await deleteImage(photo, dbName);
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+        /** check brand is exists */
+        if (brand_id) {
+            const existingBrand = await Brand.findOne({ where: { id: Number(brand_id) } });
+            if (!existingBrand) {
+                await deleteImage(photo, dbName);
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
+            }
         }
 
-        const existingCategories = await Category.findAll({
-            where: {
-                id: {
-                    [Op.in]: categories
+        /** check categories is exists */
+        let existingCategories = null;
+        if (categories) {
+            existingCategories = await Category.findAll({
+                where: {
+                    id: {
+                        [Op.in]: categories
+                    }
                 }
+            });
+            if (existingCategories.length !== categories.length) {
+                await deleteImage(photo, dbName);
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Some Categorys were not found!!!" });
             }
-        });
-        if (existingCategories.length !== categories.length) {
-            await deleteImage(photo, dbName);
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "Some Categorys were not found!!!" });
         }
 
         const packageType = await PackageType.findByPk(Number(package_type_id));
@@ -181,7 +192,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             hsn_code: hsn.hsn_code,
             sku,
             barcode,
-            brand_id: Number(brand_id),
+            ...(brand_id && { brand_id: Number(brand_id) }),
             // gst_rate: Number(gst_rate),
             // is_taxable: is_taxable,
             package_type: packageType.name,
@@ -195,7 +206,11 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
         if (!product) throw new Error("Insertion failed!!!");
         // console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(product)));
-        await product.addProductCategories(existingCategories, { transaction });
+
+        /** add product categories only if categories is not empty */
+        if (existingCategories && existingCategories.length > 0) {
+            await product.addProductCategories(existingCategories, { transaction });
+        }
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Finished Product added successfully." });

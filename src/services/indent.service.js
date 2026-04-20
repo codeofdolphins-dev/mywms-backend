@@ -38,6 +38,9 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
         const formatedDetails = vendorDetails?.toJSON();
         const node = formatedDetails.userBusinessNode[0];
 
+        console.log("formatedDetails", formatedDetails)
+        console.log("node", node)
+
         const [vendor, created] = await Vendor.findOrCreate({
             where: {
                 contact_email: formatedDetails.email,

@@ -6,7 +6,10 @@ import { rootDB } from "../../db/tenantMenager.service.js"
 // GET
 export const allRfqList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem } = models;
+    const { RFQ, RFQItem, ProductMapping } = models;
+
+    const vendor_tenant = req.headers["x-tenant-id"];
+    // console.log(dbName)
 
     try {
         let { page = 1, limit = 10, id = "", rfq_no = "", title = "" } = req.query;
@@ -32,6 +35,29 @@ export const allRfqList = asyncHandler(async (req, res) => {
         });
         if (!rfq) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
+        /** attaching vendor product id */
+        const formattedRows = await Promise.all(rfq.rows.map(async (item) => {
+            const formatJSON = item.toJSON();
+
+            const buyer_tenant = formatJSON.buyer_tenant;
+
+            for (const product of formatJSON.items) {
+                const productMapping = await ProductMapping.findOne({
+                    where: {
+                        buyer_node: buyer_tenant,
+                        vendor_node: vendor_tenant,
+                        buyer_product_id: product.product_id,
+                    },
+                });
+
+                product.vendor_product_id = productMapping?.vendor_product_id;
+            }
+
+            return formatJSON;
+        }));
+
+
+        /** pagination calculation */
         const totalItems = rfq.count;
         const totalPages = Math.ceil(totalItems / limit);
 
@@ -39,7 +65,7 @@ export const allRfqList = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: rfq.rows,
+            data: formattedRows,
             meta: {
                 totalItems,
                 totalPages,
