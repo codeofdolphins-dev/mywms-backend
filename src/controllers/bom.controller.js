@@ -2,122 +2,112 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 // GET
-const allBOMList = asyncHandler(async (req, res) => {
-  const { BillOfMaterial, Product } = req.dbModels;
+export const allBOMList = asyncHandler(async (req, res) => {
+    const { BOM, BOMItem, Product } = req.dbModels;
 
-  try {
-    let { page = 1, limit = 10, id = "" } = req.query;
-    page = parseInt(page, 10);
-    limit = parseInt(limit, 10);
-    const offset = (page - 1) * limit;
+    try {
+        let { page = 1, limit = 10, id = "", barcode = "", noLimit = false } = req.query;
 
-    // Fetch all BOM records
-    const records = await BillOfMaterial.findAll({
-      where: id ? { finished_product_id: parseInt(id, 10) } : undefined,
-      include: [
-        { model: Product, as: "finishedProduct" },
-        { model: Product, as: "rawMaterial" },
-      ],
-      order: [["createdAt", "ASC"]],
-    });
+        page = Number(page);
+        limit = Number(limit);
+        const offset = (page - 1) * limit;
 
-    // Group by finished_product_id
-    const grouped = {};
+        // Fetch all BOM records
+        const records = await BOM.findAndCountAll({
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(barcode && { finished_product_barcode: barcode }),
+            },
+            include: [
+                {
+                    model: BOMItem,
+                    as: "bomItems",
+                    include: [
+                        {
+                            model: Product,
+                            as: "rawProduct"
+                        },
+                    ]
+                },
+                {
+                    model: Product,
+                    as: "finishedProduct"
+                }
+            ],
+            order: [["createdAt", "ASC"]],
+            ...(noLimit ? {} : { limit, offset }),
+        });
 
-    for (const record of records) {
-      const fp = record.finishedProduct;
-      const rp = record.rawMaterial;     
+        const totalItems = records.count;
+        const totalPages = Math.ceil(totalItems / limit);
 
-      if (!grouped[record.finished_product_id]) {
-        grouped[record.finished_product_id] = {
-          finished_product_id: record.finished_product_id,
-          finished_product_name: fp?.name || null,
-          finished_product_sku: fp?.sku || null,
-          finished_product_barcode: fp?.barcode || null,
-          rawMaterials: [],
-        };
-      }
 
-      grouped[record.finished_product_id].rawMaterials.push({
-        raw_product_id: record.raw_product_id,
-        raw_product_name: rp?.name || null,
-        raw_product_sku: rp?.sku || null,
-        raw_product_barcode: rp?.barcode || null,
-        quantity_required: record.quantity_required,
-        uom: record.uom,
-      });
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: records.rows,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, code: 500, message: error.message });
     }
-
-    // Convert to array and paginate
-    const groupedArray = Object.values(grouped);
-    const totalItems = groupedArray.length;
-    const totalPages = Math.ceil(totalItems / limit);
-    const paginated = groupedArray.slice(offset, offset + limit);
-
-    return res.status(200).json({
-      success: true,
-      code: 200,
-      message: "Fetched Successfully.",
-      data: paginated.rows,
-      meta: {
-        totalItems,
-        totalPages,
-        currentPage: page,
-        limit,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, code: 500, message: error.message });
-  }
 });
 
 
-
-
 // POST
-const createBOM = asyncHandler(async (req, res) => {
-    const { BillOfMaterial, Product } = req.dbModels;
+export const createBOM = asyncHandler(async (req, res) => {
+    const { BOM, BOMItem, Product } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { finished_product_barcode = "", items = [] } = req.body;
-        if (!finished_product_barcode) {
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Finished Product barcode required!!!" });
-        }
-        if (items.length < 1) {
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "items should not be empty!!!" });
-        }
+        const { finished_product_barcode = "", output_qty = "", desc = "", items = [] } = req.body;
 
-        const product = await Product.findOne({ where: { barcode: parseInt(finished_product_barcode, 10) } });
-        if (!product) {
+        if (!finished_product_barcode || !output_qty) throw new Error("Required fields are missing!!!");
+        if (items.length == 0) throw new Error("items should not be empty!!!");
+
+
+        const product = await Product.findOne({ where: { barcode: finished_product_barcode } });
+        if (!product) throw new Error(`Product with barcode: ${finished_product_barcode} is not found!!!`);
+
+        const bom = await BOM.create({
+            finished_product_id: product.id,
+            finished_product_barcode: finished_product_barcode,
+            output_qty: parseFloat(output_qty),
+            output_uom: product.unit_type,
+            desc
+        }, { transaction });
+
+        if (!bom) {
             await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${finished_product_barcode} is not found!!!` });
+            return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
         }
 
         for (const item of items) {
-            const rawProduct = await Product.findOne({ where: { barcode: parseInt(item.raw_product_barcode, 10) } });
-            if (!rawProduct) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.raw_product_barcode} not found!!!` });
-            }
+            const { raw_product_id = "", required_qty = "" } = item;
+            if (!raw_product_id || !required_qty) throw new Error("Required fields are missing in items!!!");
 
-            const isCreate = await BillOfMaterial.create({
-                finished_product_id: product.id,
+            const rawProduct = await Product.findByPk(Number(raw_product_id));
+            if (!rawProduct) throw new Error(`Raw product not found!!!`);
+
+            const bomItem = await BOMItem.create({
+                bom_id: bom.id,
                 raw_product_id: rawProduct.id,
-                quantity_required: parseFloat(item.qty),
-                uom: item.uom
+                required_qty: parseFloat(required_qty),
+                uom: rawProduct.unit_type,
             }, { transaction });
-            if (!isCreate) {
+
+            if (!bomItem) {
                 await transaction.rollback();
                 return res.status(500).json({ success: false, code: 500, message: "Insertion failed!!!" });
             }
         }
-
-        product.product_type = "finished";
-        product.save({ transaction });
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record created successfully." });
@@ -128,6 +118,8 @@ const createBOM = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
 
 // PUT
 const addItem = asyncHandler(async (req, res) => {
@@ -252,7 +244,3 @@ const removeItem = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
-
-export { allBOMList, createBOM, addItem, deleteBOM, removeItem, updateBOM };
