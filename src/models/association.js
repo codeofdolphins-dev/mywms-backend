@@ -420,7 +420,9 @@ const defineTenantAssociations = (models) => {
         Outward,
         OutwardItem,
         OutwardAllocation,
-        GRNItemBatch
+        GRNItemBatch,
+        BOM,
+        BOMItem
 
 
     } = models;
@@ -1088,7 +1090,6 @@ const defineTenantAssociations = (models) => {
     });
 
 
-
     // ********************************************Many-To-One*********************************
 
     // user <-> requisition
@@ -1209,6 +1210,90 @@ const defineTenantAssociations = (models) => {
         onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
+
+
+
+    /************* bom ********************/
+    // bom ↔ bomItem
+    BOM.hasMany(BOMItem, {
+        foreignKey: "bom_id",
+        as: "bomItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(BOM, {
+        foreignKey: "bom_id",
+        as: "bom",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ bom
+    Product.hasMany(BOM, {
+        foreignKey: "finished_product_id",
+        as: "finishedProductBOM",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOM.belongsTo(Product, {
+        foreignKey: "finished_product_id",
+        as: "finishedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // unitType ↔ bom
+    UnitType.hasMany(BOM, {
+        foreignKey: "output_uom",
+        as: "outputUOMBOM",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOM.belongsTo(UnitType, {
+        foreignKey: "output_uom",
+        as: "outputUOM",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* bomItem ********************/
+    // product ↔ bomItem
+    Product.hasMany(BOMItem, {
+        foreignKey: "raw_product_id",
+        as: "rawProductBOMItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(Product, {
+        foreignKey: "raw_product_id",
+        as: "rawProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // unitType ↔ bomItem
+    UnitType.hasMany(BOMItem, {
+        foreignKey: "uom",
+        as: "uomBOMItem",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(UnitType, {
+        foreignKey: "uom",
+        as: "measureUnit",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+
+
+
 
 
     // brand <-> requisitionItem
