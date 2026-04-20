@@ -307,7 +307,7 @@ export const grnList = asyncHandler(async (req, res) => {
 export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
 
     /****************** buyer db models ******************/
-    const { Product, GRN, GRNItem, GRNItemBatch } = req.dbModels;
+    const { Product, GRN, GRNItem, GRNItemBatch, Vendor, BusinessNode, NodeDetails, User } = req.dbModels;
 
     try {
         const { grn_no } = req.params;
@@ -332,16 +332,41 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
                             required: false,
                         },
                     ]
-                }
+                },
+                {
+                    model: User,
+                    as: "creator",
+                    required: false,
+                },
             ],
         });
         if (!grn) return res.status(404).json({ success: false, code: 404, message: "GRN record not found!!!" });
+
+        const formateJSON = grn.toJSON();
+
+        const type = formateJSON.grn_type;
+
+        if (type === "purchase") {
+            formateJSON.vendor = await Vendor.findOne({
+                where: { id: formateJSON.sender_id },
+            });
+        } else {
+            formateJSON.vendor = await BusinessNode.findOne({
+                where: { id: formateJSON.sender_id },
+                include: [
+                    {
+                        model: NodeDetails,
+                        as: "nodeDetails"
+                    }
+                ]
+            });
+        }
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: grn,
+            data: formateJSON,
         });
 
     } catch (error) {
@@ -533,11 +558,11 @@ export const createInward = asyncHandler(async (req, res) => {
         await nodeStockLedger.update({ ledger_no }, { transaction });
 
         for (const item of items) {
-            const { po_item_id, buyer_product_id, vendor_product_id, allocations = [] } = item;
+            const { grn_item_id, po_item_id, product_id, allocations = [] } = item;
 
-            // Find product by buyer_product_id
-            const product = await Product.findByPk(Number(buyer_product_id));
-            if (!product) throw new Error(`Product id: ${buyer_product_id} not found`);
+            // Find product by product_id
+            const product = await Product.findByPk(Number(product_id));
+            if (!product) throw new Error(`Product id: ${product_id} not found`);
 
             // Optionally find PO item (po_item_id is not mandatory)
             let purchaseOrderItem = null;
@@ -550,29 +575,34 @@ export const createInward = asyncHandler(async (req, res) => {
             const totalDamageQty = allocations.reduce((sum, a) => sum + Number(a.d_qty || 0), 0);
             const totalShortageQty = allocations.reduce((sum, a) => sum + Number(a.s_qty || 0), 0);
 
-            /** create GRN item record */
-            const grnItem = await GRNItem.create({
-                grn_id: grn.id,
-                ...(purchaseOrderItem && { purchase_order_item_id: purchaseOrderItem.id }),
-                product_id: product.id,
-                ordered_qty: purchaseOrderItem ? Number(purchaseOrderItem.qty) : totalReceivedQty,
-                shortage_qty: totalShortageQty,
-                damage_qty: totalDamageQty,
-                received_qty: totalReceivedQty,
-            }, { transaction });
+            /** Process GRN item record */
+            let grnItem = null;
+            if (grn_item_id) {
+                grnItem = await GRNItem.findByPk(Number(grn_item_id), { transaction });
+                if (grnItem) {
+                    await grnItem.update({
+                        shortage_qty: totalShortageQty,
+                        damage_qty: totalDamageQty,
+                        received_qty: totalReceivedQty,
+                    }, { transaction });
+                }
+            }
+
+            if (!grnItem) {
+                grnItem = await GRNItem.create({
+                    grn_id: grn.id,
+                    ...(purchaseOrderItem && { purchase_order_item_id: purchaseOrderItem.id }),
+                    product_id: product.id,
+                    ordered_qty: purchaseOrderItem ? Number(purchaseOrderItem.qty) : totalReceivedQty,
+                    shortage_qty: totalShortageQty,
+                    damage_qty: totalDamageQty,
+                    received_qty: totalReceivedQty,
+                }, { transaction });
+            }
 
             /** process each allocation (batch-level) */
             for (const allocation of allocations) {
-                const { batch_no, d_qty, s_qty, r_qty, e_date } = allocation;
-
-                /** create GRNItemBatch record */
-                await GRNItemBatch.create({
-                    grn_item_id: grnItem.id,
-                    batch_no: batch_no || null,
-                    received_qty: Number(r_qty || 0),
-                    damage_qty: Number(d_qty || 0),
-                    expiry_date: new Date(e_date),
-                }, { transaction });
+                const { grn_item_batch_id, batch_no, d_qty, s_qty, r_qty, e_date } = allocation;
 
                 /** find existing or create new Batch record */
                 let newBatch;
@@ -581,8 +611,8 @@ export const createInward = asyncHandler(async (req, res) => {
                         where: {
                             batch_no,
                             product_id: product.id,
-                            location_id: po ? po.from_business_node_id : grn.receiver_id,
-                            ...(po?.target_store_id && { store_id: po.target_store_id }),
+                            location_id: grn.receiver_id,
+                            ...(grn?.mfg_unit_id && { store_id: grn.mfg_unit_id }),
                         },
                         transaction
                     });
@@ -597,15 +627,15 @@ export const createInward = asyncHandler(async (req, res) => {
                     // Create a new Batch
                     newBatch = await Batch.create({
                         product_id: product.id,
-                        location_id: po ? po.from_business_node_id : grn.receiver_id,
-                        ...(po?.target_store_id && { store_id: po.target_store_id }),
-                        location_type: po?.target_store_id ? "mfg_unit" : "business_node",
+                        location_id: grn.receiver_id,
+                        ...(grn?.mfg_unit_id && { store_id: grn.mfg_unit_id }),
+                        location_type: grn?.mfg_unit_id ? "mfg_unit" : "business_node",
                         ...(batch_no && { batch_no }),
                         available_qty: Number(r_qty || 0),
                         reserved_qty: 0,
-                        unit_price: purchaseOrderItem ? (purchaseOrderItem.unit_price || 0) : 0,
+                        ...(purchaseOrderItem && { unit_price: purchaseOrderItem.unit_price }),
                         batch_status: "active",
-                        received_date: grn.received_date || new Date(),
+                        received_date: new Date(),
                         reference_id: grn.id,
                         reference_type: "grn",
                         expiry_date: new Date(e_date),
@@ -616,6 +646,32 @@ export const createInward = asyncHandler(async (req, res) => {
                         const generatedBatchNo = generateBatch(newBatch.id);
                         await newBatch.update({ batch_no: generatedBatchNo }, { transaction });
                     }
+                }
+
+                const finalBatchNo = batch_no || newBatch.batch_no;
+
+                /** Process GRNItemBatch record */
+                let grnItemBatch = null;
+                if (grn_item_batch_id) {
+                    grnItemBatch = await GRNItemBatch.findByPk(Number(grn_item_batch_id), { transaction });
+                    if (grnItemBatch) {
+                        await grnItemBatch.update({
+                            batch_no: finalBatchNo,
+                            received_qty: Number(r_qty || 0),
+                            damage_qty: Number(d_qty || 0),
+                            expiry_date: new Date(e_date),
+                        }, { transaction });
+                    }
+                }
+
+                if (!grnItemBatch) {
+                    grnItemBatch = await GRNItemBatch.create({
+                        grn_item_id: grnItem.id,
+                        batch_no: finalBatchNo,
+                        received_qty: Number(r_qty || 0),
+                        damage_qty: Number(d_qty || 0),
+                        expiry_date: new Date(e_date),
+                    }, { transaction });
                 }
 
                 /** create NodeStockLedgerItem record */
