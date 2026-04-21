@@ -266,6 +266,8 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
         await outward.save({ transaction });
 
         /** update outward items */
+        // Array to store validated items and allocated batches for the GRN service
+        let allocatedItems = [];
         for (const item of items) {
             const { product_id = "", batches = [] } = item;
 
@@ -292,6 +294,8 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
             /** batch allocation */
             let total_allocated = 0;
+            // Temporary array to hold successful batch allocations for current item
+            let itemAllocatedBatches = [];
             for (const batch_no of batches) {
                 if (requested_qty === total_allocated) break;
 
@@ -301,8 +305,10 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                     return res.status(404).json({ success: false, code: 404, message: "Batch not found!!!" });
                 }
 
-                const remaining_qty = Number(requested_qty) - total_allocated;
                 const available = Number(batchRecord.available_qty);
+                if (available <= 0) continue; // Skip batches with zero quantity
+
+                const remaining_qty = Number(requested_qty) - total_allocated;
 
                 if (remaining_qty >= available) {
                     // Consume the entire batch
@@ -324,6 +330,16 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
                 /** create outward allocation record */
                 const allocated_qty = remaining_qty >= available ? available : remaining_qty;
+                
+                if (allocated_qty <= 0) continue; // Sanity check to avoid zero-quantity allocations
+
+                // Keep track of batches that were allocated to pass to createGrn_items
+                itemAllocatedBatches.push({
+                    batch_no: batchRecord.batch_no,
+                    allocated_qty,
+                    expiry_date: batchRecord.expiry_date
+                });
+
                 await OutwardAllocation.create({
                     outward_item_id: outwardItem.id,
                     product_id: product.id,
@@ -332,6 +348,15 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                     status: "dispatched"
                 }, { transaction });
             }
+
+            // If any batch was allocated successfully, push the product and its batches to our main array
+            if (itemAllocatedBatches.length > 0) {
+                allocatedItems.push({
+                    vendor_product_id: product.id,
+                    requested_qty: requested_qty,
+                    allocated_batches: itemAllocatedBatches
+                });
+            }
         };
 
 
@@ -339,11 +364,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
 
         const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
-        await createGrn_items(salesOrder);
-
-
-
-
+        await createGrn_items(salesOrder, allocatedItems);
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });

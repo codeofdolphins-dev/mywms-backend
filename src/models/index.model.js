@@ -18,7 +18,6 @@ import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItem from "./purchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
 import InvoiceItems from "./invoiceItems.model.js";
-import BillOfMaterial from "./billOfMaterial.model.js";
 import Brand from "./brand.model.js";
 import UnitType from "./unitType.model.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
@@ -55,6 +54,8 @@ import BlanketOrderItem from "./main/blanketOrderItem.model.js";
 import Batch from "./batch.model.js";
 import OutwardAllocation from "./outwardAllocation.joinModel.js";
 import GRNItemBatch from "./grnItemBatch.model.js";
+import BOM from "./bom.model.js";
+import BOMItem from "./bomItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -99,7 +100,8 @@ const defineTenantModels = (sequelize) => {
     PurchaseOrderItem(sequelize);
     Invoice(sequelize);
     InvoiceItems(sequelize);
-    BillOfMaterial(sequelize);
+    BOM(sequelize);
+    BOMItem(sequelize);
     Brand(sequelize);
     UnitType(sequelize);
     Vendor(sequelize);

@@ -9,8 +9,21 @@ import { allBlanketOrderList, blanketOrderWithProductDetails, createBlanketOrder
 
 const router = Router();
 
-// public route
-router.route("/list").get(allRfqList);
+const checkAuthOptional = (req, res, next) => {
+    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    if (!token) return next();
+
+    defineUserScope(req, res, (err) => {
+        if (err) return next(err);
+        defineDbObject(req, res, (err2) => {
+            if (err2) return next(err2);
+            verifyJWT(req, res, next);
+        });
+    });
+};
+
+// public route with optional auth
+router.route("/list").get(checkAuthOptional, allRfqList);
 
 // private routes
 router.use(defineUserScope, defineDbObject, verifyJWT);

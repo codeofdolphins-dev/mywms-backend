@@ -10,7 +10,7 @@ router.use(verifyJWT);
 router.route("/create").post(verifyPermission("inward:create"), createInward);
 router.route("/list").get(grnList);
 router.route("/item-prefield-data/:po_no").get(getTenantOutwardData);
-router.route("/:po_no").get(grnItemDetailsViaPO);
+router.route("/:grn_no").get(grnItemDetailsViaPO);
 
 
 export default router;
