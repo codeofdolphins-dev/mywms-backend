@@ -42,15 +42,17 @@ export const allRfqList = asyncHandler(async (req, res) => {
             const buyer_tenant = formatJSON.buyer_tenant;
 
             for (const product of formatJSON.items) {
-                const productMapping = await ProductMapping.findOne({
-                    where: {
-                        buyer_node: buyer_tenant,
-                        vendor_node: vendor_tenant,
-                        buyer_product_id: product.product_id,
-                    },
-                });
+                if (vendor_tenant) {
+                    const productMapping = await ProductMapping.findOne({
+                        where: {
+                            buyer_node: buyer_tenant,
+                            vendor_node: vendor_tenant,
+                            buyer_product_id: product.product_id,
+                        },
+                    });
 
-                product.vendor_product_id = productMapping?.vendor_product_id;
+                    product.vendor_product_id = productMapping?.vendor_product_id;
+                }
             }
 
             return formatJSON;

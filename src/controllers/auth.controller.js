@@ -202,7 +202,7 @@ export const registerVendor = asyncHandler(async (req, res) => {
 
 export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
-    const { User } = req.dbModels;
+    const { User, ManufacturingUnit } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -213,7 +213,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", isNodeAdmin = "", dept = "" } = req.body;
+        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
 
         if (
@@ -224,7 +224,19 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
+        
+        /** check store */
+        if(store_id){
+            const store = await ManufacturingUnit.findByPk(store_id);
+            if (!store) {
+                if (profile_image) await deleteImage(profile_image, dbName);
+                await transaction.rollback();
+                await rootTransaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "Store not found!!!" });
+            }
+        }
 
+        /** check user */
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
             if (profile_image) await deleteImage(profile_image, dbName);
@@ -263,7 +275,8 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             await user.addUserBusinessNode(node_id, {
                 through: {
                     ...(dept && { department: dept }),
-                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) })
+                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) }),
+                    ...(store_id && { store_id: Number(store_id) }),
                 },
                 transaction 
             });

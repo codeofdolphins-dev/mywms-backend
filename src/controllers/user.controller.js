@@ -4,7 +4,7 @@ import { Op, Sequelize } from "sequelize";
 // GET
 const currentUser = asyncHandler(async (req, res) => {
     try {
-        const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
+        const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType, ManufacturingUnit } = req.dbModels;
         const { id } = req.user;
 
 
@@ -34,7 +34,7 @@ const currentUser = asyncHandler(async (req, res) => {
                         exclude: ["parent_node_id"]
                     },
                     through: {
-                        attributes: ["isNodeAdmin", "department"]
+                        attributes: ["isNodeAdmin", "department", "store_id"],
                     },
                     include: [
                         {
@@ -57,13 +57,21 @@ const currentUser = asyncHandler(async (req, res) => {
 
         const plainUser = user.toJSON();
         // console.log(plainUser);
-
+        
         // set active node
         plainUser.activeNode = plainUser?.userBusinessNode?.find(node => node.id === req.activeNode);
 
         // remove businessnode array
         delete plainUser?.userBusinessNode;
 
+        /** set store */
+        const nodeUser = plainUser.activeNode?.NodeUser;
+        if(nodeUser?.store_id){
+            const store = await ManufacturingUnit.findByPk(nodeUser.store_id);
+            nodeUser.store = store;
+        }
+
+        /** set roles */
         plainUser.roles = plainUser.roles?.map(role => ({
             role: role.role,
             permissions:

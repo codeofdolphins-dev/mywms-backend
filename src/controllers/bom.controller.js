@@ -76,6 +76,9 @@ export const createBOM = asyncHandler(async (req, res) => {
         const product = await Product.findOne({ where: { barcode: finished_product_barcode } });
         if (!product) throw new Error(`Product with barcode: ${finished_product_barcode} is not found!!!`);
 
+        const existingBOM = await BOM.findOne({ where: { finished_product_id: product.id } });
+        if (existingBOM) throw new Error(`BOM already exists for product with barcode: ${finished_product_barcode}!!!`);
+
         const bom = await BOM.create({
             finished_product_id: product.id,
             finished_product_barcode: finished_product_barcode,
