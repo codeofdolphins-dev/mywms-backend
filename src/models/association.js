@@ -422,7 +422,10 @@ const defineTenantAssociations = (models) => {
         OutwardAllocation,
         GRNItemBatch,
         BOM,
-        BOMItem
+        BOMItem,
+        TransferOrder,
+        TransferOrderItem,
+        TransferOrderAllocation
 
 
     } = models;
@@ -1290,9 +1293,79 @@ const defineTenantAssociations = (models) => {
     });
 
 
+    /************* transferOrder ********************/
+    // transferOrder ↔ transferOrderItem
+    TransferOrder.hasMany(TransferOrderItem, {
+        foreignKey: "transfer_order_id",
+        as: "transferOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderItem.belongsTo(TransferOrder, {
+        foreignKey: "transfer_order_id",
+        as: "transferOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // user ↔ transferOrder
+    User.hasMany(TransferOrder, {
+        foreignKey: "created_by",
+        as: "createdTransferOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrder.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "createdByUser",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* transferOrderItem ********************/
+    // transferOrderItem ↔ transferOrderAllocation
+    TransferOrderItem.hasMany(TransferOrderAllocation, {
+        foreignKey: "transferOrder_item_id",
+        as: "transferItemAllocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderAllocation.belongsTo(TransferOrderItem, {
+        foreignKey: "transferOrder_item_id",
+        as: "parentTransferItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ transferOrderItem
+    Product.hasMany(TransferOrderItem, {
+        foreignKey: "product_id",
+        as: "transferProductItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "transferProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
 
-
+    /************* transferOrderAllocation ********************/
+    // batch ↔ transferOrderAllocation
+    Batch.hasMany(TransferOrderAllocation, {
+        foreignKey: "batch_id",
+        as: "allocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderAllocation.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "allocatedBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
 
 

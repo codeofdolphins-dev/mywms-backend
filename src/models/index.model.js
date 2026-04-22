@@ -56,6 +56,9 @@ import OutwardAllocation from "./outwardAllocation.joinModel.js";
 import GRNItemBatch from "./grnItemBatch.model.js";
 import BOM from "./bom.model.js";
 import BOMItem from "./bomItem.model.js";
+import TransferOrder from "./transferOrder.model.js";
+import TransferOrderItem from "./transferOrderItem.model.js";
+import TransferOrderAllocation from "./transferOrderAllocation.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -127,6 +130,10 @@ const defineTenantModels = (sequelize) => {
     OutwardItem(sequelize);
     OutwardAllocation(sequelize);
     GRNItemBatch(sequelize);
+    TransferOrder(sequelize);
+    TransferOrderItem(sequelize);
+    TransferOrderAllocation(sequelize);
+
 
     return sequelize.models;
 }
