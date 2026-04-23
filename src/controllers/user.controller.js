@@ -1,86 +1,14 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Op, Sequelize } from "sequelize";
+import { getUserContext } from "../utils/getUserContext.js";
 
 // GET
 const currentUser = asyncHandler(async (req, res) => {
     try {
-        const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType, ManufacturingUnit } = req.dbModels;
-        const { id } = req.user;
-
-
-        const user = await User.findByPk(id, {
-            attributes: {
-                exclude: ["password", "accessToken"]
-            },
-            include: [
-                {
-                    model: Role,
-                    as: "roles",
-                    attributes: ["role"],
-                    through: { attributes: [] },
-                    include: [
-                        {
-                            model: Permission,
-                            as: "permissions",
-                            attributes: ["permission"],
-                            through: { attributes: [] }
-                        }
-                    ]
-                },
-                ...(BusinessNode ? [{
-                    model: BusinessNode,
-                    as: "userBusinessNode",
-                    attributes: {
-                        exclude: ["parent_node_id"]
-                    },
-                    through: {
-                        attributes: ["isNodeAdmin", "department", "store_id"],
-                    },
-                    include: [
-                        {
-                            model: NodeDetails,
-                            as: "nodeDetails",
-                            attributes: {
-                                exclude: ["business_node_id"]
-                            }
-                        },
-                        {
-                            model: BusinessNodeType,
-                            as: "type",
-                        },
-                    ]
-                }] : []
-                ),
-            ]
-        });
+        const user = await getUserContext(req);
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
 
-        const plainUser = user.toJSON();
-        // console.log(plainUser);
-        
-        // set active node
-        plainUser.activeNode = plainUser?.userBusinessNode?.find(node => node.id === req.activeNode);
-
-        // remove businessnode array
-        delete plainUser?.userBusinessNode;
-
-        /** set store */
-        const nodeUser = plainUser.activeNode?.NodeUser;
-        if(nodeUser?.store_id){
-            const store = await ManufacturingUnit.findByPk(nodeUser.store_id);
-            nodeUser.store = store;
-        }
-
-        /** set roles */
-        plainUser.roles = plainUser.roles?.map(role => ({
-            role: role.role,
-            permissions:
-                ["owner", "company", "admin"].includes(role.role)
-                    ? "all access"
-                    : role.permissions?.map(p => p.permission) || []
-        }));
-
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: plainUser });
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: user });
 
     } catch (error) {
         console.log(error);

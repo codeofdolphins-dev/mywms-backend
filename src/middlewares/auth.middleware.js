@@ -27,7 +27,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
         const data = user.toJSON();
 
-        // NOTE: If a user is associated with multiple business nodes, we won't set an activeNode in the middleware. The frontend will need to prompt the user to select an active node after login. This is because we can't assume which node should be active if there are multiple associations. The frontend can then include the selected activeNode in subsequent requests to ensure the correct context is maintained. If there's only one associated node, we can set it as the activeNode by default.
+        // NOTE: If a user is associated with multiple business nodes, backend won't set an activeNode in the middleware. The frontend will need to prompt the user to select an active node after login. This is because backend can't assume which node should be active if there are multiple associate. The frontend can then include the selected activeNode in subsequent requests to ensure the correct context is maintained. If there's only one associated node, then backend can set it as the activeNode by default.
         const activeNode = data?.userBusinessNode?.length === 1 ? data?.userBusinessNode?.[0]?.id : null;
 
         req.user = data;

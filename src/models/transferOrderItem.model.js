@@ -3,9 +3,8 @@ import { DataTypes } from "sequelize";
 function TransferOrderItem(sequelize) {
     return sequelize.define("TransferOrderItem", {
         transfer_order_id: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            unique: true
+            type: DataTypes.INTEGER,
+            allowNull: false,
         },
         product_id: {
             type: DataTypes.INTEGER,
