@@ -12,7 +12,7 @@ function TransferOrder(sequelize) {
             allowNull: true,
         },
 
-
+        /******************* Transfer Order Request Creater *******************/
         from_parent_node_id: {              // business node id (OPTIONAL)
             type: DataTypes.INTEGER,
             allowNull: true,
@@ -26,8 +26,9 @@ function TransferOrder(sequelize) {
             allowNull: false,
             defaultValue: "mfg_unit"
         },
-
-
+        
+        
+        /******************* Transfer Order Request Fulfiller *******************/
         to_parent_node_id: {                // business node id (OPTIONAL)
             type: DataTypes.INTEGER,
             allowNull: true

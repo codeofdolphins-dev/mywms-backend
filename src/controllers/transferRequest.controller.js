@@ -87,6 +87,91 @@ export const transferOrderList = asyncHandler(async (req, res) => {
 });
 
 
+export const transferOrderItemDetails = asyncHandler(async (req, res) => {
+    const { TransferOrder, TransferOrderItem, TransferOrderAllocation, Product, ManufacturingUnit, Batch } = req.dbModels;
+
+    try {
+        const { to_no = 1 } = req.params;
+        if (!to_no) throw new Error("to_no must required!!!");
+
+        const transferOrders = await TransferOrder.findOne({
+            where: { transfer_no: to_no },
+            // attributes: {
+            //     exclude: ["to_parent_node_id", "to_location_type", "created_by"]
+            // },
+            include: [
+                {
+                    model: TransferOrderItem,
+                    as: "transferOrderItem",
+                    include: [
+                        {
+                            model: Product,
+                            as: "transferProduct"
+                        },
+                        // {
+                        //     model: TransferOrderAllocation,
+                        //     as: "transferItemAllocation"
+                        // },
+                    ]
+                }
+            ]
+        });
+        if (!transferOrders) {
+            return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
+        }
+
+        /** plain JSON */
+        const jsonTO = transferOrders.toJSON();
+
+        /** attach fulfiller details */
+        if (jsonTO?.from_location_type === "mfg_unit") {
+            jsonTO.sendTo = await ManufacturingUnit.findByPk(Number(jsonTO?.from_location_id))
+        }
+
+        if (jsonTO.status === "requested") {
+            /** attach all available batch details */
+            for (const item of jsonTO?.transferOrderItem) {
+
+                // console.log(item.product_id, jsonTO?.to_parent_node_id, jsonTO.to_location_id, jsonTO?.to_location_type,)
+
+                item.batch = await Batch.findAll({
+                    where: {
+                        product_id: item.product_id,
+                        location_id: jsonTO?.to_parent_node_id,
+                        store_id: jsonTO.to_location_id,
+                        location_type: jsonTO?.to_location_type,
+                        is_active: true
+                    }
+                })
+            }
+        } else {
+            /** attach selected batch details */
+            for (const item of jsonTO?.transferOrderItem) {
+                item.alloted_batch = await TransferOrderAllocation.findAll({
+                    where: { transferOrder_item_id: item.id },
+                    include: [
+                        {
+                            model: Batch,
+                            as: "allocatedBatch"
+                        }
+                    ]
+                })
+            }
+        };
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: jsonTO,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
 // POST
 export const createTransferRequest = asyncHandler(async (req, res) => {
     const { TransferOrder, TransferOrderItem, ManufacturingUnit, Product } = req.dbModels;
@@ -156,5 +241,114 @@ export const createTransferRequest = asyncHandler(async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+// PUT
+export const confirmAllocation = asyncHandler(async (req, res) => {
+    const { TransferOrder, TransferOrderItem, Product, TransferOrderAllocation, Batch } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    try {
+        const { transfer_order_no = "", items = [] } = req.body;
+
+        if (!transfer_order_no || !Array.isArray(items) || items.length === 0) {
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
+        }
+
+        const transferOrder = await TransferOrder.findOne({ where: { transfer_no: transfer_order_no } });
+        if (!transferOrder) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Transfer order not found!!!" });
+        }
+
+        /** update transfer order record */
+        transferOrder.status = "dispatched";
+        await transferOrder.save({ transaction });
+
+        /** process items and allocate batches */
+        for (const item of items) {
+            const { product_id = "", item_id = "", batches = [] } = item;
+
+            if (!product_id || !item_id || !Array.isArray(batches) || batches.length === 0 || batches.some(b => !b)) {
+                await transaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "Required fields are missing in items!!!" });
+            }
+
+            /** check product is valid or not */
+            const product = await Product.findOne({ where: { id: Number(product_id) } });
+            if (!product) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Product not found!!!" });
+            }
+
+            /** check transfer order item is valid or not */
+            const transferOrderItem = await TransferOrderItem.findByPk(Number(item_id));
+            if (!transferOrderItem) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Transfer order item not found!!!" });
+            }
+
+            const requested_qty = Number(transferOrderItem.requested_qty);
+
+            /** batch allocation */
+            let total_allocated = 0;
+            for (const batch_no of batches) {
+                if (requested_qty === total_allocated) break;
+
+                const batchRecord = await Batch.findOne({ where: { batch_no: batch_no } });
+                if (!batchRecord) {
+                    await transaction.rollback();
+                    return res.status(404).json({ success: false, code: 404, message: `Batch ${batch_no} not found!!!` });
+                }
+
+                const available = Number(batchRecord.available_qty);
+                if (available <= 0) continue; // Skip batches with zero quantity
+
+                const remaining_qty = requested_qty - total_allocated;
+
+                if (remaining_qty >= available) {
+                    // Consume the entire batch
+                    batchRecord.available_qty = 0;
+                    batchRecord.batch_status = "consumed";
+                    batchRecord.is_active = false;
+                    await batchRecord.save({ transaction });
+
+                    total_allocated += available;
+                }
+                else {
+                    // Consume only a part of the batch
+                    batchRecord.available_qty = available - remaining_qty;
+                    // Batch remains 'active' since it still has some quantity left
+                    await batchRecord.save({ transaction });
+
+                    total_allocated += remaining_qty;
+                }
+
+                /** create transfer order allocation record */
+                const allocated_qty = remaining_qty >= available ? available : remaining_qty;
+
+                if (allocated_qty <= 0) continue; // Sanity check to avoid zero-quantity allocations
+
+                await TransferOrderAllocation.create({
+                    transferOrder_item_id: transferOrderItem.id,
+                    batch_id: batchRecord.id,
+                    allocated_qty
+                }, { transaction });
+            }
+
+            transferOrderItem.dispatched_qty = total_allocated;
+            await transferOrderItem.save({ transaction });
+        }
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Allocation confirmed successfully." });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });

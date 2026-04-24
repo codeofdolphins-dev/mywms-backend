@@ -3,6 +3,7 @@ import { generateNo } from "../helper/generate.js";
 import { createGrn_items } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Op } from "sequelize";
+import { getUserContext } from "../utils/getUserContext.js";
 const { models } = await rootDB();
 const { Vehicle, Driver } = models;
 
@@ -10,9 +11,11 @@ const { Vehicle, Driver } = models;
 // GET
 export const allOutwardList = asyncHandler(async (req, res) => {
     const { Outward, OutwardItem, Product } = req.dbModels;
-    console.log(req.user);
+
     try {
-        let { page = 1, limit = 10, id = "", outward_no = "" } = req.query;
+        const { activeNode } = await getUserContext(req);
+
+        let { page = 1, limit = 10, id = "", outward_no = "", isAdmin = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -20,7 +23,11 @@ export const allOutwardList = asyncHandler(async (req, res) => {
         const outward = await Outward.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
-                ...(outward_no && { outward_no })
+                ...(outward_no && { outward_no }),
+                ...(isAdmin ? {} : {
+                    seller_business_node_id: activeNode.id,
+                    ...(activeNode?.store && { store_id: activeNode.store.id })
+                })
             },
             include: [
                 {
@@ -107,7 +114,7 @@ export const outwardItem = asyncHandler(async (req, res) => {
         }
 
         if (jsonOutward.status !== "dispatched") {
-            /** batch details */
+            /** attach all batch details */
             for (const item of jsonOutward.outwardItemList) {
                 const batch = await Batch.findAll({
                     where: {
@@ -119,12 +126,12 @@ export const outwardItem = asyncHandler(async (req, res) => {
                     }
                 });
                 item.batch = batch || [];
-                batch.map(item => {
-                    console.log(item.toJSON());
-                })
+                // batch.map(item => {
+                //     console.log(item.toJSON());
+                // })
             }
         } else {
-            /** batch details */
+            /** attach selected batch details */
             for (const item of jsonOutward.outwardItemList) {
                 const outwardAllocation = await OutwardAllocation.findAll({
                     where: {
@@ -330,7 +337,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
                 /** create outward allocation record */
                 const allocated_qty = remaining_qty >= available ? available : remaining_qty;
-                
+
                 if (allocated_qty <= 0) continue; // Sanity check to avoid zero-quantity allocations
 
                 // Keep track of batches that were allocated to pass to createGrn_items
@@ -358,10 +365,6 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                 });
             }
         };
-
-
-
-
 
         const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
         await createGrn_items(salesOrder, allocatedItems);

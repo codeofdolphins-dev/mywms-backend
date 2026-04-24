@@ -14,7 +14,7 @@ export async function createGrn_items(salesOrder, allocatedItems = []) {
 
 
         const { models: tenantModels, sequelize } = await getTenantConnection(indent.buyer_tenant);
-        const { GRN, Vendor, PurchasOrder, GRNItem, GRNItemBatch, PurchaseOrderItem } = tenantModels;
+        const { GRN, Vendor, PurchasOrder, GRNItem, GRNItemBatch, PurchaseOrderItem, ManufacturingUnit } = tenantModels;
         transaction = await sequelize.transaction();
 
         const po = await PurchasOrder.findOne({
@@ -31,14 +31,25 @@ export async function createGrn_items(salesOrder, allocatedItems = []) {
         });
         if (!vendor) throw new Error("Vendor not found!!!");
 
+        let store = null;
+        if (po?.target_store_id !== null) {
+            store = await ManufacturingUnit.findByPk(Number(po?.target_store_id));
+        }
+
         const grn = await GRN.create({
             grn_no: `GRN-${Date.now()}`,
             purchase_order: po.po_no,
             grn_type: "purchase",
             sender_id: vendor.id,
-            receiver_id: po.from_business_node_id,
-            mfg_unit_id: po.target_store_id,
-            status: "draft"
+            status: "draft",
+            ...(store ?
+                {
+                    receiver_id: store.business_node_id,
+                    mfg_unit_id: store.id,
+                } :
+                {
+                    receiver_id: po.from_business_node_id
+                })
         }, { transaction });
 
         if (allocatedItems && allocatedItems.length > 0) {
@@ -64,13 +75,18 @@ export async function createGrn_items(salesOrder, allocatedItems = []) {
                         buyer_product_id: productMap.buyer_product_id
                     }
                 });
+                if(!poItem) throw new Error("poItem not found!!!");
+                
+                // console.log(productMap.toJSON());
+                // console.log(poItem.toJSON());
+                // throw new Error("test error");
 
                 // Create the GRN item record connecting PO reference with received quantities
                 const grnItem = await GRNItem.create({
                     grn_id: grn.id,
-                    purchase_order_item_id: poItem ? poItem.id : null,
+                    purchase_order_item_id: poItem.id,
                     product_id: productMap.buyer_product_id,
-                    ordered_qty: poItem ? poItem.qty : 0,
+                    ordered_qty: poItem.qty,
                     received_qty: item.requested_qty
                 }, { transaction });
 

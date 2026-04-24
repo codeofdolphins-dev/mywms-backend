@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 import { generateBatch, generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { getUserContext } from "../utils/getUserContext.js";
 
 
 // GET
@@ -246,7 +247,11 @@ export const grnList = asyncHandler(async (req, res) => {
     const { GRN, User, GRNItem } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, id = "", grn_no = "", status = "", sortBy = "" } = req.query;
+        const { activeNode } = await getUserContext(req)
+        // console.log(req.activeNode); 
+        // console.log(user); return
+
+        let { page = 1, limit = 10, id = "", grn_no = "", status = "", sortBy = "", isAdmin = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -262,6 +267,10 @@ export const grnList = asyncHandler(async (req, res) => {
                         { grn_type: sortBy.toLowerCase() },
                     ],
                 }),
+                ...(isAdmin ? {} : {
+                    receiver_id: activeNode.id,
+                    ...(activeNode?.store && { mfg_unit_id: activeNode.store.id })
+                })
             },
             include: [
                 {
@@ -343,7 +352,6 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
         if (!grn) return res.status(404).json({ success: false, code: 404, message: "GRN record not found!!!" });
 
         const formateJSON = grn.toJSON();
-
         const type = formateJSON.grn_type;
 
         if (type === "purchase") {
@@ -522,6 +530,9 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
 export const createInward = asyncHandler(async (req, res) => {
     const { PurchasOrder, Product, Batch, GRN, GRNItem, GRNItemBatch, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
     const transaction = await req.dbObject.transaction();
+
+    // console.log(req.body); return
+
     try {
         const { po_no = "", grn_no = "", items = [] } = req.body;
         const userDetails = req.user;
