@@ -32,6 +32,7 @@ import downloadApi from "../download/routes/index.route.js";
 import batchApi from "./batch.route.js";
 import adminApi from "./admin.route.js";
 import transferOrderApi from "./transferOrder.route.js";
+import productionOrderApi from "./productionOrder.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -73,6 +74,7 @@ router.use("/sales-order", salesOrderApi);
 router.use("/outward", outwardApi);
 router.use("/batch", batchApi);
 router.use("/transfer-order", transferOrderApi);
+router.use("/production-order", productionOrderApi);
 
 
 

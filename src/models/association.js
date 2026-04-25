@@ -425,7 +425,9 @@ const defineTenantAssociations = (models) => {
         BOMItem,
         TransferOrder,
         TransferOrderItem,
-        TransferOrderAllocation
+        TransferOrderAllocation,
+        ProductionOrder,
+        ProductionOrderItem,
 
 
     } = models;
@@ -1363,6 +1365,94 @@ const defineTenantAssociations = (models) => {
     TransferOrderAllocation.belongsTo(Batch, {
         foreignKey: "batch_id",
         as: "allocatedBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionOrder ********************/
+    // productionOrder ↔ productionOrderItem
+    ProductionOrder.hasMany(ProductionOrderItem, {
+        foreignKey: "production_order_id",
+        as: "productionOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrderItem.belongsTo(ProductionOrder, {
+        foreignKey: "production_order_id",
+        as: "productionOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ productionOrder
+    BusinessNode.hasMany(ProductionOrder, {
+        foreignKey: "business_node_id",
+        as: "productionOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "location",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // manufacturingUnit ↔ productionOrder
+    ManufacturingUnit.hasMany(ProductionOrder, {
+        foreignKey: "mfg_location_id",
+        as: "mfgOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_location_id",
+        as: "mfgStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ productionOrder
+    Product.hasMany(ProductionOrder, {
+        foreignKey: "target_product_id",
+        as: "productionTargets",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(Product, {
+        foreignKey: "target_product_id",
+        as: "targetProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // user ↔ productionOrder
+    User.hasMany(ProductionOrder, {
+        foreignKey: "created_by",
+        as: "createdOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "proCreator",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionOrderItem ********************/
+    // productionOrderItem ↔ product
+    Product.hasMany(ProductionOrderItem, {
+        foreignKey: "rm_product_id",
+        as: "rmItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrderItem.belongsTo(Product, {
+        foreignKey: "rm_product_id",
+        as: "rmProduct",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
