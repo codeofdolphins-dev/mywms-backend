@@ -428,6 +428,7 @@ const defineTenantAssociations = (models) => {
         TransferOrderAllocation,
         ProductionOrder,
         ProductionOrderItem,
+        ProductionReceipt
 
 
     } = models;
@@ -1453,6 +1454,64 @@ const defineTenantAssociations = (models) => {
     ProductionOrderItem.belongsTo(Product, {
         foreignKey: "rm_product_id",
         as: "rmProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionReceipt ********************/
+    // manufacturingUnit ↔ productionReceipt
+    ManufacturingUnit.hasMany(ProductionReceipt, {
+        foreignKey: "fg_store_id",
+        as: "fgItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(ManufacturingUnit, {
+        foreignKey: "fg_store_id",
+        as: "fgStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ productionReceipt
+    Product.hasMany(ProductionReceipt, {
+        foreignKey: "product_id",
+        as: "productionReceipts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "receivedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // productionOrder ↔ productionReceipt
+    ProductionOrder.hasMany(ProductionReceipt, {
+        foreignKey: "production_order_id",
+        as: "receipts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(ProductionOrder, {
+        foreignKey: "production_order_id",
+        as: "parentProductionOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // user ↔ productionReceipt
+    User.hasMany(ProductionReceipt, {
+        foreignKey: "created_by",
+        as: "proReceiptsCreated",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "proReceiptCreator",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

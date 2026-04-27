@@ -38,6 +38,10 @@ function ProductionOrder(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
+        completion_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
         created_by: {
             type: DataTypes.INTEGER,
             allowNull: false
