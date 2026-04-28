@@ -35,3 +35,6 @@ mywms*.*
 
 # bun
 bun.*
+
+# yarn
+yarn.*
