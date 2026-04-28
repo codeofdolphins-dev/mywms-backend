@@ -156,7 +156,7 @@ export const createProductionOrder = asyncHandler(async (req, res) => {
         };
 
         /** generate production order no */
-        productionOrder.production_order_no = generateNo("MFG-PO", productionOrder.id);
+        productionOrder.production_order_no = generateNo("MFG-PRO", productionOrder.id);
         await productionOrder.save({ transaction });
 
         /** create production order items */

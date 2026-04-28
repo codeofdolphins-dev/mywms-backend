@@ -148,6 +148,9 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
+    const { Requisition } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
     try {
         const { rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
         if ([rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
@@ -158,6 +161,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         };
 
+        /** check RFQ Quotation */
         const quotation = await RfqQuotation.findByPk(revision.quotation_id);
         if (!quotation) {
             await rootTransaction.rollback();
@@ -169,6 +173,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         revision.status = "confirmed";
         await revision.save({ transaction: rootTransaction });
 
+        /** create blanket order */
         const blanketOrder = await BlanketOrder.create({
             buyer_tenant,
             vendor_tenant,
@@ -182,6 +187,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         blanketOrder.bpo_no = generateNo("BPO", blanketOrder.id);
         await blanketOrder.save({ transaction: rootTransaction });
 
+        /** create blanket order items */
         for (const item of items) {
             const { buyer_product_id = "", unit_price = "", total_contracted_qty = "", product_map_id = "" } = item;
 
@@ -203,11 +209,23 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
             }, { transaction: rootTransaction });
         };
 
+        /** update requisition status */
+        const requisition = await Requisition.findOne({ where: { requisition_no: pr_reference_code } });
+        if (!requisition) {
+            await rootTransaction.rollback();
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Requisition record not found!!!" });
+        }
+        requisition.status = "bpo_created";
+        await requisition.save({ transaction });
+
+        await transaction.commit();
         await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
 
     } catch (error) {
         await rootTransaction.rollback();
+        if (transaction) await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

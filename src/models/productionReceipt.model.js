@@ -19,12 +19,31 @@ function ProductionReceipt(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false // The Finished Good being handed over
         },
+        send_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0.00
+        },
         received_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
             defaultValue: 0.00
         },
+        dmg_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0.00
+        },
+        short_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0.00
+        },
         mfg_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        expiry_date: {
             type: DataTypes.DATEONLY,
             allowNull: true
         },

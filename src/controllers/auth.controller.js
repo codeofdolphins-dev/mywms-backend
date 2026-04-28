@@ -64,6 +64,11 @@ export const register_company = asyncHandler(async (req, res) => {
         const isRegister = await User.findOne({ where: { email }, transaction });
         if (isRegister) throw new Error(`Company with email: ${email} already exists!!!`);
 
+        const isTenantUserExist = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
+        if (dbName === "mywms" && isTenantUserExist) {
+            throw new Error(`Company with email: ${email} already exists!!!`);
+        }
+
         const encryptPassword = await hashPassword(password);
 
         const user = await User.create({
@@ -179,6 +184,11 @@ export const registerVendor = asyncHandler(async (req, res) => {
 
         await user.addRole(vendorRole, { transaction });
 
+        const isTenantUserExist = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
+        if (isTenantUserExist) {
+            throw new Error(`Vendor with email: ${email} already exists!!!`);
+        }
+
         const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
         await Tenant.create({
             tenant_id: tenantsName.id,
@@ -239,6 +249,14 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         /** check user */
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: `User with email: ${email} already exists!!!` });
+        }
+
+        const isTenantUserExist = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
+        if (isTenantUserExist) {
             if (profile_image) await deleteImage(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
@@ -347,6 +365,12 @@ export const updateUser = asyncHandler(async (req, res) => {
 
 
         const tenant = await Tenant.findOne({ where: { email: user.email } });
+        if (!tenant) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: `Tenant record not found for email: ${user.email}` });
+        }
         if (password) tenant.password = password;
 
 

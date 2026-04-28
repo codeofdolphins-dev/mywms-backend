@@ -91,8 +91,8 @@ export const transferOrderItemDetails = asyncHandler(async (req, res) => {
     const { TransferOrder, TransferOrderItem, TransferOrderAllocation, Product, ManufacturingUnit, Batch } = req.dbModels;
 
     try {
-        const { to_no = 1 } = req.params;
-        if (!to_no) throw new Error("to_no must required!!!");
+        const { to_no } = req.params;
+        if (!to_no) throw new Error("Transfer Order No. must required!!!");
 
         const transferOrders = await TransferOrder.findOne({
             where: { transfer_no: to_no },
@@ -221,7 +221,7 @@ export const createTransferRequest = asyncHandler(async (req, res) => {
             return res.status(500).json({ success: false, code: 500, message: "Record creation failed!!!" });
         };
 
-        transferOrder.transfer_no = generateNo("TO-WI-RM", transferOrder.id);
+        transferOrder.transfer_no = generateNo("WIP-TO-RM", transferOrder.id);
         await transferOrder.save();
 
         // Create Transfer Order Items

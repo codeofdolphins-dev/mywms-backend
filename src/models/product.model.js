@@ -54,6 +54,14 @@ function Product(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
+        has_expiry: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        shelf_life: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
         photo: {
             type: DataTypes.STRING,
             allowNull: true,

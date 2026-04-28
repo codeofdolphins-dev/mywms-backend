@@ -60,6 +60,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
             limit,
             offset,
             order: [["createdAt", "DESC"]],
+            distinct: true,
         });
         if (!rfqQuotation) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -117,8 +118,17 @@ export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
             ] // include company names, etc.
         });
 
+        // Deduplicate vendor headers in case the join produced duplicate rows
+        const uniqueHeadersMap = new Map();
+        vendorHeaders.forEach(header => {
+            if (!uniqueHeadersMap.has(header.id)) {
+                uniqueHeadersMap.set(header.id, header);
+            }
+        });
+        const uniqueHeaders = Array.from(uniqueHeadersMap.values());
+
         // 3. Process each vendor's revision and items
-        const data = await Promise.all(vendorHeaders.map(async (header) => {
+        const data = await Promise.all(uniqueHeaders.map(async (header) => {
             const isTarget = targetVendor && String(header.vendor_tenant) === String(targetVendor);
 
             // Determine which revision to show: 
@@ -248,20 +258,56 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         }, { transaction: rootTransaction });
 
 
+        const processedItems = new Set();
+
         for (const item of items) {
             const { rfq_item_id = "", offer_price = "", qty = "", supplier_product_id = "" } = item;
             if (!rfq_item_id || !offer_price || !supplier_product_id) throw new Error("Required fields are missing in items array!!!");
 
+            if (processedItems.has(rfq_item_id)) continue;
+            processedItems.add(rfq_item_id);
+
             const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
             if (!rfqItem) throw new Error("RFQ items record not found!!!");
 
-            /** create product maping records */
-            const productMapping = await ProductMapping.create({
-                buyer_node: rfq.buyer_tenant,
-                vendor_node: dbName,
-                buyer_product_id: rfqItem.product_id,
-                vendor_product_id: Number(supplier_product_id),
-            }, { transaction: rootTransaction });
+            /** check existing product maping records for safety */
+            const existingMappings = await ProductMapping.findAll({
+                where: {
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: dbName,
+                    [Op.or]: [
+                        { buyer_product_id: rfqItem.product_id },
+                        { vendor_product_id: Number(supplier_product_id) }
+                    ]
+                },
+                transaction: rootTransaction
+            });
+
+            let productMapping = null;
+
+            if (existingMappings.length > 0) {
+                for (const mapping of existingMappings) {
+                    if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id !== Number(supplier_product_id)) {
+                        throw new Error(`Conflict: Buyer product is already linked to another product of yours.`);
+                    }
+                    if (mapping.vendor_product_id === Number(supplier_product_id) && mapping.buyer_product_id !== rfqItem.product_id) {
+                        throw new Error(`Conflict: Your product is already linked to another buyer product.`);
+                    }
+                    if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id === Number(supplier_product_id)) {
+                        productMapping = mapping;
+                    }
+                }
+            }
+
+            /** create product maping record if not exists */
+            if (!productMapping) {
+                productMapping = await ProductMapping.create({
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: dbName,
+                    buyer_product_id: rfqItem.product_id,
+                    vendor_product_id: Number(supplier_product_id),
+                }, { transaction: rootTransaction });
+            }
 
             /** create rfq quotation item records */
             await RfqQuotationItem.create({

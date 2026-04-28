@@ -14,16 +14,14 @@ router.route("/register-company").post(upload.none(), defineUserScope, defineDbO
 
 // register tenant company
 router.route("/register-new-company").post(registerNewTenant, register_company);
-
-// register user
 router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registeredUserWithNodes);
+router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), updateUser);
 
 // register vendor
 router.route("/register-vendor").post(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registerVendor);
 
 
 
-router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), updateUser);
 
 
 router.use(upload.none(), defineUserScope, defineDbObject);
