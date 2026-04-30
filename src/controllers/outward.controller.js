@@ -234,6 +234,9 @@ export const createOutward = asyncHandler(async (req, res) => {
             }, { transaction });
         };
 
+        salesOrder.status = "assign_fg";
+        await salesOrder.save({ transaction });
+
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
 

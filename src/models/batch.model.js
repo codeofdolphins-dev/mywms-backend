@@ -44,7 +44,7 @@ function Batch(sequelize) {
             allowNull: true,
         },
         reference_type: {
-            type: DataTypes.ENUM("opening_stock", "grn", "production", "others"),
+            type: DataTypes.ENUM("opening_stock", "grn", "transfer", "others"),
             allowNull: true,
         },
 

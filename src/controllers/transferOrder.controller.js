@@ -501,7 +501,7 @@ export const confirmTransferOrderReceived = asyncHandler(async (req, res) => {
                             received_date: new Date(),
                             expiry_date: e_date ? new Date(e_date) : null,
                             reference_id: transferOrder.id,
-                            reference_type: "others",
+                            reference_type: "transfer",
                         }, { transaction });
 
                         /** auto-generate batch_no if not provided */

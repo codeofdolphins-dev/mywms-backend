@@ -154,8 +154,8 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        const {pr_no = "", receipt_id = "", batch_no = "", received_qty = "", accepted_qty = "", damage_qty = "", shortage_qty = "" } = req.body;
-        
+        const { pr_no = "", receipt_id = "", batch_no = "", accepted_qty = "", damage_qty = "", shortage_qty = "" } = req.body;
+
         const userDetails = req.user;
 
         if (!pr_no || !receipt_id) {
@@ -228,7 +228,6 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
         const ledger_no = generateNo("LEDG", nodeStockLedger.id);
         await nodeStockLedger.update({ ledger_no }, { transaction });
 
-        const acceptedQty = Number(accepted_qty);
 
         /** Create a new batch at the receiving location (FG Store) */
         const batchRecord = await Batch.create({
@@ -237,7 +236,7 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
             store_id: receivingStoreId,
             location_type: receivingLocationType,
             batch_no: batch_no || null,
-            available_qty: acceptedQty,
+            available_qty: Number(accepted_qty),
             reserved_qty: 0,
             unit_price: 0,
             batch_status: "active",
@@ -259,14 +258,14 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
             ledger_id: nodeStockLedger.id,
             product_id: product.id,
             batch_id: batchRecord.id,
-            qty: acceptedQty,
+            qty: Number(accepted_qty),
             unit_type: product.unit_type || "pcs",
             unit_price: 0,
             total_value: 0,
         }, { transaction });
 
         /** update production receipt with qty details and status */
-        productionReceipt.received_qty = Number(received_qty);
+        productionReceipt.received_qty = Number(accepted_qty);
         productionReceipt.dmg_qty = Number(damage_qty) || 0;
         productionReceipt.short_qty = Number(shortage_qty) || 0;
         productionReceipt.expiry_date = expiryDate;

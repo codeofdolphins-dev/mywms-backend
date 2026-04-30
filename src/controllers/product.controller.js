@@ -110,7 +110,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "",
             package_type_id = "", unit_type_id = "", measure = "",
-            description = "", reorder_level = ""
+            description = "", reorder_level = "", has_expiry = false, shelf_life = ""
         } = req.body;
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id].some(item => item === "")) {
@@ -195,6 +195,8 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             ...(brand_id && { brand_id: Number(brand_id) }),
             // gst_rate: Number(gst_rate),
             // is_taxable: is_taxable,
+            has_expiry: Boolean(has_expiry),
+            ...(has_expiry && { shelf_life: Number(shelf_life) }),
             package_type: packageType.name,
             measure,
             unit_type: unitType.name,
@@ -318,6 +320,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     const profile_image = req?.file?.filename || null;
     const transaction = await req.dbObject.transaction();
 
+    // console.log(req.body); return
+
     try {
         let {
             id = "", name = "", categories = "", brand_id = "",
@@ -364,7 +368,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
             };
             product.setProductCategories(category);
         }
-        if (brand_id) {
+        if (brand_id !== null || brand_id !== "") {
             const brand = await Brand.findOne({
                 where: { id: Number(brand_id) }
             })

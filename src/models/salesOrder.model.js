@@ -53,7 +53,7 @@ function SalesOrder(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("draft", "waiting_for_approval", "approved", "closed", "cancelled"),
+            type: DataTypes.ENUM("draft", "waiting_for_approval", "approved", "assign_fg", "closed", "cancelled"),
             defaultValue: "draft"
         },
         grand_total: {

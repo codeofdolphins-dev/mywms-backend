@@ -291,7 +291,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
                         throw new Error(`Conflict: Buyer product is already linked to another product of yours.`);
                     }
                     if (mapping.vendor_product_id === Number(supplier_product_id) && mapping.buyer_product_id !== rfqItem.product_id) {
-                        throw new Error(`Conflict: Your product is already linked to another buyer product.`);
+                        throw new Error(`Conflict: Your this product is already linked with buyer product.`);
                     }
                     if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id === Number(supplier_product_id)) {
                         productMapping = mapping;
