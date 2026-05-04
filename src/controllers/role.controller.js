@@ -1,12 +1,42 @@
+import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allRoles = asyncHandler(async (req, res) => {
-    const { Role } = req.dbModels;
+    const { Role, User } = req.dbModels;
     try {
-        const roles = await Role.findAll();
+        const { id } = req.query;
 
-        return res.status(200).json({ success: true, code: 200, message: "Roles fetched successfully.", data: roles });
+        const roles = await Role.findAll({
+            where: {
+                status: true,
+                is_default: false
+            },
+            // attributes: ["id", "role", "status"],
+            order: [["id", "ASC"]],
+        });
+
+        let user = null;
+        if (id) {
+            user = await User.findByPk(Number(id), {
+                include: [
+                    {
+                        model: Role,
+                        as: "roles",
+                        through: { attributes: [] },
+                        // attributes: ["id", "role", "status"],
+                        // where: { status: true }
+                    }
+                ]
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Roles fetched successfully.",
+            data: id ? { roles, assignRoles: user?.roles } : roles
+        });
 
     } catch (error) {
         console.log(error);
@@ -36,8 +66,8 @@ const addRole = asyncHandler(async (req, res) => {
 
 const deleteRole = asyncHandler(async (req, res) => {
     const { Role } = req.dbModels;
+    
     try {
-
         const id = req.params.id;
 
         const isDelete = await Role.destroy({ where: { id } });
@@ -55,17 +85,17 @@ const deleteRole = asyncHandler(async (req, res) => {
 const editRole = asyncHandler(async (req, res) => {
     const { Role } = req.dbModels;
     try {
-        const { id, newRole = "", status = ""  } = req.body;
-        if(!id) return res.status(400).json({ success: false, code: 400, message: "ID must required!!!" });
+        const { id, newRole = "", status = "" } = req.body;
+        if (!id) return res.status(400).json({ success: false, code: 400, message: "ID must required!!!" });
 
         const role = await Role.update(
-            { 
+            {
                 role: newRole.toLowerCase().trim(),
                 status
             },
             { where: { id } }
         );
-        if(!role) return res.status(500).json({ success: false, code: 400, message: "Updation failed!!!" });
+        if (!role) return res.status(500).json({ success: false, code: 400, message: "Updation failed!!!" });
 
         return res.status(200).json({ success: true, code: 200, message: "Updation successfull." });
 
@@ -77,20 +107,28 @@ const editRole = asyncHandler(async (req, res) => {
 
 const assignRole = asyncHandler(async (req, res) => {
     const { User, Role } = req.dbModels;
-    try {
-        const { userId = "", userRole = "" } = req.body;
 
-        if (!userId || !userRole) return res.status(400).json({ success: false, code: 400, message: "Both fields are required!!!" });
+    try {
+        const { userId = "", userRole = [] } = req.body;
+        if (!userId || !userRole.length) return res.status(400).json({ success: false, code: 400, message: "Both fields are required!!!" });
 
         const user = await User.findByPk(userId);
-        const role = await Role.findOne({ where: { role: userRole } });
+        const role = await Role.findAll({
+            where: {
+                id: { [Op.in]: userRole }
+            }
+        });
 
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
-        if (!role) return res.status(400).json({ success: false, code: 400, message: "Role not found!!!" });
+        if (!role.length) return res.status(400).json({ success: false, code: 400, message: "Roles are invalid!!!" });
 
-        await user.addRole(role);
+        // clean all previous records
+        await user.setRoles([]);
 
-        return res.status(200).json({ success: true, code: 200, message: "Role Assigned Successfully." });
+        // reassign new roles
+        const assignedRoles = await user.addRoles(userRole);
+
+        return res.status(200).json({ success: true, code: 200, message: "Role Assigned Successfully.", data: assignedRoles });
 
     } catch (error) {
         console.log(error);
@@ -98,32 +136,4 @@ const assignRole = asyncHandler(async (req, res) => {
     }
 });
 
-const removeRole = asyncHandler(async (req, res) => {
-    const { User, Role } = req.dbModels;
-    const transaction = req.dbObject.transaction();
-
-    try {
-        const { userId = "", userRole = "" } = req.body;
-
-        if (!userId || !userRole) return res.status(400).json({ success: false, code: 400, message: "Both fields are required!!!" });
-
-        const user = await User.findByPk(userId, { transaction });
-        const role = await Role.findOne({ where: { role: userRole } }, { transaction });
-
-        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
-        if (!role) return res.status(400).json({ success: false, code: 400, message: "Role not found!!!" });
-
-        await user.removeRole(role, { transaction });
-
-        await transaction.commit();
-
-        return res.status(200).json({ success: true, code: 200, message: "Role Removed." });
-
-    } catch (error) {
-        console.log(error);
-        if (transaction) await transaction.rollback();
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-export { editRole, deleteRole, addRole, allRoles, assignRole, removeRole };
+export { editRole, deleteRole, addRole, allRoles, assignRole };

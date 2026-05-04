@@ -11,6 +11,10 @@ function Role(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
+        is_default: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
     })
 }
 export default Role;
