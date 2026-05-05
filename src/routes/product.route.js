@@ -8,6 +8,8 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
+router.route("/list").get(verifyPermission("product:read"), allProductList); // optional ?barcode= &page= &limit=
+
 router.route("/create-finish").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("product:create"), createFinishedProduct);
 
 router.route("/create-raw").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("product:create"), createRawProduct);
@@ -15,8 +17,9 @@ router.route("/create-raw").post(upload.single("image"), defineUserScope, define
 router.route("/update").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("product:update"), updateProduct);
 
 router.use(defineUserScope, defineDbObject, verifyJWT);
-router.route("/update-batch").put(verifyPermission("product:update-batch"), updateProductBatch);
-router.route("/list").get(verifyPermission("product:read"), allProductList); // optional ?barcode= &page= &limit=
 router.route("/delete/:id").delete(verifyPermission("product:delete"), deleteProduct);
+
+
+router.route("/update-batch").put(verifyPermission("product:update-batch"), updateProductBatch);
 
 export default router;

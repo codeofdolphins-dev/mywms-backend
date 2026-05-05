@@ -5,12 +5,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const allRoles = asyncHandler(async (req, res) => {
     const { Role, User } = req.dbModels;
     try {
-        const { id } = req.query;
+        const { id, is_default = false } = req.query;
 
         const roles = await Role.findAll({
             where: {
                 status: true,
-                is_default: false
+                is_default: is_default
             },
             // attributes: ["id", "role", "status"],
             order: [["id", "ASC"]],
@@ -66,7 +66,7 @@ const addRole = asyncHandler(async (req, res) => {
 
 const deleteRole = asyncHandler(async (req, res) => {
     const { Role } = req.dbModels;
-    
+
     try {
         const id = req.params.id;
 

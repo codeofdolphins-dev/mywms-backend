@@ -894,13 +894,15 @@ export const districts = [
 ];
 
 export const roles = [
-  { role: "system", inBuilt: true },
-  { role: "owner", inBuilt: true },
-  { role: "company", inBuilt: true },
-  { role: "admin", inBuilt: true },
-  { role: "user", inBuilt: true },
-  { role: "purchase-admin", inBuilt: true },
-  { role: "sales-admin", inBuilt: true },
+  { role: "system", is_default: true },
+  { role: "owner", is_default: true },
+  { role: "company", is_default: true },
+  { role: "admin", is_default: true },
+  { role: "purchase", is_default: true },
+  { role: "sales", is_default: true },
+  { role: "store_rm", is_default: true },
+  { role: "store_wip", is_default: true },
+  { role: "store_fg", is_default: true },
 ];
 
 export const businessNodeTypes = [
@@ -928,43 +930,19 @@ export const permissions = [
   { permission: "role:update" },
   { permission: "role:delete" },
   { permission: "role:assign" },
-  { permission: "role:remove" },
 
   // permission
   { permission: "permission:read" },
   { permission: "permission:modify" },
 
-  // company
-  { permission: "company:create" },
-  { permission: "company:read" },
-  { permission: "company:update" },
-  { permission: "company:delete" },
-
-  // employee
-  { permission: "employee:create" },
-  { permission: "employee:read" },
-  { permission: "employee:update" },
-  { permission: "employee:delete" },
-
   // inward
   { permission: "inward:create" },
   { permission: "inward:read" },
-  { permission: "inward:delete" },
-  { permission: "inward:update" },
-  { permission: "inward-item:update" },
-
-  // invoice
-  { permission: "invoice:create" },
-  { permission: "invoice:read" },
-  { permission: "invoice:delete" },
-  { permission: "invoice:update" },
-  { permission: "invoice-item:update" },
 
   // requisition
-  { permission: "requisition:create" },
   { permission: "requisition:read" },
+  { permission: "requisition:create" },
   { permission: "requisition:update" },
-  { permission: "requisition-item:update" },
   { permission: "requisition:delete" },
 
   // hsn
@@ -977,7 +955,6 @@ export const permissions = [
   { permission: "product:create" },
   { permission: "product:read" },
   { permission: "product:update" },
-  { permission: "product:update-batch" },
   { permission: "product:delete" },
 
   // category
@@ -986,34 +963,27 @@ export const permissions = [
   { permission: "category:update" },
   { permission: "category:delete" },
 
-  // purchaseOrder
-  { permission: "purchaseOrder:create" },
-  { permission: "purchaseOrder:read" },
-  { permission: "purchaseOrder:update" },
-  { permission: "purchaseOrder-item:update" },
-  { permission: "purchaseOrder:delete" },
+  // BlanketPO
+  { permission: "BlanketPO:read" },
+  { permission: "BlanketPO:create" },
+
+  // order(purchase/sales)
+  { permission: "order:create" },
+  { permission: "order:read" },
+  { permission: "order:update" },
+  { permission: "order:delete" },
 
   // quotation
-  { permission: "quotation:create" },
   { permission: "quotation:read" },
+  { permission: "quotation:create" },
   { permission: "quotation:update" },
-  { permission: "quotation-item:update" },
   { permission: "quotation:delete" },
 
   // outward
-  { permission: "outward:create" },
   { permission: "outward:read" },
+  { permission: "outward:create" },
   { permission: "outward:update" },
-  { permission: "outward-item:update" },
   { permission: "outward:delete" },
-
-  // bom
-  { permission: "bom:create" },
-  { permission: "bom:read" },
-  { permission: "bom:update" },
-  { permission: "bom:delete" },
-  { permission: "bom-item:add" },
-  { permission: "bom-item:remove" },
 
   // brand
   { permission: "brand:create" },
@@ -1021,21 +991,37 @@ export const permissions = [
   { permission: "brand:update" },
   { permission: "brand:delete" },
 
-  // supplier
-  { permission: "supplier:create" },
-  { permission: "supplier:read" },
-  { permission: "supplier:update" },
-  { permission: "supplier:delete" },
-
-  // distributor
-  { permission: "distributor:create" },
-  { permission: "distributor:read" },
-  { permission: "distributor:update" },
-  { permission: "distributor:delete" },
-
   // unit
   { permission: "unit:create" },
   { permission: "unit:read" },
   { permission: "unit:update" },
   { permission: "unit:delete" },
+  
+  
+  // productionOrder
+  { permission: "productionOrder:create" },
+  { permission: "productionOrder:read" },
+  { permission: "productionOrder:update" },
+  { permission: "productionOrder:delete" },
+  
+  
+  // productionReceipt
+  { permission: "productionReceipt:create" },
+  { permission: "productionReceipt:read" },
+  { permission: "productionReceipt:update" },
+  { permission: "productionReceipt:delete" },
+  
+  
+  // transferOrder
+  { permission: "transferOrder:create" },
+  { permission: "transferOrder:read" },
+  { permission: "transferOrder:update" },
+  { permission: "transferOrder:delete" },
+
+  
+  // store
+  { permission: "store:create" },
+  { permission: "store:read" },
+  { permission: "store:update" },
+  { permission: "store:delete" },
 ]

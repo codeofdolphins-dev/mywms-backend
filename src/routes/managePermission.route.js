@@ -9,6 +9,6 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/:roleId").get(verifyPermission("permission:read"), allAssignPermissions);
-router.route("/assignPermission").post(verifyPermission("permission:modify"), modifyPermissions);
+router.route("/manage-permissions").put(verifyPermission("permission:modify"), modifyPermissions);
 
 export default router;

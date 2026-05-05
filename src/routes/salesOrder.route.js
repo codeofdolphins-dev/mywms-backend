@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/list").get(verifyPermission("salesOrder:read"), allSalesOrderList);
-router.route("/item-details").get(verifyPermission("salesOrder:read"), salesOrderItemDetails);
+router.route("/list").get(allSalesOrderList);
+router.route("/item-details").get(salesOrderItemDetails);
 
 export default router;
