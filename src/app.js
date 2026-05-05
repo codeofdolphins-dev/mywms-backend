@@ -67,7 +67,6 @@ app.use(session({
 
 import apiRoutes from "./routes/index.route.js";
 import renderPage from './utils/renderPage.js';
-import { data } from './sample.js';
 
 app.use("/api", apiRoutes);
 
@@ -79,15 +78,6 @@ app.use("/hash", async (req, res) => {
         res.send({ hash });
     });
 });
-
-app.get("/preview", async (req, res) => {
-    
-    const html = await renderPage("requisition", data);
-
-    res.setHeader("Content-Type", "text/html");
-    res.send(html);
-})
-
 
 app.use((req, res) => {
     res.status(404).json({

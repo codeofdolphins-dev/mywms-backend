@@ -7,9 +7,10 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/create").post(verifyPermission("inward:create"), createInward);
-router.route("/list").get(grnList);
+router.route("/list").get(verifyPermission("inward:read"), grnList);
 router.route("/item-prefield-data/:po_no").get(getTenantOutwardData);
+router.route("/create").post(verifyPermission("inward:create"), createInward);
+
 router.route("/:grn_no").get(grnItemDetailsViaPO);
 
 

@@ -211,8 +211,7 @@ export const registerVendor = asyncHandler(async (req, res) => {
 
 
 export const registeredUserWithNodes = asyncHandler(async (req, res) => {
-
-    const { User, ManufacturingUnit } = req.dbModels;
+    const { User, ManufacturingUnit, Role } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -222,8 +221,10 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const profile_image = req?.file?.filename || null;
     const dbName = req.headers["x-tenant-id"];
 
+    // console.log(req.body); return
+
     try {
-        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
+        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", storeType = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
 
         if (
@@ -234,9 +235,28 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
-        
+
+        let roles = [];
+
+        /** check user role base on store type */
+        if (storeType !== "null") {
+            if (storeType === "rm_store") {
+                const store = await Role.findOne({ where: { role: "store_rm" } })
+                if (store) roles.push(store.id);
+            }
+            if (storeType === "fg_store") {
+                const store = await Role.findOne({ where: { role: "store_fg" } })
+                if (store) roles.push(store.id);
+
+            }
+            if (storeType === "production") {
+                const store = await Role.findOne({ where: { role: "store_wip" } })
+                if (store) roles.push(store.id);
+            }
+        }
+
         /** check store */
-        if(store_id){
+        if (store_id) {
             const store = await ManufacturingUnit.findByPk(store_id);
             if (!store) {
                 if (profile_image) await deleteImage(profile_image, dbName);
@@ -245,6 +265,25 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
                 return res.status(400).json({ success: false, code: 400, message: "Store not found!!!" });
             }
         }
+
+        /** check user role base on department */
+        if (dept !== "null") {
+            if (dept === "both") {
+                const role1 = await Role.findOne({ where: { role: "sales" } })
+                const role2 = await Role.findOne({ where: { role: "purchase" } })
+                if (role1) roles.push(role1.id);
+                if (role2) roles.push(role2.id);
+            }
+            if (dept === "sales") {
+                const role1 = await Role.findOne({ where: { role: "sales" } })
+                if (role1) roles.push(role1.id);
+            }
+            if (dept === "purchase") {
+                const role2 = await Role.findOne({ where: { role: "purchase" } })
+                if (role2) roles.push(role2.id);
+            }
+        }
+
 
         /** check user */
         const isRegister = await User.findOne({ where: { email } });
@@ -292,12 +331,18 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (node_id) {
             await user.addUserBusinessNode(node_id, {
                 through: {
-                    ...(dept && { department: dept }),
-                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) }),
-                    ...(store_id && { store_id: Number(store_id) }),
+                    ...(dept !== "null" && { department: dept }),
+                    ...(isNodeAdmin !== "null" && { isNodeAdmin: Boolean(isNodeAdmin) }),
+                    ...(store_id !== "null" && { store_id: Number(store_id) }),
                 },
-                transaction 
+                transaction
             });
+            if (dept !== "null" && roles.length > 0) {
+                await user.setRoles(roles, { transaction });
+            }
+            if (storeType !== "null" && roles.length > 0) {
+                await user.setRoles(roles, { transaction });
+            }
         }
 
         await transaction.commit();
