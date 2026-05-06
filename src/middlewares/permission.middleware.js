@@ -3,6 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const verifyPermission = (purpose) => {
     return asyncHandler(async (req, res, next) => {
 
+        // if (req?.query?.noLimit == "true") return next();
+
         // return next();
 
         const { User, Role, Permission } = req.dbModels;
@@ -27,6 +29,14 @@ const verifyPermission = (purpose) => {
 
         if (!user) {
             return res.status(401).json({ success: false, message: "User not found" });
+        }
+
+        /** allow owner to skip permission */
+        if (user?.is_owner) return next();
+
+        /** allow default roles to skip permission checking */
+        for (const role of user?.roles) {
+            if (role?.is_default) return next();
         }
 
         const userPermissions = user.roles.flatMap(role =>

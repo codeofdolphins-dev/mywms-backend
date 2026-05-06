@@ -224,7 +224,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", storeType = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
+        let { email = "", password = "", full_name = "", phone_no = "", node_id = "", node = "", storeType = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
 
         if (
@@ -235,11 +235,12 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
+        node = JSON.parse(node);
 
         let roles = [];
 
         /** check user role base on store type */
-        if (storeType !== "null") {
+        if (storeType) {
             if (storeType === "rm_store") {
                 const store = await Role.findOne({ where: { role: "store_rm" } })
                 if (store) roles.push(store.id);
@@ -267,7 +268,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         }
 
         /** check user role base on department */
-        if (dept !== "null") {
+        if (dept) {
             if (dept === "both") {
                 const role1 = await Role.findOne({ where: { role: "sales" } })
                 const role2 = await Role.findOne({ where: { role: "purchase" } })
@@ -331,17 +332,21 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (node_id) {
             await user.addUserBusinessNode(node_id, {
                 through: {
-                    ...(dept !== "null" && { department: dept }),
-                    ...(isNodeAdmin !== "null" && { isNodeAdmin: Boolean(isNodeAdmin) }),
-                    ...(store_id !== "null" && { store_id: Number(store_id) }),
+                    ...(dept && { department: dept }),
+                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) }),
+                    ...(store_id && { store_id: Number(store_id) }),
                 },
                 transaction
             });
-            if (dept !== "null" && roles.length > 0) {
+            if (dept && roles.length > 0) {
                 await user.setRoles(roles, { transaction });
             }
-            if (storeType !== "null" && roles.length > 0) {
+            if (storeType && roles.length > 0) {
                 await user.setRoles(roles, { transaction });
+            }
+            if (isNodeAdmin === "true" && node?.businessNode?.type?.category === "warehouse") {
+                const warehouseRole = await Role.findOne({ where: { role: "warehouse_admin" } })
+                if (warehouseRole) await user.setRole(warehouseRole.id, { transaction });
             }
         }
 

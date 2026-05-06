@@ -84,7 +84,7 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
 
     try {
         const { production_order_id = "", fg_store_id = "", product_id = "", send_qty = "", mfg_date = "", receipt_no = "" } = req.body;
-        if (!production_order_id || !fg_store_id || !product_id || !send_qty || !mfg_date) throw new Error("Required fields are missing!!!");
+        if ([production_order_id, fg_store_id, product_id, send_qty].some((i) => i === "")) throw new Error("Required fields are missing!!!");
 
         const user = req.user;
 
@@ -114,7 +114,7 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
             fg_store_id: Number(fg_store_id),
             product_id: Number(product_id),
             send_qty: Number(send_qty),
-            mfg_date: new Date(mfg_date),
+            mfg_date: mfg_date ? new Date(mfg_date) : new Date(),
             created_by: Number(user.id),
         }, { transaction });
 

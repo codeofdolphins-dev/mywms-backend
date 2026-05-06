@@ -10,7 +10,10 @@ const allRoles = asyncHandler(async (req, res) => {
         const roles = await Role.findAll({
             where: {
                 status: true,
-                is_default: is_default
+                // is_default: is_default,
+                role: {
+                    [Op.notIn]: ["system", "owner", "company"]
+                }
             },
             // attributes: ["id", "role", "status"],
             order: [["id", "ASC"]],

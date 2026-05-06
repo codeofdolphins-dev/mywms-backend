@@ -44,9 +44,9 @@ router.route("/quotation/delete/:id").delete(verifyPermission("rfq-quotation:del
 
 
 /** blanket-order */
-router.route("/blanket-order/list").get(verifyPermission("rfq-quotation:read"), allBlanketOrderList);
-router.route("/blanket-order/:bpo_no").get(verifyPermission("rfq-quotation:read"), blanketOrderWithProductDetails);
-router.route("/blanket-order/create").post(verifyPermission("rfq-quotation:create"), createBlanketOrder);
+router.route("/blanket-order/list").get(verifyPermission("rfq-blanket-order:read"), allBlanketOrderList);
+router.route("/blanket-order/:bpo_no").get(verifyPermission("rfq-blanket-order:read"), blanketOrderWithProductDetails);
+router.route("/blanket-order/create").post(verifyPermission("rfq-blanket-order:create"), createBlanketOrder);
 
 
 

@@ -186,6 +186,13 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         }
+        if (has_expiry) {
+            if ((has_expiry === "true" || has_expiry === true) && !shelf_life) {
+                if (photo) await deleteImage(photo, dbName);
+                await transaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
+            }
+        }
 
         const product = await Product.create({
             name: name.trim(),
@@ -326,7 +333,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         let {
             id = "", name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "", package_type_id = "",
-            unit_type_id = "", measure = "",
+            unit_type_id = "", measure = "", has_expiry = false, shelf_life = "",
             description = "", reorder_level = "", is_active = ""
         } = req.body;
 
@@ -368,7 +375,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
             };
             product.setProductCategories(category);
         }
-        if (brand_id !== null || brand_id !== "") {
+        if (brand_id) {
             const brand = await Brand.findOne({
                 where: { id: Number(brand_id) }
             })
@@ -417,6 +424,21 @@ export const updateProduct = asyncHandler(async (req, res) => {
                 await deleteImage(product.photo);
             }
             product.photo = `${dbName}/${profile_image}`;
+        }
+        if (has_expiry !== "") {
+            if (has_expiry === "true" && !shelf_life) {
+                if (profile_image) await deleteImage(profile_image, dbName);
+                await transaction.rollback();
+                return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
+            }
+            if (has_expiry === "true" && shelf_life) {
+                product.has_expiry = true;
+                product.shelf_life = Number(shelf_life);
+            }
+            if (has_expiry === "false") {
+                product.has_expiry = false;
+                product.shelf_life = 0;
+            }
         }
 
         const isUpdate = await product.save({ transaction });

@@ -340,7 +340,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         );
 
         for (const item of items) {
-            if (!item.barcode || !item.brand || !item.category) throw new Error("required field are missing!!!");
+            if (!item.barcode) throw new Error("barcode is required!!!");
 
             const product = await Product.findOne({
                 where: { barcode: item.barcode },
@@ -354,9 +354,9 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
                 {
                     requisition_id: requisition.id,
                     product_id: product.id,
-                    brand: item.brand,
-                    category: item.category,
-                    sub_category: item.subCategory,
+                    ...(item.brand && { brand: item.brand }),
+                    ...(item.category && { category: item.category }),
+                    ...(item.subCategory && { sub_category: item.subCategory }),
                     qty: item.reqQty,
                     price_limit: item.priceLimit
                 },

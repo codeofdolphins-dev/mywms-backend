@@ -903,6 +903,7 @@ export const roles = [
   { role: "store_rm", is_default: true },
   { role: "store_wip", is_default: true },
   { role: "store_fg", is_default: true },
+  { role: "warehouse_admin", is_default: true },
 ];
 
 export const businessNodeTypes = [
@@ -1024,4 +1025,15 @@ export const permissions = [
   { permission: "store:read" },
   { permission: "store:update" },
   { permission: "store:delete" },
+  
+  
+  // rfq-quotation
+  { permission: "rfq-quotation:create" },
+  { permission: "rfq-quotation:read" },
+  { permission: "rfq-quotation:update" },
+  { permission: "rfq-quotation:delete" },
+
+  // rfq-blanket-order
+  { permission: "rfq-blanket-order:create" },
+  { permission: "rfq-blanket-order:read" },
 ]
