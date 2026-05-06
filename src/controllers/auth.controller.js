@@ -212,6 +212,7 @@ export const registerVendor = asyncHandler(async (req, res) => {
 
 export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const { User, ManufacturingUnit, Role } = req.dbModels;
+    const { User, ManufacturingUnit, Role } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -220,6 +221,8 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
     const profile_image = req?.file?.filename || null;
     const dbName = req.headers["x-tenant-id"];
+
+    // console.log(req.body); return
 
     // console.log(req.body); return
 
@@ -257,6 +260,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         }
 
         /** check store */
+        if (store_id) {
         if (store_id) {
             const store = await ManufacturingUnit.findByPk(store_id);
             if (!store) {
@@ -332,9 +336,9 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (node_id) {
             await user.addUserBusinessNode(node_id, {
                 through: {
-                    ...(dept && { department: dept }),
-                    ...(isNodeAdmin && { isNodeAdmin: Boolean(isNodeAdmin) }),
-                    ...(store_id && { store_id: Number(store_id) }),
+                    ...(dept !== "null" && { department: dept }),
+                    ...(isNodeAdmin !== "null" && { isNodeAdmin: Boolean(isNodeAdmin) }),
+                    ...(store_id !== "null" && { store_id: Number(store_id) }),
                 },
                 transaction
             });
