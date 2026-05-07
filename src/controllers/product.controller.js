@@ -269,8 +269,6 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Product already exists!!!` });
         };
 
-        console.log(isExists)
-
         const product = await Product.create({
             name: name?.trim(),
             sku: p_code,
@@ -398,7 +396,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
         if (sku) product.sku = sku;
         if (package_type_id) {
             const packageType = await PackageType.findByPk(Number(package_type_id));
-            console.log(packageType)
             if (!packageType) {
                 if (profile_image) await deleteImage(profile_image, dbName);
                 await transaction.rollback();

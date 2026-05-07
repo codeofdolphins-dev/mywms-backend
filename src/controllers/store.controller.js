@@ -29,7 +29,7 @@ export const manufacturingUnitCountByType = asyncHandler(async (req, res) => {
 });
 
 export const manufacturingUnitList = asyncHandler(async (req, res) => {
-    const { ManufacturingUnit, BusinessNode, BusinessNodeType } = req.dbModels;
+    const { ManufacturingUnit, BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, id = "", name = "", store_type = "", noLimit = false, isAdmin = false, location_id = "" } = req.query;
@@ -53,7 +53,11 @@ export const manufacturingUnitList = asyncHandler(async (req, res) => {
                         {
                             model: BusinessNodeType,
                             as: "type",
-                        }
+                        },
+                        {
+                            model: NodeDetails,
+                            as: "nodeDetails",
+                        },
                     ]
                 }
             ],

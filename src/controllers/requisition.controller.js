@@ -101,6 +101,7 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
     const { BusinessNode, Requisition, NodeDetails, RequisitionItem, Product, UnitType, PackageType } = req.dbModels;
 
     const current_node = req.activeNode;
+    console.log("current_node", current_node)
 
     try {
         let { page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = "" } = req.query;
@@ -241,7 +242,7 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: formattedRequisitions,
-            meta: {
+            pagination: {
                 totalItems,
                 currentPage: page,
                 totalPages,
@@ -255,14 +256,13 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
 });
 
 
+/** allow nodes */
 export const getCreateRequisitionContext = asyncHandler(async (req, res) => {
     const models = req.dbModels;
 
     try {
-        const { userBusinessNode } = req.user;
-
         const allowNode = await getAllowedBusinessNodes(
-            userBusinessNode?.[0]?.id,
+            req.activeNode,
             models,
         );
 
@@ -295,9 +295,14 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         // fetch all supplier nodes
         const supplierNode = await BusinessNode.findAll({
-            where: { id: supplier_node }
+            where: { id: { [Op.in]: supplier_node } }
         });
         if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
+
+        // for (const i of supplierNode) {
+        //     console.log(i.toJSON());
+        //     return;
+        // }
 
         const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
 
@@ -330,7 +335,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         /** push all supplier id into join table (requisitionSupplier) */
         await requisition.addSupplierBusinessNode(
-            supplierNode.map(node => node.id),
+            supplierNode.map(node => node.node_type_code === "L-101" ? 1 : node.id),
             {
                 through: {
                     status: "sent",
@@ -436,7 +441,6 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             if ([id, reqQty, priceLimit].some(i => i === "")) throw new Error("required fields are missing!!!");
 
             const product = await Product.findByPk(Number(id));
-            console.log(product)
             if (!product) {
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });

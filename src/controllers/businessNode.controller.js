@@ -82,20 +82,22 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
     try {
         const businessNode = await BusinessNode.findAll({
             where: { node_type_code: "L-101" },
-            // include: [
-            //     {
-            //         model: NodeDetails,
-            //         as: "nodeDetails"
-            //     },
-            // ]
+            include: [
+                {
+                    model: NodeDetails,
+                    as: "nodeDetails"
+                },
+            ]
         });
         if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        const formatResponse = businessNode?.map(i => i.nodeDetails)
 
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: businessNode
+            data: formatResponse
         });
 
     } catch (error) {

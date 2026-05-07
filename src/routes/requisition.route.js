@@ -12,7 +12,7 @@ router.route("/allow-node").get(getCreateRequisitionContext);
 
 router.route("/list").get(verifyPermission("requisition:read"), allRequisitionList);
 router.route("/receive-list").get(verifyPermission("receive-requisition:read"), allReceiveRequisitionList);
-router.route("/create").post(verifyPermission("requisition:create"), createInternalRequisition);
+router.route("/create-internal").post(verifyPermission("requisition:create"), createInternalRequisition);
 router.route("/update").put(verifyPermission("requisition:update"), updateRequisition);
 router.route("/delete/:id").delete(verifyPermission("requisition:delete"), deleteRequisition);
 

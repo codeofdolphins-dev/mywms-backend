@@ -6,7 +6,6 @@ const allRoles = asyncHandler(async (req, res) => {
     const { Role, User } = req.dbModels;
     try {
         const { id, is_default = false } = req.query;
-        const { id, is_default = false } = req.query;
 
         const roles = await Role.findAll({
             where: {

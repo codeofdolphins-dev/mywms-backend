@@ -8,7 +8,7 @@ import { Op } from "sequelize";
  */
 export const getAllowedBusinessNodes = async (userBusinessNodeId, models, removeSelf = true) => {
 
-    const { BusinessNode, NodeDetails, TenantBusinessFlow } = models;
+    const { BusinessNode, NodeDetails, TenantBusinessFlow, ManufacturingUnit } = models;
 
     try {
         const userNode = await BusinessNode.findByPk(userBusinessNodeId, {
@@ -24,15 +24,51 @@ export const getAllowedBusinessNodes = async (userBusinessNodeId, models, remove
             throw new Error("Business node not found");
         }
 
-        const sequences = [userNode.parentFlow.sequence];
+        // const sequences = [userNode.parentFlow.sequence];
+        const sequences = userNode.parentFlow.sequence;
 
-        console.log(sequences);
+        // console.log("sequences", sequences);
         // return
 
 
-        if (userNode.parentFlow.sequence > 1) {
-            sequences.push(userNode.parentFlow.sequence - 1);
-        }
+        // if (sequences > 1) {
+        //     sequences.push(userNode.parentFlow.sequence - 1);
+        // }
+        // if (sequences - 1 === 1) {
+        //     const res = await BusinessNode.findAll({
+        //         include: [
+        //             {
+        //                 model: TenantBusinessFlow,
+        //                 as: "parentFlow",
+        //                 where: {
+        //                     sequence: 1,
+        //                     is_active: true
+        //                 },
+        //                 order: [["sequence", "DESC"]]
+        //             },
+        //             {
+        //                 model: ManufacturingUnit,
+        //                 as: "unitLocations",
+        //                 where: {
+        //                     store_type: "fg_store",
+        //                     isActive: true
+        //                 }
+        //             }
+        //         ],
+        //     });
+
+        //     let formatresponse = [];
+        //     for (const r of res) {
+        //         // console.log("r", r.toJSON())
+        //         formatresponse = [...formatresponse, ...r.unitLocations]
+        //     }
+
+        //     // for (const i of formatresponse) {
+        //     //     console.log(i);
+        //     // }
+
+        //     return formatresponse;
+        // }
 
         return BusinessNode.findAll({
             where: {
@@ -43,7 +79,8 @@ export const getAllowedBusinessNodes = async (userBusinessNodeId, models, remove
                     model: TenantBusinessFlow,
                     as: "parentFlow",
                     where: {
-                        sequence: { [Op.in]: sequences },
+                        // sequence: { [Op.in]: sequences },
+                        sequence: sequences - 1,
                         is_active: true
                     },
                     order: [["sequence", "DESC"]]

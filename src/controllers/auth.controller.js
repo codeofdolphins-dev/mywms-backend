@@ -93,7 +93,7 @@ export const register_company = asyncHandler(async (req, res) => {
                 companyName: name
             }, { transaction: rootTransaction });
         } else {
-            console.log("update tenant");
+            // console.log("update tenant");
 
             await Tenant.update({
                 password,
@@ -212,7 +212,6 @@ export const registerVendor = asyncHandler(async (req, res) => {
 
 export const registeredUserWithNodes = asyncHandler(async (req, res) => {
     const { User, ManufacturingUnit, Role } = req.dbModels;
-    const { User, ManufacturingUnit, Role } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const { models, rootSequelize } = await rootDB();
@@ -260,7 +259,6 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         }
 
         /** check store */
-        if (store_id) {
         if (store_id) {
             const store = await ManufacturingUnit.findByPk(store_id);
             if (!store) {

@@ -9,7 +9,6 @@ export const allRfqList = asyncHandler(async (req, res) => {
     const { RFQ, RFQItem, ProductMapping } = models;
 
     const vendor_tenant = req.headers["x-tenant-id"];
-    const { Product } = req.dbModels;
     // console.log(dbName)
 
     try {
@@ -51,12 +50,14 @@ export const allRfqList = asyncHandler(async (req, res) => {
                             buyer_product_id: product.product_id,
                         },
                     });
-
-                    product.vendor_product = await Product.findOne({
-                        where: {
-                            id: Number(productMapping?.vendor_product_id || 0),
-                        },
-                    });
+                    if (req?.dbModels) {
+                        const { Product } = req.dbModels;
+                        product.vendor_product = await Product.findOne({
+                            where: {
+                                id: Number(productMapping?.vendor_product_id || 0),
+                            },
+                        });
+                    }
                 }
             }
 
