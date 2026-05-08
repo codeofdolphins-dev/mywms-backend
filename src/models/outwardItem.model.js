@@ -8,7 +8,7 @@ function OutwardItem(sequelize) {
         },
         sales_order_item_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         vendor_product_id: {
             type: DataTypes.INTEGER,
@@ -26,7 +26,7 @@ function OutwardItem(sequelize) {
         },
         unit_price: {
             type: DataTypes.DECIMAL(10, 2),
-            allowNull: false,
+            allowNull: true,
             defaultValue: 0.00
         }
     });

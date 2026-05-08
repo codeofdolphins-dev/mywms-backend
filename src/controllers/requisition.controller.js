@@ -287,7 +287,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", total = "", type = "internal", items = [], } = req.body;
+        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", type = "internal", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
@@ -320,7 +320,6 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             title,
             notes,
-            grandTotal: total,
             type,
             type: "internal",
             ...(priority && { priority: priority.toLowerCase() }),
@@ -363,7 +362,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
                     ...(item.category && { category: item.category }),
                     ...(item.subCategory && { sub_category: item.subCategory }),
                     qty: item.reqQty,
-                    price_limit: item.priceLimit
+                    // price_limit: item.priceLimit
                 },
                 { transaction }
             );
@@ -406,7 +405,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             buyer_business_node_id: current_node,
             title: title?.trim(),
             notes: notes?.trim(),
-            grandTotal: total,
+            ...(total !== "" && { grandTotal: total }),
             requisition_category_id: rCat?.id,
             type: "external",
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
@@ -428,7 +427,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             note: notes?.trim(),
             status: "open",
             ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
-            grand_total: total,
+            ...(total !== "" && { grand_total: total }),
             meta: nodeDetails
         }, {
             transaction: rootTransaction

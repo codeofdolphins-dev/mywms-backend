@@ -10,7 +10,7 @@ function Outward(sequelize) {
         // Link to the associated Sales Order
         sales_order_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
 
 
@@ -23,7 +23,6 @@ function Outward(sequelize) {
         store_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            defaultValue: null
         },
         // this will may target both node or vendor
         buyer_business_node_id: {

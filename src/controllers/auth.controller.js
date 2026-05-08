@@ -334,9 +334,9 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (node_id) {
             await user.addUserBusinessNode(node_id, {
                 through: {
-                    ...(dept !== "null" && { department: dept }),
-                    ...(isNodeAdmin !== "null" && { isNodeAdmin: Boolean(isNodeAdmin) }),
-                    ...(store_id !== "null" && { store_id: Number(store_id) }),
+                    ...(dept && dept !== "null" && { department: dept }),
+                    ...(isNodeAdmin && isNodeAdmin !== "null" && { isNodeAdmin: Boolean(isNodeAdmin) }),
+                    ...(store_id && store_id !== "null" && { store_id: Number(store_id) }),
                 },
                 transaction
             });
