@@ -62,6 +62,10 @@ function Product(sequelize) {
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
+        mrp: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
+        },
         photo: {
             type: DataTypes.STRING,
             allowNull: true,

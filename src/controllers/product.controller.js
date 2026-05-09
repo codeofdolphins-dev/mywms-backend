@@ -38,7 +38,7 @@ export const allProductList = asyncHandler(async (req, res) => {
                 product_type: type,
             },
             ...(type === "raw" && {
-                attributes: ["id", "name", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
+                attributes: ["id", "name", "barcode", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
             }),
             include: [
                 {
@@ -110,7 +110,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "",
             package_type_id = "", unit_type_id = "", measure = "",
-            description = "", reorder_level = "", has_expiry = false, shelf_life = ""
+            description = "", reorder_level = "", has_expiry = false, shelf_life = "", mrp = ""
         } = req.body;
 
         if ([name, hsn_id, barcode, package_type_id, unit_type_id].some(item => item === "")) {
@@ -209,6 +209,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             unit_type: unitType.name,
             description,
             reorder_level: Number(reorder_level),
+            ...(mrp ? { mrp: Number(mrp) } : null),
             ...(photo ? { photo: `${dbName}/${photo}` } : null),
             product_type: "finished"
         }, { transaction });
@@ -332,7 +333,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
             id = "", name = "", categories = "", brand_id = "",
             hsn_id = "", sku = "", barcode = "", package_type_id = "",
             unit_type_id = "", measure = "", has_expiry = false, shelf_life = "",
-            description = "", reorder_level = "", is_active = ""
+            description = "", reorder_level = "", is_active = "", mrp = ""
         } = req.body;
 
         if (!(id || barcode)) {
@@ -437,6 +438,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
                 product.shelf_life = 0;
             }
         }
+        if (mrp) product.mrp = Number(mrp);
 
         const isUpdate = await product.save({ transaction });
         if (!isUpdate) throw new Error("Updation failed!!!");
