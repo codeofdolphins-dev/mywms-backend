@@ -222,6 +222,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
     const current_node = req.activeNode;
 
+    // console.log(req.body); return 
+
     try {
         const { rfq_no = "", valid_till = "", grandTotal = "", buyer_name = "", items = "" } = req.body;
         if (!rfq_no || items?.length < 1) throw new Error("Required fields are missing!!!");
@@ -291,7 +293,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
                         throw new Error(`Conflict: Buyer product is already linked to another product of yours.`);
                     }
                     if (mapping.vendor_product_id === Number(supplier_product_id) && mapping.buyer_product_id !== rfqItem.product_id) {
-                        throw new Error(`Conflict: Your this product is already linked with buyer product.`);
+                        await mapping.update({ vendor_product_id: Number(supplier_product_id) }, { transaction: rootTransaction });
+                        // throw new Error(`Conflict: Your this product is already linked with buyer product.`);
                     }
                     if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id === Number(supplier_product_id)) {
                         productMapping = mapping;
@@ -320,7 +323,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         };
 
         await rootTransaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
+        return res.status(200).json({ success: true, code: 200, message: `Record created successfully ${productMapping ? " and product mapping updated" : ""}` });
 
     } catch (error) {
         await rootTransaction.rollback();

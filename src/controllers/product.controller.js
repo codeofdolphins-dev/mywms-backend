@@ -7,7 +7,7 @@ import { deleteImage } from "../utils/handelImage.js";
 export const allProductList = asyncHandler(async (req, res) => {
     const { Product, HSN, Brand, PackageType, UnitType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "finished", noLimit = false } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -35,11 +35,11 @@ export const allProductList = asyncHandler(async (req, res) => {
                         },
                     ]
                 }),
-                product_type: type,
+                ...(type && { product_type: type }),
             },
-            ...(type === "raw" && {
-                attributes: ["id", "name", "barcode", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
-            }),
+            // ...(type === "raw" && {
+            //     attributes: ["id", "name", "barcode", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
+            // }),
             include: [
                 {
                     model: HSN,
@@ -65,9 +65,9 @@ export const allProductList = asyncHandler(async (req, res) => {
             order: [["createdAt", "ASC"]],
         });
 
-        if (type !== "raw") {
-            await helper(req.dbModels, product);
-        };
+        await helper(req.dbModels, product);
+        // if (type !== "raw") {
+        // };
 
         if (!product) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -108,12 +108,12 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
     try {
         let {
             name = "", categories = "", brand_id = "",
-            hsn_id = "", sku = "", barcode = "",
+            hsn_id = "", sku = "", barcode = "", product_type = "finished",
             package_type_id = "", unit_type_id = "", measure = "",
             description = "", reorder_level = "", has_expiry = false, shelf_life = "", mrp = ""
         } = req.body;
 
-        if ([name, hsn_id, barcode, package_type_id, unit_type_id].some(item => item === "")) {
+        if ([name, barcode, package_type_id, unit_type_id, sku].some(item => item === "")) {
             await deleteImage(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
@@ -139,11 +139,14 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
         }
 
         /** check hsn is exists */
-        const hsn = await HSN.findByPk(Number(hsn_id));
-        if (!hsn) {
-            await deleteImage(photo, dbName);
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
+        let hsn = null;
+        if (hsn_id) {
+            hsn = await HSN.findByPk(Number(hsn_id));
+            if (!hsn) {
+                await deleteImage(photo, dbName);
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
+            }
         }
 
         /** check brand is exists */
@@ -186,8 +189,9 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         }
+
         if (has_expiry) {
-            if ((has_expiry === "true" || has_expiry === true) && !shelf_life) {
+            if ((has_expiry == "true") && !shelf_life) {
                 if (photo) await deleteImage(photo, dbName);
                 await transaction.rollback();
                 return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
@@ -196,12 +200,10 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
         const product = await Product.create({
             name: name.trim(),
-            hsn_code: hsn.hsn_code,
+            ...(hsn && { hsn_code: hsn.hsn_code }),
             sku,
             barcode,
             ...(brand_id && { brand_id: Number(brand_id) }),
-            // gst_rate: Number(gst_rate),
-            // is_taxable: is_taxable,
             has_expiry: Boolean(has_expiry),
             ...(has_expiry && { shelf_life: Number(shelf_life) }),
             package_type: packageType.name,
@@ -211,7 +213,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             reorder_level: Number(reorder_level),
             ...(mrp ? { mrp: Number(mrp) } : null),
             ...(photo ? { photo: `${dbName}/${photo}` } : null),
-            product_type: "finished"
+            product_type
         }, { transaction });
 
         if (!product) throw new Error("Insertion failed!!!");
@@ -242,7 +244,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
     let photo = req?.file?.filename || null;
 
     try {
-        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", p_code = "" } = req.body;
+        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", sku = "" } = req.body;
 
         if ([name, unit_type_id].some(item => item === "")) {
             if (photo) await deleteImage(photo, dbName);
@@ -261,7 +263,8 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             where: {
                 unit_type: unitType.name,
                 name: { [Op.iLike]: name.trim() },
-                product_type: "raw"
+                product_type: "raw",
+                ...(sku ? { sku } : { sku: null })
             }
         })
         if (isExists) {
@@ -272,7 +275,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
 
         const product = await Product.create({
             name: name?.trim(),
-            sku: p_code,
+            sku,
             ...(barcode?.trim() && { barcode: barcode.trim() }),
             unit_type: unitType.name,
             description,

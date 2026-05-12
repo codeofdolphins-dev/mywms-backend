@@ -429,9 +429,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             ...(required_by_date && { submission_deadline: new Date(required_by_date) }),
             ...(total !== "" && { grand_total: total }),
             meta: nodeDetails
-        }, {
-            transaction: rootTransaction
-        });
+        }, { transaction: rootTransaction });
         await rfq.update({ rfq_no: generateNo("RFQ", rfq.id) }, { transaction: rootTransaction });
 
 
@@ -446,18 +444,15 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             }
 
             // create record in requisition item model
-            await RequisitionItem.create(
-                {
-                    requisition_id: requisition.id,
-                    product_id: product.id,
-                    brand: item.brand,
-                    category: item.category,
-                    sub_category: item.subCategory,
-                    qty: item.reqQty,
-                    price_limit: item.priceLimit
-                },
-                { transaction }
-            );
+            await RequisitionItem.create({
+                requisition_id: requisition.id,
+                product_id: product.id,
+                brand: item.brand,
+                category: item.category,
+                sub_category: item.subCategory,
+                qty: item.reqQty,
+                price_limit: item.priceLimit
+            }, { transaction });
 
             await RFQItem.create({
                 rfq_id: rfq.id,
@@ -467,7 +462,6 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
                 uom: product.unit_type,
                 price_limit: item.priceLimit
             }, { transaction: rootTransaction });
-
         }
 
         await transaction.commit();
