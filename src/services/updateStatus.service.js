@@ -12,7 +12,8 @@ export const updatePOStatus = async (indentData, status) => {
         po.status = status;
         await po.save({ transaction });
 
-        return await transaction.commit();
+        await transaction.commit();
+        return po;
 
     } catch (err) {
         console.error(err);

@@ -409,6 +409,8 @@ export const confirmTransferOrderReceived = asyncHandler(async (req, res) => {
         const ledger_no = generateNo("LEDG", nodeStockLedger.id);
         await nodeStockLedger.update({ ledger_no }, { transaction });
 
+        let isReturn = false;
+
         /** process each item */
         for (const item of items) {
             const { item_id, product_id, allocations = [] } = item;
@@ -437,6 +439,9 @@ export const confirmTransferOrderReceived = asyncHandler(async (req, res) => {
             /** process each allocation (batch-level) */
             for (const alloc of allocations) {
                 const { item_alloc_id, batch_no, r_qty, d_qty, s_qty, e_date } = alloc;
+
+                /** update isReturn flag if damage or shortage is found */
+                if (!isReturn && Number(d_qty || 0) + Number(s_qty || 0) > 0) isReturn = true;
 
                 const receivedQty = Number(r_qty || 0);
                 const damageQty = Number(d_qty || 0);
@@ -533,7 +538,7 @@ export const confirmTransferOrderReceived = asyncHandler(async (req, res) => {
         }
 
         /** mark transfer order as received */
-        transferOrder.status = "received";
+        transferOrder.status = isReturn ? "returns" : "received";
         await transferOrder.save({ transaction });
 
         await transaction.commit();

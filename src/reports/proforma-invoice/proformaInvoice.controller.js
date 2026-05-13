@@ -68,7 +68,9 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         if (templateData.buyer_tenant) {
             try {
                 const { models: BuyerModels } = await getTenantConnection(templateData.buyer_tenant);
-                if (BuyerModels && BuyerModels.Product) {
+                const { Product, PurchasOrder } = BuyerModels;
+
+                if (BuyerModels && Product) {
                     const productIds = templateData.bpoIndentItem
                         ?.map(item => item.parentBlanketOrderItem?.buyer_product_id)
                         .filter(id => id);
@@ -87,16 +89,22 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
                         }));
                     }
                 }
+
+                const purchasOrder = await PurchasOrder.findByPk(Number(templateData?.buyer_po_id))
+                templateData.poNo = purchasOrder?.po_no;
+
             } catch (error) {
                 console.error("Failed to fetch buyer products for proforma invoice:", error);
             }
         }
 
+        // console.log(templateData)
+
         const pdf = await generatePDF("proforma-invoice", templateData);
 
 
         /** update PO & SO status */
-        await updatePOStatus(indent, "poi_received");
+        const po = await updatePOStatus(indent, "poi_received");
         await updateSOStatus(indent, "waiting_for_approval");
 
         const pdfBuffer = Buffer.from(pdf);
@@ -104,7 +112,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename="PI-${indent.indent_no || id}.pdf"`
+            `attachment; filename="${po.po_no}.pdf"`
         );
         res.setHeader(
             "Access-Control-Expose-Headers",

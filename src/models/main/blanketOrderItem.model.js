@@ -17,7 +17,7 @@ function BlanketOrderItem(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false
         },
-        unsettled_qty: {
+        consumed_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
             defaultValue: 0

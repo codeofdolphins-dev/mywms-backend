@@ -49,7 +49,7 @@ function TransferOrder(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("draft", "requested", "dispatched", "received", "cancelled"),
+            type: DataTypes.ENUM("draft", "requested", "dispatched", "received", "returns", "cancelled"),
             allowNull: true
         },
         created_by: {

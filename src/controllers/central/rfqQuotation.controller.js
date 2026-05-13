@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { rootDB } from "../../db/tenantMenager.service.js"
 import { fetchNodeDetails } from "../../helper/helper.js";
+import { updateRequisitionStatus } from "../../services/rfqQuotation.service.js";
 
 
 // GET
@@ -222,7 +223,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
     const current_node = req.activeNode;
 
-    // console.log(req.body); return 
+    /** for buyer transaction  */
+    let buyerTransaction = null;
 
     try {
         const { rfq_no = "", valid_till = "", grandTotal = "", buyer_name = "", items = "" } = req.body;
@@ -230,6 +232,15 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 
         const rfq = await RFQ.findOne({ where: { rfq_no } });
         if (!rfq) throw new Error("RFQ record not found!!!");
+
+
+
+        // console.log(rfq.toJSON())
+        // console.log("dbName", dbName);
+        // throw new Error("testing purpose");
+
+        buyerTransaction = await updateRequisitionStatus(rfq);
+
 
 
         //  check record already exists or not
@@ -293,8 +304,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
                         throw new Error(`Conflict: Buyer product is already linked to another product of yours.`);
                     }
                     if (mapping.vendor_product_id === Number(supplier_product_id) && mapping.buyer_product_id !== rfqItem.product_id) {
-                        await mapping.update({ vendor_product_id: Number(supplier_product_id) }, { transaction: rootTransaction });
-                        // throw new Error(`Conflict: Your this product is already linked with buyer product.`);
+                        throw new Error(`Conflict: Your this product is already linked with buyer product.`);
                     }
                     if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id === Number(supplier_product_id)) {
                         productMapping = mapping;
@@ -323,7 +333,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         };
 
         await rootTransaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: `Record created successfully ${productMapping ? " and product mapping updated" : ""}` });
+        await buyerTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
 
     } catch (error) {
         await rootTransaction.rollback();

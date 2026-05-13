@@ -226,7 +226,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
             /** update blanket order items */
             await BlanketOrderItem.update({
-                unsettled_qty: Sequelize.literal(`unsettled_qty + ${release_qty}`),
+                consumed_qty: Sequelize.literal(`consumed_qty + ${release_qty}`),
                 remain_contracted_qty: Sequelize.literal(`remain_contracted_qty - ${release_qty}`)
             }, { where: { id: Number(bpo_item_id) }, transaction: rootTransaction });
         };
