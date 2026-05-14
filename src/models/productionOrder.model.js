@@ -28,7 +28,17 @@ function ProductionOrder(sequelize) {
         produced_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
-            defaultValue: 0.00 // Increments as FG Store accepts goods
+            defaultValue: 0.00 // Increments as FG Store releases the goods
+        },
+        wasted_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0.00
+        },
+        part: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: 0
         },
         status: {
             type: DataTypes.ENUM("draft", "planned", "in_progress", "completed", "cancelled"),

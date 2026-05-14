@@ -903,7 +903,7 @@ export const roles = [
   { role: "store_rm", is_default: true },
   { role: "store_wip", is_default: true },
   { role: "store_fg", is_default: true },
-  { role: "warehouse_admin", is_default: true },
+  { role: "warehouse", is_default: true },
 ];
 
 export const businessNodeTypes = [

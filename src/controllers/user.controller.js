@@ -176,53 +176,5 @@ const updateEmployeeDetails = asyncHandler(async (req, res) => {
     }
 });
 
-// DELETE
-const delete_employee = asyncHandler(async (req, res) => {
-    const { User, IndividualDetails } = req.dbModels;
-    try {
-        const { targetEmail, adminPassword } = req.body;
-        if (!targetEmail || !adminPassword) return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-        const userDetails = req.user;
 
-        const user = await User.findOne({
-            where: { email: targetEmail },
-            include: [
-                {
-                    model: IndividualDetails,
-                    as: "individualDetails"
-                }
-            ]
-        });
-        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
-
-        const admin = await User.findByPk(userDetails.id);
-
-        const is_password_matched = await bcrypt.compare(adminPassword, admin.password);
-
-        if (!is_password_matched) return res.status(401).json({ success: false, code: 401, message: "Wrong password!!!" });
-
-        if (user.individualDetails.profile_image !== null) {
-            const oldImagePath = path.join(
-                process.cwd(),
-                "public",
-                "user",
-                user.individualDetails.profile_image
-            );
-            if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-        }
-
-        const isDeleted = await user.destroy({ where: { email: targetEmail } });
-
-        if (!isDeleted) return res.status(400).json({ success: false, code: 400, message: "Deletion filled!!!" });
-
-        return res.status(200).json({ success: true, code: 200, message: "Employee successfully deleted." });
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-
-
-export { currentUser, allUserList, updateEmployeeDetails, delete_employee };
+export { currentUser, allUserList, updateEmployeeDetails };

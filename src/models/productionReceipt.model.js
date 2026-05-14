@@ -19,6 +19,10 @@ function ProductionReceipt(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false // The Finished Good being handed over
         },
+        batch_no: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         send_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
@@ -45,6 +49,10 @@ function ProductionReceipt(sequelize) {
         },
         expiry_date: {
             type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        remarks: {
+            type: DataTypes.TEXT,
             allowNull: true
         },
         status: {

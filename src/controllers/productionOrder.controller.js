@@ -6,7 +6,7 @@ import { generateNo, generateBatch } from "../helper/generate.js"
 
 // GET
 export const productionOrderList = asyncHandler(async (req, res) => {
-    const { ProductionOrder, ProductionOrderItem, Product, User } = req.dbModels;
+    const { ProductionOrder, ProductionOrderItem, Product, User, ProductionReceipt } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, id = "", status = "", noLimit = false } = req.query;
@@ -34,6 +34,11 @@ export const productionOrderList = asyncHandler(async (req, res) => {
                     //         as: "rmProduct"
                     //     }
                     // ]
+                },
+                {
+                    model: ProductionReceipt,
+                    as: "receipts",
+                    attributes: ["batch_no"]
                 },
                 {
                     model: Product,

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt"
 import { deleteTenantDatabase, rootDB } from "../db/tenantMenager.service.js";
 import { deleteImage, moveFile } from "../utils/handelImage.js";
 import { hashPassword, removeFirstWord } from "../helper/helper.js";
+import { Op } from "sequelize";
 
 // GET request
 export const logout = asyncHandler(async (req, res) => {
@@ -223,8 +224,6 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
     // console.log(req.body); return
 
-    // console.log(req.body); return
-
     try {
         let { email = "", password = "", full_name = "", phone_no = "", node_id = "", node = "", storeType = "", store_id = "", isNodeAdmin = "", dept = "" } = req.body;
         const loginUser = req.user;
@@ -287,6 +286,11 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             }
         }
 
+        // if (isNodeAdmin !== undefined || isNodeAdmin !== "") {
+        //     const role = await Role.findOne({ where: { role: "warehouse" } })
+        //     if (role) roles.push(role.id);
+        // }
+
 
         /** check user */
         const isRegister = await User.findOne({ where: { email } });
@@ -346,9 +350,10 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             if (storeType && roles.length > 0) {
                 await user.setRoles(roles, { transaction });
             }
-            if (isNodeAdmin === "true" && node?.businessNode?.type?.category === "warehouse") {
-                const warehouseRole = await Role.findOne({ where: { role: "warehouse_admin" } })
-                if (warehouseRole) await user.setRole(warehouseRole.id, { transaction });
+            if (node?.businessNode?.type?.category === "warehouse") {
+                const warehouseRole = await Role.findOne({ where: { role: "warehouse" } })
+                if (!warehouseRole) throw new Error("Warehouse role not found!!!")
+                await user.setRoles([warehouseRole.id], { transaction });
             }
         }
 
@@ -443,6 +448,51 @@ export const updateUser = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+// DELETE
+export const deleteUser = asyncHandler(async (req, res) => {
+    const { User } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    const { rootSequelize, models: { Tenant } } = await rootDB();
+    const rootTransaction = await rootSequelize.transaction();
+
+
+    try {
+        const { targetEmail } = req.params;
+        if (!targetEmail) return res.status(400).json({ success: false, code: 400, message: "Target email is required!!!" });
+
+        const user = await User.findOne({
+            where: { email: { [Op.iLike]: targetEmail?.trim() } }
+        });
+        if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
+
+        const tenant = await Tenant.findOne({
+            where: {
+                email: { [Op.iLike]: targetEmail?.trim() },
+                isOwner: false
+            }
+        });
+        if (!tenant) return res.status(400).json({ success: false, code: 400, message: "Tenant record not found!!!" });
+
+        await user.destroy({ where: { email: targetEmail }, transaction });
+        await tenant.destroy({ where: { email: targetEmail }, transaction: rootTransaction });
+
+        await transaction.commit();
+        await rootTransaction.commit();
+
+        return res.status(200).json({ success: true, code: 200, message: "User deleted successfully" });
+
+    } catch (error) {
+        console.log(error);
+        await transaction.rollback();
+        await rootTransaction.rollback();
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
 
 export const login = asyncHandler(async (req, res) => {
     const { User, Role } = req.dbModels;

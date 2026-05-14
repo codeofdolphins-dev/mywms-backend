@@ -70,7 +70,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
 });
 
 export const outwardItem = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetail, Vendor, OutwardAllocation } = req.dbModels;
+    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetails, Vendor, OutwardAllocation } = req.dbModels;
     try {
         const { outward_no = "" } = req.params;
         if (!outward_no) throw new Error("Outward No is required!!!");
@@ -100,7 +100,7 @@ export const outwardItem = asyncHandler(async (req, res) => {
                 where: { id: jsonOutward.buyer_business_node_id },
                 include: [
                     {
-                        model: NodeDetail,
+                        model: NodeDetails,
                         as: "nodeDetails"
                     }
                 ]
@@ -165,11 +165,11 @@ export const outwardItem = asyncHandler(async (req, res) => {
 
 // POST
 export const createOutward = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, SalesOrder, ManufacturingUnit } = req.dbModels;
+    const { Outward, OutwardItem, Product, SalesOrder, ManufacturingUnit, Requisition, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "" } = req.body;
+        const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "" } = req.body;
 
         if (!store_id) {
             await transaction.rollback()
@@ -180,6 +180,7 @@ export const createOutward = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "Items fields are should not be empty!!!" });
         };
 
+        /** check if salesOrder is exists or not */
         let salesOrder = null
         if (sales_order_id) {
             salesOrder = await SalesOrder.findByPk(Number(sales_order_id));
@@ -191,6 +192,27 @@ export const createOutward = asyncHandler(async (req, res) => {
             salesOrder.status = "assign_fg";
             await salesOrder.save({ transaction });
         }
+
+        /** only trigger if req_no is passed, and check if requisition is exists or not */
+        if (req_no) {
+            const requisition = await Requisition.findOne({
+                where: { requisition_no: req_no?.trim() }
+            })
+            if (!requisition) {
+                await transaction.rollback()
+                return res.status(404).json({ success: false, code: 404, message: "Requisition not found!!!" });
+            }
+
+            const reqSupplier = await RequisitionSupplier.findByPk(requisition.id);
+            if (!reqSupplier) throw new Error("Requisition Supplier not found!!!");
+
+            reqSupplier.status = "assign_fg";
+            await reqSupplier.save({ transaction });
+
+            requisition.status = "assign_fg";
+            await requisition.save({ transaction });
+        }
+
 
         const store = await ManufacturingUnit.findOne({
             where: {

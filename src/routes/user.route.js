@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { allUserList, currentUser, delete_employee, updateEmployeeDetails } from "../controllers/user.controller.js";
+import { allUserList, currentUser, updateEmployeeDetails } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
@@ -14,6 +14,5 @@ router.use(defineUserScope, defineDbObject, verifyJWT);
 
 router.route("/current-user").get(currentUser);
 router.route("/list").get(verifyPermission("user:read"), allUserList); // optional ?id= &text=
-router.route("/delete-employee").delete(verifyJWT, verifyPermission("employee:delete"), delete_employee);
 
 export default router;

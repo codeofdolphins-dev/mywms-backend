@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
+import { getUserContext } from "../utils/getUserContext.js"
 
 
 // GET
@@ -65,7 +66,8 @@ export const allProductList = asyncHandler(async (req, res) => {
             order: [["createdAt", "ASC"]],
         });
 
-        await helper(req.dbModels, product);
+        await addCategory(req.dbModels, product);
+        await addTotalStock(req, product);
         // if (type !== "raw") {
         // };
 
@@ -491,7 +493,7 @@ export const updateProductBatch = asyncHandler(async (req, res) => {
  * @param {Object} models DB model
  * @param {Object} product product fetched data from DB
  */
-async function helper(models, product) {
+async function addCategory(models, product) {
     const { CategoryProducts, Category } = models;
 
     if (product.rows && product.rows.length > 0) {
@@ -578,5 +580,41 @@ async function helper(models, product) {
                 prod.dataValues.productCategories = [];
             });
         }
+    }
+}
+
+async function addTotalStock(req, product) {
+    const { Batch } = req.dbModels;
+    try {
+
+        const user = await getUserContext(req);
+
+        const productIds = product.rows.map(p => p.id);
+        const batchDetails = await Batch.findAll({
+            where: {
+                product_id: {
+                    [Op.in]: productIds
+                },
+                is_active: true,
+                location_id: user?.activeNode?.id,
+                ...(user?.activeNode?.NodeUser?.store_id !== null && { store_id: user?.activeNode?.NodeUser?.store_id }),
+            },
+            attributes: ["product_id", "available_qty"],
+        });
+
+        const stockByProduct = {};
+        batchDetails.forEach(batch => {
+            if (!stockByProduct[batch.product_id]) {
+                stockByProduct[batch.product_id] = 0;
+            }
+            stockByProduct[batch.product_id] += Number(batch.available_qty) || 0;
+        });
+
+        product.rows.forEach(prod => {
+            prod.dataValues.total_stock = stockByProduct[prod.id] || 0;
+        });
+
+    } catch (error) {
+        throw error;
     }
 }

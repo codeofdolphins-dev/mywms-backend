@@ -1,4 +1,3 @@
-import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { generateNo, generateBatch } from "../helper/generate.js";
 
@@ -49,7 +48,7 @@ export const productionReceiptList = asyncHandler(async (req, res) => {
             ],
             limit,
             offset,
-            order: [["createdAt", "ASC"]],
+            order: [["createdAt", "DESC"]],
         });
         if (!productionReceipt) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -83,7 +82,7 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { production_order_id = "", fg_store_id = "", product_id = "", send_qty = "", mfg_date = "", receipt_no = "" } = req.body;
+        const { production_order_id = "", fg_store_id = "", product_id = "", send_qty = "", mfg_date = "", receipt_no = "", remarks = "", batchNo = "", po_status = "" } = req.body;
         if ([production_order_id, fg_store_id, product_id, send_qty].some((i) => i === "")) throw new Error("Required fields are missing!!!");
 
         const user = req.user;
@@ -109,12 +108,14 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
 
 
         const productionReceipt = await ProductionReceipt.create({
-            ...(receipt_no && { receipt_no: `PR-${receipt_no.trim()}` }),
+            ...(receipt_no && { receipt_no: `PREC-${receipt_no.trim()}` }),
             production_order_id: Number(production_order_id),
             fg_store_id: Number(fg_store_id),
             product_id: Number(product_id),
             send_qty: Number(send_qty),
             mfg_date: mfg_date ? new Date(mfg_date) : new Date(),
+            ...(batchNo && { batch_no: batchNo.trim() }),
+            ...(remarks && { remarks: remarks.trim() }),
             created_by: Number(user.id),
         }, { transaction });
 
@@ -133,9 +134,14 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
             productionOrder.status = "completed";
             productionOrder.completion_date = new Date();
         }
+        if (po_status === "closed") {
+            productionOrder.status = "completed";
+            productionOrder.completion_date = new Date();
+            productionOrder.wasted_qty = Number(productionOrder.planned_qty || 0) - Number(productionOrder.produced_qty || 0);
+        };
+
+        productionOrder.part = Number(productionOrder.part || 0) + 1;
         await productionOrder.save({ transaction });
-
-
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Production Receipt Created" });
@@ -154,7 +160,7 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { pr_no = "", receipt_id = "", batch_no = "", accepted_qty = "", damage_qty = "", shortage_qty = "" } = req.body;
+        const { pr_no = "", receipt_id = "", accepted_qty = "", damage_qty = "", shortage_qty = "" } = req.body;
 
         const userDetails = req.user;
 
@@ -235,7 +241,7 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
             location_id: receivingLocationId,
             store_id: receivingStoreId,
             location_type: receivingLocationType,
-            batch_no: batch_no || null,
+            batch_no: productionReceipt?.batch_no || null,
             available_qty: Number(accepted_qty),
             reserved_qty: 0,
             unit_price: 0,
@@ -248,7 +254,7 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
         }, { transaction });
 
         /** auto-generate batch_no if not provided */
-        if (!batch_no) {
+        if (!productionReceipt?.batch_no) {
             const generatedBatchNo = generateBatch("BAT", batchRecord.id);
             await batchRecord.update({ batch_no: generatedBatchNo }, { transaction });
         }
