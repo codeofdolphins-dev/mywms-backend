@@ -39,7 +39,7 @@ function Requisition(sequelize) {
             allowNull: false
         },
         status: {
-            type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg"),
+            type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg", "dispatched"),
             defaultValue: "pending"
         },
         priority: {

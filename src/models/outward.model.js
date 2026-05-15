@@ -7,9 +7,15 @@ function Outward(sequelize) {
             allowNull: true,
             unique: true
         },
-        // Link to the associated Sales Order
+        // Link to the associated Sales Order when type is external
         sales_order_id: {
             type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
+        // Link to the associated Purchase Requisition when type is internal
+        pr_no: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
 

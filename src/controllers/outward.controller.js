@@ -1,11 +1,7 @@
-import { rootDB } from "../db/tenantMenager.service.js";
 import { generateNo } from "../helper/generate.js";
-import { createGrn_items } from "../services/createGrn.service.js";
+import { createGrn_items_external, createGrn_items_internal } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Op } from "sequelize";
 import { getUserContext } from "../utils/getUserContext.js";
-const { models } = await rootDB();
-const { Vehicle, Driver } = models;
 
 
 // GET
@@ -70,7 +66,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
 });
 
 export const outwardItem = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetails, Vendor, OutwardAllocation } = req.dbModels;
+    const { Outward, OutwardItem, Product, Batch, BusinessNode, NodeDetails, Vendor, OutwardAllocation, User } = req.dbModels;
     try {
         const { outward_no = "" } = req.params;
         if (!outward_no) throw new Error("Outward No is required!!!");
@@ -96,15 +92,36 @@ export const outwardItem = asyncHandler(async (req, res) => {
 
         /** buyer details */
         if (jsonOutward.type === "internal") {
-            jsonOutward.buyer = await BusinessNode.findOne({
+            const user = await BusinessNode.findOne({
                 where: { id: jsonOutward.buyer_business_node_id },
                 include: [
                     {
                         model: NodeDetails,
                         as: "nodeDetails"
+                    },
+                    {
+                        model: User,
+                        as: "businessNodeUser",
+                        through: {
+                            where: {
+                                isNodeAdmin: true
+                            },
+                            attributes: []
+                        },
+                        attributes: ["email", "phone_no"]
                     }
                 ]
             })
+
+            const userData = user?.toJSON();
+            if (userData) {
+                const [nodeAdmin = {}] = userData.businessNodeUser;
+                userData.email = nodeAdmin?.email || null;
+                userData.phone_no = nodeAdmin?.phone_no || null;
+                delete userData.businessNodeUser;
+            }
+            jsonOutward.buyer = userData;
+
         } else if (jsonOutward.type === "external") {
             jsonOutward.buyer = await Vendor.findOne({
                 where: { id: jsonOutward.buyer_business_node_id }
@@ -168,6 +185,8 @@ export const createOutward = asyncHandler(async (req, res) => {
     const { Outward, OutwardItem, Product, SalesOrder, ManufacturingUnit, Requisition, RequisitionSupplier } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
+    // console.log(req.body); return;
+
     try {
         const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "" } = req.body;
 
@@ -203,7 +222,7 @@ export const createOutward = asyncHandler(async (req, res) => {
                 return res.status(404).json({ success: false, code: 404, message: "Requisition not found!!!" });
             }
 
-            const reqSupplier = await RequisitionSupplier.findByPk(requisition.id);
+            const reqSupplier = await RequisitionSupplier.findOne({ where: { requisition_id: Number(requisition.id) } });
             if (!reqSupplier) throw new Error("Requisition Supplier not found!!!");
 
             reqSupplier.status = "assign_fg";
@@ -235,6 +254,7 @@ export const createOutward = asyncHandler(async (req, res) => {
 
             type,
             priority,
+            ...(req_no && { pr_no: req_no }),
             required_by: new Date(salesOrder ? salesOrder.required_by : required_by_date),
             meta: salesOrder ? salesOrder.meta : null,
             note,
@@ -275,7 +295,7 @@ export const createOutward = asyncHandler(async (req, res) => {
 
 // PUT
 export const confirmAllocation = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, OutwardAllocation, Batch, SalesOrder, Vendor } = req.dbModels;
+    const { Outward, OutwardItem, Product, OutwardAllocation, Batch, SalesOrder, Requisition } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     // console.log(req.body.items); return
@@ -394,8 +414,18 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             }
         };
 
-        const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
-        await createGrn_items(salesOrder, allocatedItems);
+
+        if (outward.type === "external") {
+            const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
+            await createGrn_items_external(salesOrder, allocatedItems);
+        } else {
+            await createGrn_items_internal(req, transaction, outward, allocatedItems);
+
+            const requisition = await Requisition.findOne({ where: { requisition_no: outward?.pr_no } })
+            requisition.status = "dispatched";
+            await requisition.save({ transaction });
+        }
+
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });

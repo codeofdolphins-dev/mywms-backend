@@ -42,3 +42,9 @@ function GRN(sequelize) {
 
 }
 export default GRN;
+
+// NOTE: 
+/**
+ * if type == purchase => SALER (sender_id), BUYER (receiver_id + mfg_unit_id)
+ * if type == transfer => SENDER (sender_id + || mfg_unit_id), RECEIVER (receiver_id)
+ */

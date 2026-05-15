@@ -1,6 +1,6 @@
 import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 
-export async function createGrn_items(salesOrder, allocatedItems = []) {
+export async function createGrn_items_external(salesOrder, allocatedItems = []) {
     const { models } = await rootDB();
     const { BpoIndent, ProductMapping } = models;
 
@@ -75,8 +75,8 @@ export async function createGrn_items(salesOrder, allocatedItems = []) {
                         buyer_product_id: productMap.buyer_product_id
                     }
                 });
-                if(!poItem) throw new Error("poItem not found!!!");
-                
+                if (!poItem) throw new Error("poItem not found!!!");
+
                 // console.log(productMap.toJSON());
                 // console.log(poItem.toJSON());
                 // throw new Error("test error");
@@ -107,6 +107,66 @@ export async function createGrn_items(salesOrder, allocatedItems = []) {
 
     } catch (error) {
         if (transaction) await transaction.rollback();
+        throw error;
+    }
+}
+
+
+export async function createGrn_items_internal(req, transaction, outward, allocatedItems = []) {
+
+    // for (const i of allocatedItems) {
+    //     console.log("allocatedItems", i);
+    // }
+
+    // throw new Error("testing");
+
+    try {
+        const { GRN, GRNItem, GRNItemBatch, ManufacturingUnit } = req.dbModels;
+
+        let store = null;
+        if (outward?.store_id !== null) {
+            store = await ManufacturingUnit.findByPk(Number(outward?.store_id));
+        }
+
+        const grn = await GRN.create({
+            grn_no: `GRN-${Date.now()}`,
+            grn_type: "transfer",
+            sender_id: outward.seller_business_node_id,
+            ...(store && { mfg_unit_id: outward?.store_id }),
+            receiver_id: outward.buyer_business_node_id,
+            status: "draft",
+        }, { transaction });
+
+        if (allocatedItems && allocatedItems.length > 0) {
+            // Attempt to iterate over the extracted allocated batches passed from outward allocation
+            for (const item of allocatedItems) {
+                // For internal transfers, there is no vendor mapping or purchase order.
+                // The vendor_product_id from outward maps directly to product_id.
+
+                // Create the GRN item record connecting with received quantities
+                const grnItem = await GRNItem.create({
+                    grn_id: grn.id,
+                    purchase_order_item_id: null,
+                    product_id: item.vendor_product_id,
+                    ordered_qty: item.requested_qty,
+                    received_qty: item.requested_qty
+                }, { transaction });
+
+                // Iterate over allocated batches associated with the current item to create GRN item batches
+                for (const batch of item.allocated_batches) {
+                    await GRNItemBatch.create({
+                        grn_item_id: grnItem.id,
+                        batch_no: batch.batch_no,
+                        received_qty: batch.allocated_qty,
+                        expiry_date: batch.expiry_date || null
+                    }, { transaction });
+                }
+            }
+        }
+
+        return grn;
+
+    } catch (error) {
         throw error;
     }
 }

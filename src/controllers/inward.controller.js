@@ -359,15 +359,35 @@ export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
                 where: { id: formateJSON.sender_id },
             });
         } else {
-            formateJSON.vendor = await BusinessNode.findOne({
+            const user = await BusinessNode.findOne({
                 where: { id: formateJSON.sender_id },
                 include: [
                     {
                         model: NodeDetails,
                         as: "nodeDetails"
+                    },
+                    {
+                        model: User,
+                        as: "businessNodeUser",
+                        through: {
+                            where: {
+                                isNodeAdmin: true
+                            },
+                            attributes: []
+                        },
+                        attributes: ["email", "phone_no"]
                     }
                 ]
             });
+
+            const userData = user?.toJSON();
+            if (userData) {
+                const [nodeAdmin = {}] = userData.businessNodeUser;
+                userData.email = nodeAdmin?.email || null;
+                userData.phone_no = nodeAdmin?.phone_no || null;
+                delete userData.businessNodeUser;
+            }
+            formateJSON.vendor = userData;
         }
 
         return res.status(200).json({
@@ -649,7 +669,7 @@ export const createInward = asyncHandler(async (req, res) => {
                         received_date: new Date(),
                         reference_id: grn.id,
                         reference_type: "grn",
-                        expiry_date: new Date(e_date),
+                        ...(e_date && { expiry_date: new Date(e_date) }),
                     }, { transaction });
 
                     // Auto-generate batch_no if not provided
@@ -670,7 +690,7 @@ export const createInward = asyncHandler(async (req, res) => {
                             batch_no: finalBatchNo,
                             received_qty: Number(r_qty || 0),
                             damage_qty: Number(d_qty || 0),
-                            expiry_date: new Date(e_date),
+                            ...(e_date && { expiry_date: new Date(e_date) }),
                         }, { transaction });
                     }
                 }
@@ -681,7 +701,7 @@ export const createInward = asyncHandler(async (req, res) => {
                         batch_no: finalBatchNo,
                         received_qty: Number(r_qty || 0),
                         damage_qty: Number(d_qty || 0),
-                        expiry_date: new Date(e_date),
+                        ...(e_date && { expiry_date: new Date(e_date) })
                     }, { transaction });
                 }
 
