@@ -122,8 +122,6 @@ const updateCategory = asyncHandler(async (req, res) => {
             updateDetails.parent_id = parent_id == 0 ? null : parent_id;
         }
 
-        console.log(updateDetails);
-
         const isUpdate = await Category.update(
             updateDetails,
             { where: { id } }

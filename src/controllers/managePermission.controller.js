@@ -2,10 +2,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET request
 const allAssignPermissions = asyncHandler(async (req, res) => {
-    const { Permission, RolePermissions } = req.dbModels;   
+    const { Permission, RolePermissions, Role } = req.dbModels;
     try {
         const { roleId } = req.params;
         if (!roleId) return res.status(500).json({ success: false, code: 500, message: "Role id Required." });
+
+        const role = await Role.findByPk(roleId);
 
         const allPermissions = await Permission.findAll();
 
@@ -24,9 +26,9 @@ const allAssignPermissions = asyncHandler(async (req, res) => {
         const rolePermissions = await RolePermissions.findAll({
             where: { roleId }
         });
-        const rolePermissionIds = rolePermissions.map(rp => rp.permissionId);
+        const rolePermissionIds = rolePermissions?.map(rp => rp.permissionId);
 
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: { allPermissions: grouped, allowed: rolePermissionIds } });
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: { role, allPermissions: grouped, allowed: rolePermissionIds } });
 
     } catch (error) {
         console.log(error);

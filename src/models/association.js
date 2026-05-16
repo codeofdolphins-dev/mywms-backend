@@ -1,90 +1,27 @@
 const defineRootAssociations = (models) => {
     const {
-        Category,
-        User,
-        Permission,
-        Product,
         Role,
         RolePermissions,
-        Inward,
-        InwardItem,
         UserRoles,
-        Batch,
         Tenant,
         TenantsName,
-        Requisition,
-        RequisitionItem,
-        HSN,
-        Quotation,
-        QuotationItems,
-        PurchasOrder,
-        PurchaseOrderItems,
-        Invoice,
-        InvoiceItems,
-        Supplier,
-        Inventory,
-        Outward,
-        OutwardItems,
-        BillOfMaterial,
-        Brand,
-        UnitType,
-        SupplierBrand,
-        BrandProducts,
-        CategoryProducts,
         TenantBusinessFlowMaster,
-        BusinessNodeType,
-        BusinessNode,
-        PackageType,
-        NodeUser,
-        NodeDetails,
-        RequisitionSupplier,
+        User,
+        Permission,
+        RFQ,
+        RFQItem,
+        RfqQuotation,
+        RfqQuotationRevision,
+        RfqQuotationItem,
+        BlanketOrder,
+        BlanketOrderItem,
+        BpoIndent,
+        BpoIndentItem,
+        ProductMapping
+
     } = models;
 
-    // ******************************************** Self-Association *********************************
-    // category → category
-    Category.hasMany(Category, {
-        as: "subcategories",
-        foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Category.belongsTo(Category, {
-        as: "parent",
-        foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // parent → children
-    BusinessNode.hasMany(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "children",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    // child → parent
-    BusinessNode.belongsTo(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "parentNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // ********************************************One-To-One*********************************
-
-    // product ↔ qty
-    Product.hasOne(Batch, {
-        foreignKey: "product_id",
-        as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Batch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "batch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
     // tenant ↔ tenantsName
     TenantsName.hasOne(Tenant, {
@@ -100,49 +37,434 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // rfqQuotationRevision ↔ blanketOrder
+    RfqQuotationRevision.hasOne(BlanketOrder, {
+        foreignKey: "rfq_quotation_revision_id",
+        as: "blanketOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(RfqQuotationRevision, {
+        foreignKey: "rfq_quotation_revision_id",
+        as: "rfqQuotationRevision",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // productMapping ↔ rfqQuotationItem
+    ProductMapping.hasOne(RfqQuotationItem, {
+        foreignKey: "product_map_id",
+        as: "rfqItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(ProductMapping, {
+        foreignKey: "product_map_id",
+        as: "productMapping",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+
+    // ********************************************One-To-Many*********************************
+    // tenantsName ↔ tenantBusinessFlowMaster
+    TenantsName.hasMany(TenantBusinessFlowMaster, {
+        foreignKey: "tenant_id",
+        as: "businessFlows",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TenantBusinessFlowMaster.belongsTo(TenantsName, {
+        foreignKey: "tenant_id",
+        as: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // tenantsName ↔ rfq
+    TenantsName.hasMany(RFQ, {
+        foreignKey: "buyer_tenant",
+        as: "buyerRfqs",
+        sourceKey: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RFQ.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        as: "buyerTenant",
+        targetKey: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // tenantsName ↔ quotation  =>> Vendor
+    TenantsName.hasMany(RfqQuotation, {
+        foreignKey: "vendor_tenant",
+        as: "quotations",
+        sourceKey: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotation.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        as: "vendorTenant",
+        targetKey: "tenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /** ******************* rfq ************************ */
+    // rfq ↔ rfqItem
+    RFQ.hasMany(RFQItem, {
+        foreignKey: "rfq_id",
+        as: "items",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RFQItem.belongsTo(RFQ, {
+        foreignKey: "rfq_id",
+        as: "rfq",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // rfq ↔ rfqItem
+    RFQ.hasMany(RfqQuotation, {
+        foreignKey: "rfq_id",
+        as: "rfqQuotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotation.belongsTo(RFQ, {
+        foreignKey: "rfq_id",
+        as: "linkedRfq",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* quotation ************************ */
+    // quotation ↔ rfqQuotationRevision
+    RfqQuotation.hasMany(RfqQuotationRevision, {
+        foreignKey: "quotation_id",
+        as: "quotationRevision",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationRevision.belongsTo(RfqQuotation, {
+        foreignKey: "quotation_id",
+        as: "revisionQuotationParent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* rfqQuotationRevision ************************ */
+    // rfqQuotationRevision ↔ rfqQuotationItem
+    RfqQuotationRevision.hasMany(RfqQuotationItem, {
+        foreignKey: "revision_id",
+        as: "revisionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(RfqQuotationRevision, {
+        foreignKey: "revision_id",
+        as: "itemsRevision",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* rfqItem ************************ */
+    // rfqItem ↔ quotationItem
+    RFQItem.hasMany(RfqQuotationItem, {
+        foreignKey: "rfq_item_id",
+        as: "relatedQuotationItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RfqQuotationItem.belongsTo(RFQItem, {
+        foreignKey: "rfq_item_id",
+        as: "sourceRfqItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* blanketOrder ************************ */
+    // tenantsName ↔ blanketOrder(Buyer)
+    TenantsName.hasMany(BlanketOrder, {
+        foreignKey: "buyer_tenant",
+        sourceKey: "tenant",
+        as: "buyerBlanketOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        targetKey: "tenant",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // tenantsName ↔ blanketOrder(vendor/supplier)
+    TenantsName.hasMany(BlanketOrder, {
+        foreignKey: "vendor_tenant",
+        sourceKey: "tenant",
+        as: "vendorBlanketOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrder.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        targetKey: "tenant",
+        as: "vendor",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /** ******************* blanketOrderItem ************************ */
+    // blanketOrder ↔ blanketOrderItem
+    BlanketOrder.hasMany(BlanketOrderItem, {
+        foreignKey: "bpo_id",
+        as: "blanketOrderItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrderItem.belongsTo(BlanketOrder, {
+        foreignKey: "bpo_id",
+        as: "blanketOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // blanketOrderItem ↔ bpoIndentItem
+    BlanketOrderItem.hasMany(BpoIndentItem, {
+        foreignKey: "bpo_item_id",
+        as: "linkedBpoIndentItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndentItem.belongsTo(BlanketOrderItem, {
+        foreignKey: "bpo_item_id",
+        as: "parentBlanketOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /** ******************* bpoIndent ************************ */
+    // blanketOrder ↔ bpoIndent
+    BlanketOrder.hasMany(BpoIndent, {
+        foreignKey: "bpo_id",
+        as: "bpoIndent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndent.belongsTo(BlanketOrder, {
+        foreignKey: "bpo_id",
+        as: "bpo",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    // tenantsName ↔ blanketOrder(Buyer)
+    TenantsName.hasMany(BpoIndent, {
+        foreignKey: "buyer_tenant",
+        sourceKey: "tenant",
+        as: "buyerIndents",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndent.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        targetKey: "tenant",
+        as: "bpoIndentBuyerTenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+    // tenantsName ↔ blanketOrder(vendor/supplier)
+    TenantsName.hasMany(BpoIndent, {
+        foreignKey: "vendor_tenant",
+        sourceKey: "tenant",
+        as: "vendorIndents",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+    BpoIndent.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        targetKey: "tenant",
+        as: "bpoIndentVendorTenant",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    /** ******************* BpoIndentItem ************************ */
+    // bpoIndent ↔ bpoIndentItem
+    BpoIndent.hasMany(BpoIndentItem, {
+        foreignKey: "indent_id",
+        as: "bpoIndentItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BpoIndentItem.belongsTo(BpoIndent, {
+        foreignKey: "indent_id",
+        as: "indentParent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+
+
+
+
+
+
+
+    // ********************************************Many-To-Many*********************************
+    // user - role
+    User.belongsToMany(Role, {
+        through: {
+            model: UserRoles,
+            unique: false,
+        },
+        as: "roles",
+        foreignKey: "userId",
+        otherKey: "roleId",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Role.belongsToMany(User, {
+        through: {
+            model: UserRoles,
+            unique: false,
+        },
+        as: "users",
+        foreignKey: "roleId",
+        otherKey: "userId",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // role - permission
+    Role.belongsToMany(Permission, {
+        through: {
+            model: RolePermissions,
+            unique: false,
+        },
+        as: "permissions",
+        foreignKey: "roleId",
+        otherKey: "permissionId",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Permission.belongsToMany(Role, {
+        through: {
+            model: RolePermissions,
+            unique: false,
+        },
+        as: "roles",
+        foreignKey: "permissionId",
+        otherKey: "roleId",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+};
+
+const defineTenantAssociations = (models) => {
+    const {
+        Role,
+        RolePermissions,
+        User,
+        UserRoles,
+        NodeUser,
+        NodeDetails,
+        TenantBusinessFlow,
+        Category,
+        Permission,
+        Product,
+        RequisitionItem,
+        Requisition,
+        HSN,
+        Quotation,
+        QuotationItem,
+        PurchasOrder,
+        PurchaseOrderItem,
+        Brand,
+        UnitType,
+        CategoryProducts,
+        PackageType,
+        BusinessNode,
+        BusinessNodeType,
+        RequisitionSupplier,
+        NodeStockLedger,
+        NodeStockLedgerItem,
+        GRN,
+        GRNItem,
+        RequisitionCategory,
+        ManufacturingUnit,
+        Batch,
+        SalesOrder,
+        SalesOrderItem,
+        Vendor,
+        Outward,
+        OutwardItem,
+        OutwardAllocation,
+        GRNItemBatch,
+        BOM,
+        BOMItem,
+        TransferOrder,
+        TransferOrderItem,
+        TransferOrderAllocation,
+        ProductionOrder,
+        ProductionOrderItem,
+        ProductionReceipt
+
+
+    } = models;
+
+    // ******************************************** Self-Association *********************************
+
+    // category → category
+    Category.hasMany(Category, {
+        as: "subcategories",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Category.belongsTo(Category, {
+        as: "parent",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // ********************************************One-To-One*********************************
     // product ↔ requisitionItem
     Product.hasOne(RequisitionItem, {
         foreignKey: "product_id",
-        as: "requisitionItem", // Product → RequisitionItem
+        as: "requisitionItem",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     RequisitionItem.belongsTo(Product, {
         foreignKey: "product_id",
-        as: "product", // RequisitionItem → Product
+        as: "product",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
-    // hsn ↔ product
-    HSN.hasOne(Product, {
-        foreignKey: "hsn_id",
-        as: "product", // singular, since it's a hasOne relationship
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.belongsTo(HSN, {
-        foreignKey: "hsn_id",
-        as: "hsn", // or just "hsn" if not already used
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoice ↔ inward
-    Invoice.hasOne(Inward, {
-        foreignKey: "invoice_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "purchaseInvoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // businessNode ↔ nodeDetails
+    // BusinessNode ↔ NodeDetails
     BusinessNode.hasOne(NodeDetails, {
         foreignKey: "business_node_id",
         as: "nodeDetails",
@@ -156,8 +478,109 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    // requisitionItem ↔ quotationItem
+    RequisitionItem.hasOne(QuotationItem, {
+        foreignKey: "requisition_item_id",
+        as: "linkedQuotationItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    QuotationItem.belongsTo(RequisitionItem, {
+        foreignKey: "requisition_item_id",
+        as: "sourceRequisitionItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // requisition(PR) <-> quotation
+    Requisition.hasOne(Quotation, {
+        foreignKey: "requisition_id",
+        as: "requisitionQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Quotation.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "quotationRequisition",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // quotation <-> purchasOrder
+    Quotation.hasOne(PurchasOrder, {
+        foreignKey: "quotation_id",
+        as: "linkedPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.belongsTo(Quotation, {
+        foreignKey: "quotation_id",
+        as: "linkedQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // requisition - purchasOrder
+    Requisition.hasOne(PurchasOrder, {
+        foreignKey: "requisition_id",
+        as: "purchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.belongsTo(Requisition, {
+        foreignKey: "requisition_id",
+        as: "requisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
     // ********************************************One-To-Many*********************************
 
+    // brand ↔ product
+    Product.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Brand.hasMany(Product, {
+        foreignKey: "brand_id",
+        as: "products",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // vendor ↔ brand
+    Brand.belongsTo(Vendor, {
+        foreignKey: "vendor_id",
+        as: "ownerVendor",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Vendor.hasMany(Brand, {
+        foreignKey: "vendor_id",
+        as: "brandsList",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // hsn ↔ product (1:M Relationship)
+    Product.belongsTo(HSN, {
+        foreignKey: "hsn_code",
+        targetKey: "hsn_code",
+        as: "hsn",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    HSN.hasMany(Product, {
+        foreignKey: "hsn_code",
+        sourceKey: "hsn_code",
+        as: "products",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* requisition (PR) ********************/
     // requisition <-> requisitionItem
     RequisitionItem.belongsTo(Requisition, {
         foreignKey: "requisition_id",
@@ -172,240 +595,16 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // requisition(PR) <-> Quotation
-    Quotation.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "quotationRequisition",
+    // requisition <-> requisitionCategory
+    Requisition.belongsTo(RequisitionCategory, {
+        foreignKey: "requisition_category_id",
+        as: "requisitionCategory",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    Requisition.hasMany(Quotation, {
-        foreignKey: "pr_id",
-        as: "vendorQuotations",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // quotation ↔ quotationItems
-    Quotation.hasMany(QuotationItems, {
-        foreignKey: "quotation_id",
-        as: "quotationItem",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    QuotationItems.belongsTo(Quotation, {
-        foreignKey: "quotation_id",
-        as: "quotationDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // purchasOrder(po) <-> user
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "POcreatedBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "created_by",
-        as: "POsCreater",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // purchasOrder(po) <-> user
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "approved_by",
-        as: "POapprovedBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "approved_by",
-        as: "POsApprover",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // purchaseOrderItems(poi) <-> purchasOrder(po)
-    PurchaseOrderItems.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "purchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(PurchaseOrderItems, {
-        foreignKey: "po_id",
-        as: "purchasOrderDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inward <-> purchasOrder(po)
-    Inward.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "poReference",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Inward, {
-        foreignKey: "po_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoice <-> purchasOrder(po)
-    Invoice.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "invoicePurchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Invoice, {
-        foreignKey: "po_id",
-        as: "purchasOrderInvoices",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoiceItems <-> invoice
-    InvoiceItems.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "invoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Invoice.hasMany(InvoiceItems, {
-        foreignKey: "invoice_id",
-        as: "invoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // invoiceItems <-> product
-    InvoiceItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "InvoiceItemProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InvoiceItems, {
-        foreignKey: "product_id",
-        as: "productInvoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition - purchasOrder
-    PurchasOrder.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "requisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(PurchasOrder, {
-        foreignKey: "pr_id",
-        as: "purchaseOrders",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inwardItem - product
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "stockInwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "stockInwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - product
-    Inventory.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(Inventory, {
-        foreignKey: "product_id",
-        as: "inventoryProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - inward
-    Inventory.belongsTo(Inward, {
-        foreignKey: "last_inward_id",
-        as: "inwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.hasMany(Inventory, {
-        foreignKey: "last_inward_id",
-        as: "inventoryInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // inventory - outward
-    Inventory.belongsTo(Outward, {
-        foreignKey: "last_outward_id",
-        as: "outwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(Inventory, {
-        foreignKey: "last_outward_id",
-        as: "inventoryOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // outwardItems <-> outward
-    OutwardItems.belongsTo(Outward, {
-        foreignKey: "outward_id",
-        as: "outward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(OutwardItems, {
-        foreignKey: "outward_id",
-        as: "outwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // outward <-> user
-    Outward.belongsTo(User, {
-        foreignKey: "outward_by",
-        as: "outwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Outward, {
-        foreignKey: "outward_by",
-        as: "userOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // tenantsName ↔ tenantBusinessFlowMaster
-    TenantBusinessFlowMaster.belongsTo(TenantsName, {
-        foreignKey: "tenant_id",
-        as: "tenant",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    TenantsName.hasMany(TenantBusinessFlowMaster, {
-        foreignKey: "tenant_id",
-        as: "businessFlows",
+    RequisitionCategory.hasMany(Requisition, {
+        foreignKey: "requisition_category_id",
+        as: "categoryRequisition",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
@@ -424,35 +623,480 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+
+    /************* quotation ********************/
+    // quotation ↔ quotationItem
+    Quotation.hasMany(QuotationItem, {
+        foreignKey: "quotation_id",
+        as: "quotationItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    QuotationItem.belongsTo(Quotation, {
+        foreignKey: "quotation_id",
+        as: "quotationDetails",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // quotation <-> businessNode
+    Quotation.belongsTo(BusinessNode, {
+        foreignKey: "to_business_node_id",
+        as: "toBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Quotation, {
+        foreignKey: "to_business_node_id",
+        as: "receivedQuotations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // quotation <-> User
+    Quotation.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "quotationCreated",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(Quotation, {
+        foreignKey: "created_by",
+        as: "createQuotation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ purchaseOrderItem
+    Product.hasMany(PurchaseOrderItem, {
+        foreignKey: "buyer_product_id",
+        as: "linkedPoi_product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.belongsTo(Product, {
+        foreignKey: "buyer_product_id",
+        as: "poi_product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ salesOrderItem
+    Product.hasMany(SalesOrderItem, {
+        foreignKey: "vendor_product_id",
+        as: "linkedSoi_product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrderItem.belongsTo(Product, {
+        foreignKey: "vendor_product_id",
+        as: "soi_product",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* PURCHASE ORDER (PO) ********************/
+    // purchaseOrderItem(POD) <-> purchasOrder(PO)
+    PurchaseOrderItem.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(PurchaseOrderItem, {
+        foreignKey: "purchase_order_id",
+        as: "purchasOrderItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchasOrder(PO) <-> user
+    PurchasOrder.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "POcreatedBy",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(PurchasOrder, {
+        foreignKey: "created_by",
+        as: "POsCreater",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // purchasOrder - businessNode
+    PurchasOrder.belongsTo(BusinessNode, {
+        foreignKey: "from_business_node_id",
+        as: "poFromBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(PurchasOrder, {
+        foreignKey: "from_business_node_id",
+        as: "fromPurchaseOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* businessNode ********************/
+    // businessNode <-> tenantBusinessFlow
+    BusinessNode.belongsTo(TenantBusinessFlow, {
+        foreignKey: "tenant_business_flow_id",
+        as: "parentFlow",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TenantBusinessFlow.hasMany(BusinessNode, {
+        foreignKey: "tenant_business_flow_id",
+        as: "flowNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode <-> tenantBusinessFlow
+    ManufacturingUnit.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "parentBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(ManufacturingUnit, {
+        foreignKey: "business_node_id",
+        as: "unitLocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* grn ********************/
+    // grnItem <-> grn
+    GRN.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "creator",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(GRN, {
+        foreignKey: "created_by",
+        as: "grnsCreator",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
+    // grnItem <-> grn
+    GRNItem.belongsTo(GRN, {
+        foreignKey: "grn_id",
+        as: "grn",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    GRN.hasMany(GRNItem, {
+        foreignKey: "grn_id",
+        as: "grnLineItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> purchasOrder
+    GRN.belongsTo(PurchasOrder, {
+        foreignKey: "purchase_order",
+        as: "grnPurchaseOrder",
+        targetKey: "po_no",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchasOrder.hasMany(GRN, {
+        foreignKey: "purchase_order",
+        as: "grns",
+        sourceKey: "po_no",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> businessNode
+    GRN.belongsTo(BusinessNode, {
+        foreignKey: "receiver_id",
+        as: "receiverNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(GRN, {
+        foreignKey: "receiver_id",
+        as: "receivedGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grn <-> manufacturingUnit
+    GRN.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnit",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(GRN, {
+        foreignKey: "mfg_unit_id",
+        as: "mfgUnitGrns",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /************* grnItem ********************/
+    // grnItem <-> purchaseOrderItem
+    GRNItem.belongsTo(PurchaseOrderItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "poItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    PurchaseOrderItem.hasMany(GRNItem, {
+        foreignKey: "purchase_order_item_id",
+        as: "grnItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // grnItem <-> product
+    GRNItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "grnProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(GRNItem, {
+        foreignKey: "product_id",
+        as: "grnItemsForProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* grnItemBatch ********************/
+    GRNItemBatch.belongsTo(GRNItem, {
+        foreignKey: "grn_item_id",
+        as: "grnItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    GRNItem.hasMany(GRNItemBatch, {
+        foreignKey: "grn_item_id",
+        as: "grnItemBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // GRNItemBatch.belongsTo(Product, {
+    //     foreignKey: "product_id",
+    //     as: "grnItemBatchProduct",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+    // Product.hasMany(GRNItemBatch, {
+    //     foreignKey: "product_id",
+    //     as: "grnItemBatchesForProduct",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+
+
+
+    /************* batch ********************/
+    // batch <-> product
+    Batch.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "batchProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(Batch, {
+        foreignKey: "product_id",
+        as: "batches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // batch <-> businessNode
+    Batch.belongsTo(BusinessNode, {
+        foreignKey: "location_id",
+        as: "batchLocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Batch, {
+        foreignKey: "location_id",
+        as: "locationBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // batch <-> manufacturingUnit
+    Batch.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "batchStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(Batch, {
+        foreignKey: "store_id",
+        as: "storeBatches",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* outwardAllocation ********************/
+    // outwardAllocation <-> outwardItem
+    OutwardAllocation.belongsTo(OutwardItem, {
+        foreignKey: "outward_item_id",
+        as: "outwardItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    OutwardItem.hasMany(OutwardAllocation, {
+        foreignKey: "outward_item_id",
+        as: "outwardItemAllocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // outwardAllocation <-> batch
+    OutwardAllocation.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "batch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Batch.hasMany(OutwardAllocation, {
+        foreignKey: "batch_id",
+        as: "outwardAllocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* salesOrder ********************/
+    // salesOrderItem <-> salesOrder
+    SalesOrderItem.belongsTo(SalesOrder, {
+        foreignKey: "sales_order_id",
+        as: "salesOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrder.hasMany(SalesOrderItem, {
+        foreignKey: "sales_order_id",
+        as: "salesOrderItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // salesOrder <-> businessNode (seller)
+    SalesOrder.belongsTo(BusinessNode, {
+        foreignKey: "seller_business_node_id",
+        as: "soSellerBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(SalesOrder, {
+        foreignKey: "seller_business_node_id",
+        as: "sellerSo",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* outward ********************/
+    // salesOrder <-> outward
+    Outward.belongsTo(SalesOrder, {
+        foreignKey: "sales_order_id",
+        as: "outwardSalesOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrder.hasMany(Outward, {
+        foreignKey: "sales_order_id",
+        as: "outwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // outward <-> businessNode (seller)
+    Outward.belongsTo(BusinessNode, {
+        foreignKey: "seller_business_node_id",
+        as: "sellerOutwardNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Outward, {
+        foreignKey: "seller_business_node_id",
+        as: "sellerOutwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // outward <-> manufacturingUnit
+    Outward.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "outwardStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(Outward, {
+        foreignKey: "store_id",
+        as: "outwardStores",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* outwardItems ********************/
+    // outwardItems <-> outward
+    OutwardItem.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "outward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Outward.hasMany(OutwardItem, {
+        foreignKey: "outward_id",
+        as: "outwardItemList",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // outwardItems <-> outward
+    OutwardItem.belongsTo(SalesOrderItem, {
+        foreignKey: "sales_order_item_id",
+        as: "outwardSalesOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    SalesOrderItem.hasMany(OutwardItem, {
+        foreignKey: "sales_order_item_id",
+        as: "outwardItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // outwardItems <-> product
+    OutwardItem.belongsTo(Product, {
+        foreignKey: "vendor_product_id",
+        as: "outwardProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(OutwardItem, {
+        foreignKey: "vendor_product_id",
+        as: "productOutwards",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
     // ********************************************Many-To-One*********************************
-
-    // stockInward - stockInwardItems
-    Inward.hasMany(InwardItem, {
-        foreignKey: "stock_inward_id",
-        as: "items",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Inward, {
-        foreignKey: "stock_inward_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // user - stock inward
-    User.hasMany(Inward, {
-        foreignKey: "inward_by",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(User, {
-        foreignKey: "inward_by",
-        as: "inwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
 
     // user <-> requisition
     User.hasMany(Requisition, {
@@ -464,91 +1108,7 @@ const defineRootAssociations = (models) => {
         as: "createdBy",
     });
 
-    // product <-> quotationItems
-    Product.hasMany(QuotationItems, {
-        foreignKey: "product_id",
-        as: "quotationItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    QuotationItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "quotedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product <-> purchaseOrderItems
-    Product.hasMany(PurchaseOrderItems, {
-        foreignKey: "product_id",
-        as: "inwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchaseOrderItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInwarded",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product <-> outwardItems
-    Product.hasMany(OutwardItems, {
-        foreignKey: "product_id",
-        as: "productOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "outwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // batch <-> outwardItems
-    Batch.hasMany(OutwardItems, {
-        foreignKey: "batch_id",
-        as: "batchOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Batch, {
-        foreignKey: "batch_id",
-        as: "outwardBatch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product <-> billOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "finished_product_id",
-        as: "bomItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "finished_product_id",
-        as: "finishedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product <-> billOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "raw_product_id",
-        as: "usedInBoms",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "raw_product_id",
-        as: "rawMaterial",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // unitType <-> product
+    // UnitType <-> Product
     UnitType.hasMany(Product, {
         foreignKey: "unit_type",
         as: "unitProducts",
@@ -564,7 +1124,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // packageType <-> product
+    // PackageType <-> Product
     PackageType.hasMany(Product, {
         foreignKey: "package_type",
         as: "productPackage",
@@ -580,7 +1140,7 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // businessNodeType <-> businessNode
+    // BusinessNodeType <-> BusinessNode
     BusinessNodeType.hasMany(BusinessNode, {
         foreignKey: "node_type_code",
         as: "nodes",
@@ -595,6 +1155,404 @@ const defineRootAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+
+
+    /************* nodeStockLedger ********************/
+    // nodeStockLedger ↔ nodeStockLedgerItem
+    NodeStockLedger.hasMany(NodeStockLedgerItem, {
+        foreignKey: "ledger_id",
+        as: "ledgerItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedgerItem.belongsTo(NodeStockLedger, {
+        foreignKey: "ledger_id",
+        as: "ledger",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ nodeStockLedgerItem
+    Product.hasMany(NodeStockLedgerItem, {
+        foreignKey: "product_id",
+        as: "stockLedgers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedgerItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "linkedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // batch ↔ nodeStockLedgerItem
+    Batch.hasMany(NodeStockLedgerItem, {
+        foreignKey: "batch_id",
+        as: "nodeStockLedgerItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    NodeStockLedgerItem.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "sourceBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /******************** manufacturingUnit ********************/
+    // manufacturingUnit ↔ nodeUser
+    ManufacturingUnit.hasMany(NodeUser, {
+        foreignKey: "store_id",
+        as: "storeUser",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    NodeUser.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "store",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /************* bom ********************/
+    // bom ↔ bomItem
+    BOM.hasMany(BOMItem, {
+        foreignKey: "bom_id",
+        as: "bomItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(BOM, {
+        foreignKey: "bom_id",
+        as: "bom",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ bom
+    Product.hasMany(BOM, {
+        foreignKey: "finished_product_id",
+        as: "finishedProductBOM",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOM.belongsTo(Product, {
+        foreignKey: "finished_product_id",
+        as: "finishedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // unitType ↔ bom
+    UnitType.hasMany(BOM, {
+        foreignKey: "output_uom",
+        as: "outputUOMBOM",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOM.belongsTo(UnitType, {
+        foreignKey: "output_uom",
+        as: "outputUOM",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* bomItem ********************/
+    // product ↔ bomItem
+    Product.hasMany(BOMItem, {
+        foreignKey: "raw_product_id",
+        as: "rawProductBOMItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(Product, {
+        foreignKey: "raw_product_id",
+        as: "rawProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // unitType ↔ bomItem
+    UnitType.hasMany(BOMItem, {
+        foreignKey: "uom",
+        as: "uomBOMItem",
+        sourceKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BOMItem.belongsTo(UnitType, {
+        foreignKey: "uom",
+        as: "measureUnit",
+        targetKey: "name",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* transferOrder ********************/
+    // transferOrder ↔ transferOrderItem
+    TransferOrder.hasMany(TransferOrderItem, {
+        foreignKey: "transfer_order_id",
+        as: "transferOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderItem.belongsTo(TransferOrder, {
+        foreignKey: "transfer_order_id",
+        as: "transferOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // user ↔ transferOrder
+    User.hasMany(TransferOrder, {
+        foreignKey: "created_by",
+        as: "createdTransferOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrder.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "createdByUser",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* transferOrderItem ********************/
+    // transferOrderItem ↔ transferOrderAllocation
+    TransferOrderItem.hasMany(TransferOrderAllocation, {
+        foreignKey: "transferOrder_item_id",
+        as: "transferItemAllocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderAllocation.belongsTo(TransferOrderItem, {
+        foreignKey: "transferOrder_item_id",
+        as: "parentTransferItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ transferOrderItem
+    Product.hasMany(TransferOrderItem, {
+        foreignKey: "product_id",
+        as: "transferProductItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "transferProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* transferOrderAllocation ********************/
+    // batch ↔ transferOrderAllocation
+    Batch.hasMany(TransferOrderAllocation, {
+        foreignKey: "batch_id",
+        as: "allocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    TransferOrderAllocation.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "allocatedBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionOrder ********************/
+    // productionOrder ↔ productionOrderItem
+    ProductionOrder.hasMany(ProductionOrderItem, {
+        foreignKey: "production_order_id",
+        as: "productionOrderItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrderItem.belongsTo(ProductionOrder, {
+        foreignKey: "production_order_id",
+        as: "productionOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // businessNode ↔ productionOrder
+    BusinessNode.hasMany(ProductionOrder, {
+        foreignKey: "business_node_id",
+        as: "productionOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "location",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // manufacturingUnit ↔ productionOrder
+    ManufacturingUnit.hasMany(ProductionOrder, {
+        foreignKey: "mfg_location_id",
+        as: "mfgOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(ManufacturingUnit, {
+        foreignKey: "mfg_location_id",
+        as: "mfgStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ productionOrder
+    Product.hasMany(ProductionOrder, {
+        foreignKey: "target_product_id",
+        as: "productionTargets",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(Product, {
+        foreignKey: "target_product_id",
+        as: "targetProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // user ↔ productionOrder
+    User.hasMany(ProductionOrder, {
+        foreignKey: "created_by",
+        as: "createdOrders",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrder.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "proCreator",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionOrderItem ********************/
+    // productionOrderItem ↔ product
+    Product.hasMany(ProductionOrderItem, {
+        foreignKey: "rm_product_id",
+        as: "rmItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionOrderItem.belongsTo(Product, {
+        foreignKey: "rm_product_id",
+        as: "rmProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* productionReceipt ********************/
+    // manufacturingUnit ↔ productionReceipt
+    ManufacturingUnit.hasMany(ProductionReceipt, {
+        foreignKey: "fg_store_id",
+        as: "fgItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(ManufacturingUnit, {
+        foreignKey: "fg_store_id",
+        as: "fgStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // product ↔ productionReceipt
+    Product.hasMany(ProductionReceipt, {
+        foreignKey: "product_id",
+        as: "productionReceipts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "receivedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // productionOrder ↔ productionReceipt
+    ProductionOrder.hasMany(ProductionReceipt, {
+        foreignKey: "production_order_id",
+        as: "receipts",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(ProductionOrder, {
+        foreignKey: "production_order_id",
+        as: "parentProductionOrder",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // user ↔ productionReceipt
+    User.hasMany(ProductionReceipt, {
+        foreignKey: "created_by",
+        as: "proReceiptsCreated",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductionReceipt.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "proReceiptCreator",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    // brand <-> requisitionItem
+    /*Brand.hasMany(RequisitionItem, {
+        foreignKey: "brand_id",
+        as: "brandRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Brand, {
+        foreignKey: "brand_id",
+        as: "brand",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });*/
+
+    // category <-> requisitionItem
+    /*Category.hasMany(RequisitionItem, {
+        foreignKey: "category_id",
+        as: "categoryRequisitionItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RequisitionItem.belongsTo(Category, {
+        foreignKey: "category_id",
+        as: "category",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });*/
+
+    // requisitionItem -> category
+    /*RequisitionItem.belongsTo(Category, {
+        foreignKey: "sub_category_id",
+        as: "subCategory",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });*/
 
     // ********************************************Many-To-Many*********************************
     // user - role
@@ -645,53 +1603,29 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // supplier - brand
-    Supplier.belongsToMany(Brand, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "brands",
-        foreignKey: "supplier_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Supplier, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "suppliers",
-        foreignKey: "brand_id",
-        otherKey: "supplier_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
     // product - brand
-    Product.belongsToMany(Brand, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "productBrands",
-        foreignKey: "product_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Product, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "brandProducts",
-        foreignKey: "brand_id",
-        otherKey: "product_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
+    // Product.belongsToMany(Brand, {
+    //     through: {
+    //         model: BrandProducts,
+    //         unique: false,
+    //     },
+    //     as: "productBrands",
+    //     foreignKey: "product_id",
+    //     otherKey: "brand_id",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
+    // Brand.belongsToMany(Product, {
+    //     through: {
+    //         model: BrandProducts,
+    //         unique: false,
+    //     },
+    //     as: "brandProducts",
+    //     foreignKey: "brand_id",
+    //     otherKey: "product_id",
+    //     onDelete: "CASCADE",
+    //     onUpdate: "CASCADE",
+    // });
 
     // product - category
     Product.belongsToMany(Category, {
@@ -747,747 +1681,6 @@ const defineRootAssociations = (models) => {
     BusinessNode.belongsToMany(Requisition, {
         through: RequisitionSupplier,
         as: "supplierRequisition",
-        foreignKey: "supplier_business_node_id",
-        otherKey: "requisition_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-};
-
-const defineTenantAssociations = (models) => {
-    const {
-        Category,
-        Permission,
-        Product,
-        Role,
-        RolePermissions,
-        Inward,
-        InwardItem,
-        User,
-        UserRoles,
-        Batch,
-        RequisitionItem,
-        Requisition,
-        HSN,
-        Quotation,
-        QuotationItems,
-        PurchasOrder,
-        PurchaseOrderItems,
-        Invoice,
-        InvoiceItems,
-        Supplier,
-        Inventory,
-        Outward,
-        OutwardItems,
-        BillOfMaterial,
-        Brand,
-        UnitType,
-        SupplierBrand,
-        BrandProducts,
-        CategoryProducts,
-        PackageType,
-        NodeUser,
-        NodeDetails,
-        BusinessNode,
-        BusinessNodeType,
-        RequisitionSupplier,
-    } = models;
-
-    // ******************************************** Self-Association *********************************
-
-    // category → category
-    Category.hasMany(Category, {
-        as: "subcategories",
-        foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Category.belongsTo(Category, {
-        as: "parent",
-        foreignKey: "parent_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // parent → children
-    BusinessNode.hasMany(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "children",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // child → parent
-    BusinessNode.belongsTo(BusinessNode, {
-        foreignKey: "parent_node_id",
-        as: "parentNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // ********************************************One-To-One*********************************
-
-    // product ↔ qty
-    Product.hasOne(Batch, {
-        foreignKey: "product_id",
-        as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Batch.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "batch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product ↔ requisitionItem
-    Product.hasOne(RequisitionItem, {
-        foreignKey: "product_id",
-        as: "requisitionItem", // Product → RequisitionItem
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    RequisitionItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "product", // RequisitionItem → Product
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // hsn ↔ product
-    HSN.hasOne(Product, {
-        foreignKey: "hsn_id",
-        as: "product",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.belongsTo(HSN, {
-        foreignKey: "hsn_id",
-        as: "hsn",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Invoice ↔ Inward
-    Invoice.hasOne(Inward, {
-        foreignKey: "invoice_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "purchaseInvoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // BusinessNode ↔ NodeDetails
-    BusinessNode.hasOne(NodeDetails, {
-        foreignKey: "business_node_id",
-        as: "nodeDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    NodeDetails.belongsTo(BusinessNode, {
-        foreignKey: "business_node_id",
-        as: "businessNode",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // ********************************************One-To-Many*********************************
-
-    // requisition <-> requisitionItem
-    RequisitionItem.belongsTo(Requisition, {
-        foreignKey: "requisition_id",
-        as: "requisition",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(RequisitionItem, {
-        foreignKey: "requisition_id",
-        as: "items",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition(PR) <-> Quotation
-    Quotation.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "quotationRequisition",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(Quotation, {
-        foreignKey: "pr_id",
-        as: "vendorQuotations",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Quotation ↔ QuotationItems
-    Quotation.hasMany(QuotationItems, {
-        foreignKey: "quotation_id",
-        as: "quotationItem",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    QuotationItems.belongsTo(Quotation, {
-        foreignKey: "quotation_id",
-        as: "quotationDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // PurchasOrder(PO) <-> User
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "POcreatedBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "created_by",
-        as: "POsCreater",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // PurchasOrder(PO) <-> User
-    PurchasOrder.belongsTo(User, {
-        foreignKey: "approved_by",
-        as: "POapprovedBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(PurchasOrder, {
-        foreignKey: "approved_by",
-        as: "POsApprover",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // PurchaseOrderItems(POD) <-> PurchasOrder(PO)
-    PurchaseOrderItems.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "purchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(PurchaseOrderItems, {
-        foreignKey: "po_id",
-        as: "purchasOrderDetails",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inward <-> PurchasOrder(PO)
-    Inward.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "poReference",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Inward, {
-        foreignKey: "po_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Invoice <-> PurchasOrder(PO)
-    Invoice.belongsTo(PurchasOrder, {
-        foreignKey: "po_id",
-        as: "invoicePurchasOrder",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    PurchasOrder.hasMany(Invoice, {
-        foreignKey: "po_id",
-        as: "purchasOrderInvoices",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // InvoiceItems <-> Invoice
-    InvoiceItems.belongsTo(Invoice, {
-        foreignKey: "invoice_id",
-        as: "invoice",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Invoice.hasMany(InvoiceItems, {
-        foreignKey: "invoice_id",
-        as: "invoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // InvoiceItems <-> Product
-    InvoiceItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "InvoiceItemProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InvoiceItems, {
-        foreignKey: "product_id",
-        as: "productInvoiceItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Requisition - PurchasOrder
-    PurchasOrder.belongsTo(Requisition, {
-        foreignKey: "pr_id",
-        as: "requisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Requisition.hasMany(PurchasOrder, {
-        foreignKey: "pr_id",
-        as: "purchaseOrders",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // InwardItem - Product
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "stockInwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "stockInwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Product
-    Inventory.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.hasMany(Inventory, {
-        foreignKey: "product_id",
-        as: "inventoryProducts",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Inward
-    Inventory.belongsTo(Inward, {
-        foreignKey: "last_inward_id",
-        as: "inwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.hasMany(Inventory, {
-        foreignKey: "last_inward_id",
-        as: "inventoryInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Inventory - Outward
-    Inventory.belongsTo(Outward, {
-        foreignKey: "last_outward_id",
-        as: "outwardInventory",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(Inventory, {
-        foreignKey: "last_outward_id",
-        as: "inventoryOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // OutwardItems <-> Outward
-    OutwardItems.belongsTo(Outward, {
-        foreignKey: "outward_id",
-        as: "outward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Outward.hasMany(OutwardItems, {
-        foreignKey: "outward_id",
-        as: "outwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Outward <-> user
-    Outward.belongsTo(User, {
-        foreignKey: "outward_by",
-        as: "outwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.hasMany(Outward, {
-        foreignKey: "outward_by",
-        as: "userOutward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // requisition <-> businessNode ==> BUYER
-    Requisition.belongsTo(BusinessNode, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyer",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.hasMany(Requisition, {
-        foreignKey: "buyer_business_node_id",
-        as: "buyerRequisitions",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // ********************************************Many-To-One*********************************
-
-    // stockInward - stockInwardItems
-    Inward.hasMany(InwardItem, {
-        foreignKey: "stock_inward_id",
-        as: "items",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Inward, {
-        foreignKey: "stock_inward_id",
-        as: "stockInward",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // User - stock inward
-    User.hasMany(Inward, {
-        foreignKey: "inward_by",
-        as: "stockInwards",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Inward.belongsTo(User, {
-        foreignKey: "inward_by",
-        as: "inwardBy",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // user <-> requisition
-    User.hasMany(Requisition, {
-        foreignKey: "created_by",
-        as: "requisitionDetails",
-    });
-    Requisition.belongsTo(User, {
-        foreignKey: "created_by",
-        as: "createdBy",
-    });
-
-    // Product <-> QuotationItems
-    Product.hasMany(QuotationItems, {
-        foreignKey: "product_id",
-        as: "quotationItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    QuotationItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "quotedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Warehouse <-> Invoice
-    // Warehouse.hasMany(Invoice, {
-    //     foreignKey: "warehouse_id",
-    //     as: "warehouseInvoices",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-    // Invoice.belongsTo(Warehouse, {
-    //     foreignKey: "warehouse_id",
-    //     as: "invoiceWarehouse",
-    //     onDelete: "CASCADE",
-    //     onUpdate: "CASCADE"
-    // });
-
-    // Product <-> InwardItem
-    Product.hasMany(InwardItem, {
-        foreignKey: "product_id",
-        as: "inwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    InwardItem.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "productInwarded",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Product <-> OutwardItems
-    Product.hasMany(OutwardItems, {
-        foreignKey: "product_id",
-        as: "productOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Product, {
-        foreignKey: "product_id",
-        as: "outwardProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Batch <-> OutwardItems
-    Batch.hasMany(OutwardItems, {
-        foreignKey: "batch_id",
-        as: "batchOutwardItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    OutwardItems.belongsTo(Batch, {
-        foreignKey: "batch_id",
-        as: "outwardBatch",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Product <-> BillOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "finished_product_id",
-        as: "bomItems",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "finished_product_id",
-        as: "finishedProduct",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Product <-> BillOfMaterial
-    Product.hasMany(BillOfMaterial, {
-        foreignKey: "raw_product_id",
-        as: "usedInBoms",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BillOfMaterial.belongsTo(Product, {
-        foreignKey: "raw_product_id",
-        as: "rawMaterial",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // UnitType <-> Product
-    UnitType.hasMany(Product, {
-        foreignKey: "unit_type",
-        as: "unitProducts",
-        sourceKey: "name",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.belongsTo(UnitType, {
-        foreignKey: "unit_type",
-        as: "unitRef",
-        targetKey: "name",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // PackageType <-> Product
-    PackageType.hasMany(Product, {
-        foreignKey: "package_type",
-        as: "productPackage",
-        sourceKey: "name",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Product.belongsTo(PackageType, {
-        foreignKey: "package_type",
-        as: "packageType",
-        targetKey: "name",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // BusinessNodeType <-> BusinessNode
-    BusinessNodeType.hasMany(BusinessNode, {
-        foreignKey: "node_type_code",
-        as: "nodes",
-        sourceKey: "code",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.belongsTo(BusinessNodeType, {
-        foreignKey: "node_type_code",
-        as: "type",
-        targetKey: "code",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // ********************************************Many-To-Many*********************************
-    // user - role
-    User.belongsToMany(Role, {
-        through: {
-            model: UserRoles,
-            unique: false,
-        },
-        as: "roles",
-        foreignKey: "userId",
-        otherKey: "roleId",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Role.belongsToMany(User, {
-        through: {
-            model: UserRoles,
-            unique: false,
-        },
-        as: "users",
-        foreignKey: "roleId",
-        otherKey: "userId",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // role - permission
-    Role.belongsToMany(Permission, {
-        through: {
-            model: RolePermissions,
-            unique: false,
-        },
-        as: "permissions",
-        foreignKey: "roleId",
-        otherKey: "permissionId",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Permission.belongsToMany(Role, {
-        through: {
-            model: RolePermissions,
-            unique: false,
-        },
-        as: "roles",
-        foreignKey: "permissionId",
-        otherKey: "roleId",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // supplier - brand
-    Supplier.belongsToMany(Brand, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "brands",
-        foreignKey: "supplier_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Supplier, {
-        through: {
-            model: SupplierBrand,
-            unique: false,
-        },
-        as: "suppliers",
-        foreignKey: "brand_id",
-        otherKey: "supplier_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product - brand
-    Product.belongsToMany(Brand, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "productBrands",
-        foreignKey: "product_id",
-        otherKey: "brand_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Brand.belongsToMany(Product, {
-        through: {
-            model: BrandProducts,
-            unique: false,
-        },
-        as: "brandProducts",
-        foreignKey: "brand_id",
-        otherKey: "product_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // product - category
-    Product.belongsToMany(Category, {
-        through: {
-            model: CategoryProducts,
-            unique: false,
-        },
-        as: "productCategories",
-        foreignKey: "product_id",
-        otherKey: "category_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    Category.belongsToMany(Product, {
-        through: {
-            model: CategoryProducts,
-            unique: false,
-        },
-        as: "categoryProducts",
-        foreignKey: "category_id",
-        otherKey: "product_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // businessNode - user
-    BusinessNode.belongsToMany(User, {
-        through: NodeUser,
-        as: "businessNodeUser",
-        foreignKey: "node_id",
-        otherKey: "user_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    User.belongsToMany(BusinessNode, {
-        through: NodeUser,
-        as: "userBusinessNode",
-        foreignKey: "user_id",
-        otherKey: "node_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // Requisition - BusinessNode
-    Requisition.belongsToMany(BusinessNode, {
-        through: RequisitionSupplier,
-        as: "supplierBusinessNodes",
-        foreignKey: "requisition_id",
-        otherKey: "supplier_business_node_id",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BusinessNode.belongsToMany(Requisition, {
-        through: RequisitionSupplier,
-        as: "supplierRequisitions",
         foreignKey: "supplier_business_node_id",
         otherKey: "requisition_id",
         onDelete: "CASCADE",

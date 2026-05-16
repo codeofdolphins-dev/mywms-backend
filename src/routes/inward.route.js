@@ -1,16 +1,17 @@
 import { Router } from "express";
-import { createInward, deleteInward, getInward, updateInward, updateInwardItems } from "../controllers/inward.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js"
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
+import { createInward, getTenantOutwardData, grnItemDetailsViaPO, grnList } from "../controllers/inward.controller.js"
 
 const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/all").get(verifyPermission("inward:read"), getInward);  // optional ?id= &page= &limit=
+router.route("/list").get(verifyPermission("inward:read"), grnList);
+router.route("/item-prefield-data/:po_no").get(getTenantOutwardData);
 router.route("/create").post(verifyPermission("inward:create"), createInward);
-router.route("/delete/:id").delete(verifyPermission("inward:delete"), deleteInward);
-router.route("/update").put(verifyPermission("inward:update"), updateInward);
-router.route("/update-item").put(verifyPermission("inward-item:update"), updateInwardItems);
+
+router.route("/:grn_no").get(grnItemDetailsViaPO);
+
 
 export default router;

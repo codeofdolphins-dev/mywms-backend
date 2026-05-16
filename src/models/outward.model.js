@@ -2,51 +2,75 @@ import { DataTypes } from "sequelize";
 
 function Outward(sequelize) {
     return sequelize.define("Outward", {
-        outward_ref: {
-            type: DataTypes.UUID,
-            allowNull: false,
-            defaultValue: DataTypes.UUIDV4
+        outward_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true
         },
-        host_warehouse_id: {
+        // Link to the associated Sales Order when type is external
+        sales_order_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
+        // Link to the associated Purchase Requisition when type is internal
+        pr_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+
+
+        // Internal Node ID of the company/location selling the goods
+        seller_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        target_warehouse_id: {
+        // FG Store ID who selling the goods
+        store_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: true,
         },
-        outward_date: {
-            type: DataTypes.DATEONLY,
-            allowNull: false
-        },
-        outward_type: {
-            type: DataTypes.ENUM("transfer", "sales", "other"),
-            defaultValue: "transfer"
-        },
-        outward_by: {
+        // this will may target both node or vendor
+        buyer_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        vehicle_id: {
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "internal"
+        },
+
+
+        // User assigned to pick the items
+        picker_id: {
             type: DataTypes.INTEGER,
             allowNull: true
         },
-        driver_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
+        priority: {
+            type: DataTypes.ENUM("low", "medium", "high", "urgent"),
+            defaultValue: "medium"
         },
         status: {
-            type: DataTypes.ENUM("pending", "picked", "dispatched", "delivered", "cancelled"),
+            type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched"),
             defaultValue: "pending"
         },
-        total: {
-            type: DataTypes.DECIMAL(10, 2),
+        required_by: {
+            type: DataTypes.DATEONLY,
             allowNull: true
+        },
+        dispatch_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {}
         },
         note: {
             type: DataTypes.TEXT,
             allowNull: true
-        }
+        },
     });
 }
 export default Outward;

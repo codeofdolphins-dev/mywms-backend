@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { all_company, allBusinessNodes, delete_company, registerBusinessNode, registerNewTenant, updateCompanyDetails } from "../controllers/superAdmin.controller.js"
+import { all_company, allBusinessNodes, delete_company, registerNewTenant, tenantBusinessFlow, updateCompanyDetails, updateTenantBusinessFlow } from "../controllers/superAdmin.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -10,21 +10,23 @@ const router = Router();
 
 
 
-// private APIs
-router.route("/register-node").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:create"), registerBusinessNode);
-
-
 router.use(defineUserScope, defineDbObject, verifyJWT);
+
 
 // public API
 router.route("/business-nodes").get(allBusinessNodes);
+router.route("/tenant-business-flow").get(verifyPermission("tenant-flow:read"), tenantBusinessFlow);
+router.route("/company-list").get(verifyPermission("company:read"), all_company);
 
 
-router.route("/list").get(verifyPermission("company:read"), all_company);    // optional ?page= &limit= &email= &id=
+router.route("/update-tenant-business-flow").put(verifyJWT, verifyPermission("tenant-flow:update"), updateTenantBusinessFlow);
 
-router.route("/register-tenant").post(verifyPermission("company:create"), registerNewTenant);
-router.route("/delete").post(verifyPermission("company:delete"), delete_company);
-router.route("/update-company-details").put(upload.single("image"), verifyJWT, verifyPermission("company:update"), updateCompanyDetails);
+
+
+// router.route("/register-tenant").post(verifyPermission("company:create"), registerNewTenant);
+// router.route("/delete").post(verifyPermission("company:delete"), delete_company);
+// router.route("/update-company-details").put(upload.single("image"), verifyJWT, verifyPermission("company:update"), updateCompanyDetails);
+
 
 
 export default router;

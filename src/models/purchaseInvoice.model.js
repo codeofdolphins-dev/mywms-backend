@@ -23,17 +23,17 @@ function PurchaseInvoice(sequelize) {
             allowNull: true
         },
         subtotal: {
-            type: DataTypes.DECIMAL(10,2),
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         tax_amount: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         total_amount: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true,
             defaultValue: 0.00
         },

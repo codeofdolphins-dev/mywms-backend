@@ -6,7 +6,7 @@ function Requisition(sequelize) {
             type: DataTypes.STRING,
             unique: true
         },
-        buyer_business_node_id: {
+        buyer_business_node_id: {        // Location A (requester)
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -18,6 +18,18 @@ function Requisition(sequelize) {
             type: DataTypes.TEXT,
             allowNull: true
         },
+        grandTotal: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: true
+        },
+        requisition_category_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "external"
+        },
         required_by_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,
@@ -27,7 +39,7 @@ function Requisition(sequelize) {
             allowNull: false
         },
         status: {
-            type: DataTypes.ENUM("pending", "quoted", "cancelled", "closed"),
+            type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg", "dispatched"),
             defaultValue: "pending"
         },
         priority: {

@@ -2,42 +2,80 @@ import { DataTypes } from "sequelize";
 
 function Batch(sequelize) {
     return sequelize.define("Batch", {
-        product_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
+        // --- 1. CORE IDENTIFIERS ---
+        batch_no: {
+            type: DataTypes.STRING,
+            allowNull: true
         },
-        inventory_id: {
+        product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        warehouse_id: {
+
+        // --- 2. LOCATION TRACKING ---
+        location_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        store_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        batch_number: {
-            type: DataTypes.STRING,
-            allowNull: false
+        location_type: {
+            type: DataTypes.ENUM("mfg_unit", "business_node"),
+            allowNull: false,
+        },
+
+        // --- 3. QUANTITIES ---
+        available_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0,
+        },
+        reserved_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0
+        },
+
+        // --- 4. AUDIT & REFERENCES ---
+        reference_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        reference_type: {
+            type: DataTypes.ENUM("opening_stock", "grn", "transfer", "others", "production"),
+            allowNull: true,
+        },
+
+        // --- 5. METADATA & STATUS ---
+        batch_status: {
+            type: DataTypes.ENUM("active", "quarantine", "expired", "consumed"),
+            allowNull: true,
+            defaultValue: "active",
+        },
+        unit_price: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: false,
+            defaultValue: 0.00
+        },
+        mfg_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
         },
         expiry_date: {
             type: DataTypes.DATEONLY,
             allowNull: true,
         },
-        qty: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            defaultValue: 0
-        },
-        cost_price: {
-            type: DataTypes.DECIMAL(10, 2),
+        received_date: {
+            type: DataTypes.DATEONLY,
             allowNull: true,
-        }
-    }, {
-        indexes: [
-            {
-                unique: true,
-                fields: ['product_id', 'warehouse_id', 'batch_number']
-            }
-        ]
+        },
+        is_active: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+        },
     });
 }
+
 export default Batch;

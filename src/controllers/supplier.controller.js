@@ -1,6 +1,6 @@
 import { Op, Sequelize } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { removeFirstWord } from "../helper/removeFirstWord.js";
+import { removeFirstWord } from "../helper/helper.js";
 
 // GET
 const supplierList = asyncHandler(async (req, res) => {

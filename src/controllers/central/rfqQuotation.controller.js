@@ -1,0 +1,502 @@
+import { Op } from "sequelize";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { rootDB } from "../../db/tenantMenager.service.js"
+import { fetchNodeDetails } from "../../helper/helper.js";
+import { updateRequisitionStatus } from "../../services/rfqQuotation.service.js";
+
+
+// GET
+export const allRfqQuotationList = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem } = models;
+
+    const dbName = req.headers["x-tenant-id"];
+
+    try {
+        let { page = 1, limit = 10, id = "", rfq_no = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        let rfq_id = null;
+        if (rfq_no) {
+            const rfq = await RFQ.findOne({
+                where: { rfq_no }
+            });
+            rfq_id = rfq.id;
+        }
+
+        const rfqQuotation = await RfqQuotation.findAndCountAll({
+            where: {
+                ...(id && { id: Number(id) }),
+                ...(rfq_no && { rfq_id }),
+                vendor_tenant: dbName,
+            },
+            include: [
+                {
+                    model: RFQ,
+                    as: "linkedRfq",
+                    // attributes: ["rfq_no"]
+                },
+                {
+                    model: RfqQuotationRevision,
+                    as: "quotationRevision",
+                    include: [
+                        {
+                            model: RfqQuotationItem,
+                            as: "revisionItems",
+                            attributes: {
+                                exclude: ["quotation_id", "qty"]
+                            },
+                            include: [
+                                {
+                                    model: RFQItem,
+                                    as: "sourceRfqItem"
+                                }
+                            ]
+                        }
+                    ]
+                },
+            ],
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+            distinct: true,
+        });
+        if (!rfqQuotation) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        const totalItems = rfqQuotation.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: (!rfq_no || !id) ? rfqQuotation?.rows : rfqQuotation?.rows?.[0],
+            ...((!rfq_no || !id) && {
+                meta: {
+                    totalItems,
+                    totalPages,
+                    currentPage: page,
+                    limit,
+                },
+            }),
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const getQuotationWithPaginatedItems = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, RFQItem, TenantsName, Tenant } = models;
+
+    try {
+        const { page = 1, limit = 10, reqNo, targetVendor, targetRevision, } = req.query;
+
+        // 1. Get the RFQ Header
+        const rfq = await RFQ.findOne({ where: { pr_reference_code: reqNo } });
+        if (!rfq) return res.status(404).json({ success: false, code: 404, message: "RFQ not found" });
+
+        // 2. Get all Vendor Headers for this RFQ
+        const vendorHeaders = await RfqQuotation.findAll({
+            where: { rfq_id: rfq.id },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "vendorTenant",
+                    attributes: ["id"],
+                    include: [
+                        {
+                            model: Tenant,
+                            as: "tenantDetails",
+                            attributes: ["companyName"]
+                        }
+                    ]
+                },
+            ] // include company names, etc.
+        });
+
+        // Deduplicate vendor headers in case the join produced duplicate rows
+        const uniqueHeadersMap = new Map();
+        vendorHeaders.forEach(header => {
+            if (!uniqueHeadersMap.has(header.id)) {
+                uniqueHeadersMap.set(header.id, header);
+            }
+        });
+        const uniqueHeaders = Array.from(uniqueHeadersMap.values());
+
+        // 3. Process each vendor's revision and items
+        const data = await Promise.all(uniqueHeaders.map(async (header) => {
+            const isTarget = targetVendor && String(header.vendor_tenant) === String(targetVendor);
+
+            // Determine which revision to show: 
+            // If it's the target vendor, use targetRevision. Otherwise, use their latest (current_revision_no).
+            const revToFetch = isTarget && targetRevision ? targetRevision : header.current_revision_no;
+
+            // Fetch the specific Revision record
+            const revisionRecord = await RfqQuotationRevision.findOne({
+                where: {
+                    quotation_id: header.id,
+                    revision_no: revToFetch
+                }
+            });
+
+            // Fetch all revisions for remarks history
+            const remarksHistory = await RfqQuotationRevision.findAll({
+                where: {
+                    quotation_id: header.id,
+                    remarks: { [Op.not]: null }
+                },
+                attributes: ['revision_no', 'remarks'],
+                order: [['revision_no', 'ASC']]
+            });
+
+
+            if (!revisionRecord) return { ...header.toJSON(), revision: null, items: [], remarksHistory };
+
+            // Fetch Items for this specific revision with CONDITIONAL pagination
+            const items = await RfqQuotationItem.findAndCountAll({
+                where: { revision_id: revisionRecord.id },
+                include: [{ model: RFQItem, as: "sourceRfqItem", attributes: { exclude: ["qty"] } },],
+                limit: isTarget ? parseInt(limit) : undefined,
+                offset: isTarget ? (parseInt(page) - 1) * parseInt(limit) : undefined,
+                order: [['createdAt', 'ASC']]
+            });
+
+            return {
+                ...header.toJSON(),
+                activeRevision: revisionRecord,
+                requisition: rfq,
+                remarksHistory,
+                quotationItems: items.rows,
+                pagination: {
+                    totalItems: items.count,
+                    currentPage: isTarget ? parseInt(page) : 1,
+                    totalPages: isTarget ? Math.ceil(items.count / limit) : 1,
+                    isPaginated: isTarget
+                }
+            };
+        }));
+
+        return res.status(200).json({ success: true, code: 200, data: data });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+
+export const appliedRfqList = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RfqQuotation } = models;
+
+    const dbName = req.headers["x-tenant-id"];
+
+    try {
+        const appliedRfqs = await RfqQuotation.findAll({
+            where: { vendor_tenant: dbName },
+            attributes: ["rfq_id"]
+        });
+
+        const rfqIds = appliedRfqs.map(q => q.rfq_id);
+
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: rfqIds });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+
+// POST
+export const createRfqQuotation = asyncHandler(async (req, res) => {
+    const { rootSequelize, models } = await rootDB();
+
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const dbName = req.headers["x-tenant-id"];
+    const current_node = req.activeNode;
+
+    /** for buyer transaction  */
+    let buyerTransaction = null;
+
+    try {
+        const { rfq_no = "", valid_till = "", grandTotal = "", buyer_name = "", items = "" } = req.body;
+        if (!rfq_no || items?.length < 1) throw new Error("Required fields are missing!!!");
+
+        const rfq = await RFQ.findOne({ where: { rfq_no } });
+        if (!rfq) throw new Error("RFQ record not found!!!");
+
+
+
+        // console.log(rfq.toJSON())
+        // console.log("dbName", dbName);
+        // throw new Error("testing purpose");
+
+        buyerTransaction = await updateRequisitionStatus(rfq);
+
+
+
+        //  check record already exists or not
+        const isExists = await RfqQuotation.findOne({
+            where: {
+                rfq_id: rfq.id,
+                vendor_tenant: dbName
+            }
+        });
+        if (isExists) {
+            await rootTransaction.rollback();
+            return res.status(409).json({ success: false, code: 409, message: "Record already created!!!" });
+        }
+
+        const nodeDetails = await fetchNodeDetails(req.dbModels, current_node);
+
+        const rfqQuotation = await RfqQuotation.create({
+            rfq_id: rfq.id,
+            vendor_tenant: dbName,
+            buyer_name: buyer_name?.trim() ?? "",
+            ...(valid_till && { valid_till: new Date(valid_till) }),
+            meta: nodeDetails,
+        }, { transaction: rootTransaction });
+
+        const revision = await RfqQuotationRevision.create({
+            quotation_id: rfqQuotation.id,
+            grand_total: Number(grandTotal),
+        }, { transaction: rootTransaction });
+
+
+        const processedItems = new Set();
+
+        for (const item of items) {
+            const { rfq_item_id = "", offer_price = "", qty = "", supplier_product_id = "" } = item;
+            if (!rfq_item_id || !offer_price || !supplier_product_id) throw new Error("Required fields are missing in items array!!!");
+
+            if (processedItems.has(rfq_item_id)) continue;
+            processedItems.add(rfq_item_id);
+
+            const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
+            if (!rfqItem) throw new Error("RFQ items record not found!!!");
+
+            /** check existing product maping records for safety */
+            const existingMappings = await ProductMapping.findAll({
+                where: {
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: dbName,
+                    [Op.or]: [
+                        { buyer_product_id: rfqItem.product_id },
+                        { vendor_product_id: Number(supplier_product_id) }
+                    ]
+                },
+                transaction: rootTransaction
+            });
+
+            let productMapping = null;
+
+            if (existingMappings.length > 0) {
+                for (const mapping of existingMappings) {
+                    if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id !== Number(supplier_product_id)) {
+                        throw new Error(`Conflict: Buyer product is already linked to another product of yours.`);
+                    }
+                    if (mapping.vendor_product_id === Number(supplier_product_id) && mapping.buyer_product_id !== rfqItem.product_id) {
+                        throw new Error(`Conflict: Your this product is already linked with buyer product.`);
+                    }
+                    if (mapping.buyer_product_id === rfqItem.product_id && mapping.vendor_product_id === Number(supplier_product_id)) {
+                        productMapping = mapping;
+                    }
+                }
+            }
+
+            /** create product maping record if not exists */
+            if (!productMapping) {
+                productMapping = await ProductMapping.create({
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: dbName,
+                    buyer_product_id: rfqItem.product_id,
+                    vendor_product_id: Number(supplier_product_id),
+                }, { transaction: rootTransaction });
+            }
+
+            /** create rfq quotation item records */
+            await RfqQuotationItem.create({
+                revision_id: revision.id,
+                rfq_item_id: rfqItem.id,
+                product_map_id: productMapping.id,
+                qty,
+                offer_price,
+            }, { transaction: rootTransaction });
+        };
+
+        await rootTransaction.commit();
+        await buyerTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
+
+    } catch (error) {
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+// DELETE
+export const deleteRfqQuotation = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RfqQuotation } = models;
+
+    const dbName = req.headers["x-tenant-id"];
+
+    try {
+        const { id } = req.params;
+        if (!id) throw new Error("Id is required!!!");
+
+        const quotation = await RfqQuotation.findOne({ where: { id: parseInt(id, 10), vendor_tenant: dbName } });
+        if (!quotation) return res.status(404).json({ success: false, code: 404, message: "No record found!!!" });
+
+        const isDeleted = await RfqQuotation.destroy({
+            where: { id: parseInt(id, 10) },
+        });
+        if (!isDeleted) return res.status(503).json({ success: false, code: 503, message: "Deletion failed!!!" });
+
+        return res.status(200).json({ success: true, code: 200, message: "Delete Successfully." });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+// PUT
+export const updateRfqQuotation = asyncHandler(async (req, res) => {
+    const { rootSequelize, models } = await rootDB();
+
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    try {
+        const { quotation_id = "", grandTotal = "", items = "" } = req.body;
+        if (!quotation_id || items?.length < 1) throw new Error("Required fields are missing!!!");
+
+        const quotation = await RfqQuotation.findByPk(Number(quotation_id));
+        if (!quotation) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Quotation record not found!!!" });
+        }
+
+        const rfq = await RFQ.findByPk(Number(quotation.rfq_id));
+        if (!rfq) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "RFQ record not found!!!" });
+        }
+
+        const current_revision_no = quotation.current_revision_no;
+        if (current_revision_no >= 3) {
+            await rootTransaction.rollback();
+            return res.status(405).json({ success: false, code: 405, message: "Cannot update this quotation!!!" });
+        };
+
+        /** update current revision status */
+        await RfqQuotationRevision.update(
+            { status: "pending" },
+            {
+                where: {
+                    quotation_id: quotation.id,
+                    revision_no: current_revision_no
+                },
+                transaction: rootTransaction
+            }
+        );
+
+        /** update the quotation record */
+        quotation.current_revision_no = current_revision_no + 1;
+        await quotation.save({ transaction: rootTransaction });
+
+        /** create new revision */
+        const revision = await RfqQuotationRevision.create({
+            quotation_id: quotation.id,
+            grand_total: Number(grandTotal),
+            revision_no: current_revision_no + 1,
+        }, { transaction: rootTransaction });
+
+
+        for (const item of items) {
+            const { rfq_item_id = "", offer_price = "", qty = "" } = item;
+            if (!rfq_item_id || !offer_price) throw new Error("Required fields are missing in items array!!!");
+
+            const rfqItem = await RFQItem.findByPk(Number(rfq_item_id));
+            if (!rfqItem) throw new Error("RFQ items record not found!!!");
+
+            /** fetch product maping records */
+            const productMapping = await ProductMapping.findOne({
+                where: {
+                    buyer_node: rfq.buyer_tenant,
+                    vendor_node: quotation.vendor_tenant,
+                    buyer_product_id: rfqItem.product_id,
+                }
+            });
+            if (!productMapping) {
+                await rootTransaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Product Mapping record not found!!!" });
+            }
+
+            /** create rfq quotation item records */
+            await RfqQuotationItem.create({
+                revision_id: revision.id,
+                rfq_item_id: rfqItem.id,
+                product_map_id: productMapping.id,
+                qty,
+                offer_price,
+            }, { transaction: rootTransaction });
+        };
+
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
+
+    } catch (error) {
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const negotiateRfqQuotation = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { RfqQuotation, RfqQuotationRevision } = models;
+
+    try {
+        const { id = "", remarks = "" } = req.body;
+        if (!id) throw new Error("quotation id must required!!!");
+
+        const quotation = await RfqQuotation.findByPk(Number(id));
+        if (!quotation) {
+            return res.status(404).json({ success: false, code: 404, message: 'Quotation record not found!!!' });
+        }
+
+        const current_revision_no = quotation.current_revision_no;
+        if (current_revision_no == 3) {
+            return res.status(405).json({ success: false, code: 405, message: 'Cannot negotiate this quotation!!!' });
+        }
+
+        const quotationRevision = await RfqQuotationRevision.findOne({
+            where: { quotation_id: Number(id) }
+        });
+        if (!quotationRevision) {
+            return res.status(404).json({ success: false, code: 404, message: 'Record not found!!!' });
+        }
+
+        quotationRevision.status = "negotiate";
+        quotationRevision.remarks = remarks.trim();
+        await quotationRevision.save();
+
+        return res.status(200).json({ success: true, code: 200, message: 'Negotiation started successfully!!!' });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});

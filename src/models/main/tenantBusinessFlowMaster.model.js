@@ -18,6 +18,16 @@ function TenantBusinessFlowMaster(sequelize) {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
-    });
+    },
+        {
+            indexes: [
+                {
+                    unique: true,
+                    fields: ["tenant_id", "node_type_code"],
+                    name: "uniq_tenant_node_type",
+                },
+            ],
+        }
+    );
 }
 export default TenantBusinessFlowMaster;

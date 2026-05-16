@@ -16,10 +16,6 @@ function User(sequelize) {
             allowNull: true,
             defaultValue: {}
         },
-        // userType: {
-        //     type: DataTypes.STRING,
-        //     allowNull: false,
-        // },
         company_name: {
             type: DataTypes.STRING,
             allowNull: true
@@ -40,6 +36,10 @@ function User(sequelize) {
         accessToken: {
             type: DataTypes.STRING,
             allowNull: true
+        },
+        type: {
+            type: DataTypes.ENUM("internal", "external"),
+            defaultValue: "internal"
         },
         is_active: {
             type: DataTypes.BOOLEAN,

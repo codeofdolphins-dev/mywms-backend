@@ -10,10 +10,32 @@ function RequisitionItem(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        qty: {
-            type: DataTypes.INTEGER,
+        brand: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
+        category: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        sub_category: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        qty: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        price_limit: {
+            type: DataTypes.DECIMAL(18, 2),
+            defaultValue: 0.00,
+            allowNull: true,
+        },
+        remarks: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        }
     });
 }
+
 export default RequisitionItem;

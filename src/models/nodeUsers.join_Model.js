@@ -15,10 +15,18 @@ function NodeUser(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        userRole: {
-            type: DataTypes.ENUM("NODE_ADMIN", "NODE_USER"),
-            allowNull: false,
-            defaultValue: "NODE_USER"
+        store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        department: {
+            type: DataTypes.ENUM("purchase", "sales", "both"),
+            defaultValue: null,
+            allowNull: true
+        },
+        isNodeAdmin: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         },
     });
 }

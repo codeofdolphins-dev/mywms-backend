@@ -5,7 +5,6 @@ import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 import { deleteImage } from "../utils/handelImage.js";
-import { hashPassword } from "../utils/hashPassword.js";
 
 
 // GET
@@ -28,6 +27,49 @@ const allBusinessNodes = asyncHandler(async (req, res) => {
     }
 });
 
+
+const tenantBusinessFlow = asyncHandler(async (req, res) => {
+    const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
+    try {
+        const { email = "" } = req.query;
+        if (!email) throw new Error("Email required!!!");
+
+        const isExists = await Tenant.findOne({ where: { email: email?.trim() } });
+        if (!isExists) throw new Error("Record not found!!!");
+
+        const result = await Tenant.findOne({
+            where: { email },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "tenantsName",
+                    include: [
+                        {
+                            model: TenantBusinessFlowMaster,
+                            as: "businessFlows",
+                            where: { is_active: true },
+                            separate: true,
+                            order: [["sequence", "ASC"]],
+                        },
+                    ],
+                },
+            ],
+        });
+
+
+        const formatedResult = result?.toJSON();
+        formatedResult.businessFlows = result.tenantsName.businessFlows;
+        delete formatedResult.tenantsName.businessFlows;
+
+        return res.status(200).json({ success: true, code: 200, data: formatedResult });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
 const all_company = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName } = req.dbModels;
     try {
@@ -37,12 +79,14 @@ const all_company = asyncHandler(async (req, res) => {
 
         const offset = (page - 1) * limit;
 
-        let condition = {};
-        if (email) condition.email = email;
-        if (id) condition.id = id;
 
         const tenant = await Tenant.findAndCountAll({
-            where: { isOwner: true, password: { [Op.ne]: null }, ...condition },
+            where: {
+                isOwner: true,
+                password: { [Op.ne]: null },
+                ...(email && { email }),
+                ...(id && { id: Number(id) }),
+            },
             include: [
                 {
                     model: TenantsName,
@@ -62,7 +106,7 @@ const all_company = asyncHandler(async (req, res) => {
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: tenant,
+            data: tenant.rows,
             meta: {
                 totalItems,
                 totalPages,
@@ -80,6 +124,8 @@ const all_company = asyncHandler(async (req, res) => {
 
 
 // POST
+
+/** ==>> not in use anymore  */
 const registerNewTenant = asyncHandler(async (req, res) => {
     const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
     const rootTransaction = await req.dbObject.transaction();
@@ -128,178 +174,8 @@ const registerNewTenant = asyncHandler(async (req, res) => {
     }
 });
 
-const registerBusinessNode = asyncHandler(async (req, res) => {
-    const { BusinessNode, NodeDetails, TenantBusinessFlow } = req.dbModels;
-    const transaction = await req.dbObject.transaction();
-
-    const dbName = req.headers["x-tenant-id"];
-    const profile_image = req?.file?.filename || null;
-    try {
-        let { full_name = "", location = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
-
-        if ([full_name, location, address, state_id, district_id, pincode, node].some(item => item === "")) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
-        }
-        node = JSON.parse(node);
-
-        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
-        if (!tenantBusinessFlow) {
-            throw new Error("Invalid business node type code!!!");
-        }
-
-        // // find parent business node if not root
-        // let parentNodeId = null;
-        // if (tenantBusinessFlow.sequence !== 1) {
-        //     const parentFlow = await TenantBusinessFlow.findOne({
-        //         where: {
-        //             sequence: tenantBusinessFlow.sequence - 1
-        //         },
-        //         transaction
-        //     });
-        //     if (!parentFlow) {
-        //         throw new Error("Parent flow not found!!!");
-        //     }
-
-        //     const parentBusinessNode = await BusinessNode.findOne({
-        //         where: {
-        //             node_type_code: parentFlow.node_type_code
-        //         },
-        //         transaction
-        //     });
-        //     console.log(parentBusinessNode);
-        //     throw new Error("Invalid business node type code!!!");
-        //     parentNodeId = parentBusinessNode.id;
-        // }
-
-        /** create business node */
-        const businessNode = await BusinessNode.create({
-            name: `${node.name} - ${location}`,
-            node_type_code: node.code,
-            sequence: tenantBusinessFlow.sequence,
-        }, { transaction });
-
-        /**create node details */
-        const nodeDetails = await NodeDetails.create({
-            name: full_name,
-            business_node_id: businessNode.id,
-            location,
-            address: {
-                address,
-                state_id,
-                district_id,
-                pincode,
-                ...((lat && long) ? { lat, long } : {})
-            },
-            gst_no,
-            license_no,
-            ...(profile_image && { image: `${dbName}/${profile_image}` }),
-            desc
-        }, { transaction });
-        if (!nodeDetails) {
-            if (profile_image) await deleteImage(profile_image, dbName);
-            await transaction.rollback();
-            return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-        }
-
-        await transaction.commit();
-        return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
-
-    } catch (error) {
-        await transaction.rollback();
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-// const registerBusinessNode = asyncHandler(async (req, res) => {
-//     const { BusinessNode, NodeDetails, TenantBusinessFlow } = req.dbModels;
-//     const transaction = await req.dbObject.transaction();
-
-//     const dbName = req.headers["x-tenant-id"];
-//     const profile_image = req?.file?.filename || null;
-//     try {
-//         let { full_name = "", location = "", address = "", state_id = "", district_id = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
-
-//         if ([full_name, location, address, state_id, district_id, pincode, node].some(item => item === "")) {
-//             if (profile_image) await deleteImage(profile_image, dbName);
-//             await transaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
-//         }
-//         node = JSON.parse(node);
-
-//         const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
-//         if (!tenantBusinessFlow) {
-//             throw new Error("Invalid business node type code!!!");
-//         }
-
-//         // // find parent business node if not root
-//         // let parentNodeId = null;
-//         // if (tenantBusinessFlow.sequence !== 1) {
-//         //     const parentFlow = await TenantBusinessFlow.findOne({
-//         //         where: {
-//         //             sequence: tenantBusinessFlow.sequence - 1
-//         //         },
-//         //         transaction
-//         //     });
-//         //     if (!parentFlow) {
-//         //         throw new Error("Parent flow not found!!!");
-//         //     }
-
-//         //     const parentBusinessNode = await BusinessNode.findOne({
-//         //         where: {
-//         //             node_type_code: parentFlow.node_type_code
-//         //         },
-//         //         transaction
-//         //     });
-//         //     console.log(parentBusinessNode);
-//         //     throw new Error("Invalid business node type code!!!");
-//         //     parentNodeId = parentBusinessNode.id;
-//         // }
-
-//         /** create business node */
-//         const businessNode = await BusinessNode.create({
-//             name: `${node.name} - ${location}`,
-//             node_type_code: node.code,
-//             sequence: tenantBusinessFlow.sequence,
-//         }, { transaction });
-
-//         /**create node details */
-//         const nodeDetails = await NodeDetails.create({
-//             name: full_name,
-//             business_node_id: businessNode.id,
-//             location,
-//             address: {
-//                 address,
-//                 state_id,
-//                 district_id,
-//                 pincode,
-//                 ...((lat && long) ? { lat, long } : {})
-//             },
-//             gst_no,
-//             license_no,
-//             ...(profile_image && { image: `${dbName}/${profile_image}` }),
-//             desc
-//         }, { transaction });
-//         if (!nodeDetails) {
-//             if (profile_image) await deleteImage(profile_image, dbName);
-//             await transaction.rollback();
-//             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
-//         }
-
-//         await transaction.commit();
-//         return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
-
-//     } catch (error) {
-//         await transaction.rollback();
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
 
 
-// UPDATE
 const updateCompanyDetails = asyncHandler(async (req, res) => {
     const { User, CompanyDetails } = req.dbModels;
     try {
@@ -349,6 +225,93 @@ const updateCompanyDetails = asyncHandler(async (req, res) => {
     }
 });
 
+// UPDATE
+const updateTenantBusinessFlow = asyncHandler(async (req, res) => {
+    const { Tenant, TenantsName, TenantBusinessFlowMaster } = req.dbModels;
+    const rootTransaction = await req.dbObject.transaction();
+
+    let tenantTransaction = null;
+    try {
+        const { email, nodeSequence = [] } = req.body;
+        if (!email || nodeSequence.length < 1) {
+            await rootTransaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "email and nodeSequence must required!!!" });
+        }
+
+        const result = await Tenant.findOne({
+            where: { email },
+            include: [
+                {
+                    model: TenantsName,
+                    as: "tenantsName"
+                },
+            ],
+        }, { transaction: rootTransaction });
+        if (!result) throw new Error("Record Not Found!!!");
+
+        const tenantId = result?.tenant_id;
+        const tenantDB = result?.tenantsName?.tenant;
+
+        /** prepare data sequence data */
+        const businessNodeSequence = nodeSequence.map((item, index) => ({
+            node_type_code: item.code,
+            sequence: index + 1
+        }));
+
+        /** update main DB */
+        await TenantBusinessFlowMaster.update(
+            { is_active: false },
+            { where: { tenant_id: tenantId }, transaction: rootTransaction }
+        );
+
+        await TenantBusinessFlowMaster.bulkCreate(
+            businessNodeSequence.map(item => ({
+                ...item,
+                tenant_id: tenantId,
+                is_active: true,
+            })),
+            {
+                updateOnDuplicate: ["sequence", "is_active", "updatedAt"],
+                transaction: rootTransaction,
+            }
+        );
+
+
+        const { sequelize, models } = await getTenantConnection(tenantDB);
+        const { TenantBusinessFlow } = models;
+        tenantTransaction = await sequelize.transaction();
+
+
+        /** update tenant DB */
+        await TenantBusinessFlow.update(
+            { is_active: false },
+            { where: {}, transaction: tenantTransaction }
+        );
+
+        await TenantBusinessFlow.bulkCreate(
+            businessNodeSequence.map(item => ({
+                ...item,
+                is_active: true,
+            })),
+            {
+                updateOnDuplicate: ["sequence", "is_active", "updatedAt"],
+                transaction: tenantTransaction,
+            }
+        );
+
+        await tenantTransaction.commit();
+        await rootTransaction.commit();
+
+        return res.status(200).json({ success: true, code: 200, message: "Tenant Business Flow Updated" });
+
+    } catch (error) {
+        if (tenantTransaction) await tenantTransaction.rollback();
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // DELETE
 const delete_company = asyncHandler(async (req, res) => {
@@ -387,4 +350,4 @@ const delete_company = asyncHandler(async (req, res) => {
     }
 });
 
-export { allBusinessNodes, registerNewTenant, registerBusinessNode, delete_company, all_company, updateCompanyDetails };
+export { allBusinessNodes, tenantBusinessFlow, registerNewTenant, delete_company, all_company, updateCompanyDetails, updateTenantBusinessFlow };

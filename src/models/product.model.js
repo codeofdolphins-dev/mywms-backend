@@ -7,33 +7,32 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        hsn_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
+        hsn_code: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
         sku: {
             type: DataTypes.STRING,
             allowNull: true,
             unique: true,
         },
-        barcode: {
-            type: DataTypes.BIGINT,
-            allowNull: false,
-            unique: true,
+        brand_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
         },
-        gst_type: {
-            type: DataTypes.ENUM("include", "exclude"),
-            defaultValue: "exclude",
-            allowNull: false
+        barcode: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true,
         },
         product_type: {
             type: DataTypes.ENUM("raw", "finished"),
             defaultValue: "raw",
-            allowNull: false
+            allowNull: true
         },
         package_type: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         measure: {
             type: DataTypes.STRING,
@@ -41,23 +40,11 @@ function Product(sequelize) {
         },
         unit_type: {
             type: DataTypes.STRING,
-            allowNull: false,
-        },
-        unit: {
-            type: DataTypes.STRING,
             allowNull: true,
         },
         description: {
             type: DataTypes.STRING,
             allowNull: true
-        },
-        purchase_price: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-        },
-        MRP: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
         },
         reorder_level: {
             type: DataTypes.INTEGER,
@@ -66,6 +53,18 @@ function Product(sequelize) {
         is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true
+        },
+        has_expiry: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        shelf_life: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+        },
+        mrp: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
         },
         photo: {
             type: DataTypes.STRING,

@@ -15,36 +15,36 @@ function InvoiceItems(sequelize) {
             allowNull: false
         },
         unit_price: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true
         },
         gross_amount: {
-            type: DataTypes.DECIMAL(10,2),
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         discount: {
-            type: DataTypes.DECIMAL(10,2),
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         taxable_amount: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         CGST: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         SGST: {
-            type: DataTypes.DECIMAL,
+            type: DataTypes.DECIMAL(18,2),
             allowNull: true,
             defaultValue: 0.00
         },
         total_amount: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true,
             defaultValue: 0.00
         }

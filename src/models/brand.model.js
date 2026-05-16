@@ -10,6 +10,10 @@ function Brand(sequelize) {
             type: DataTypes.STRING,
             allowNull: false
         },
+        vendor_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         description: {
             type: DataTypes.TEXT,
             allowNull: true

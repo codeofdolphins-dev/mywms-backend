@@ -6,7 +6,15 @@ function Role(sequelize) {
         role: {
             type: DataTypes.STRING,
             allowNull: true
-        }
+        },
+        status: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
+        },
+        is_default: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
     })
 }
 export default Role;

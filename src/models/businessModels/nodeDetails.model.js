@@ -2,19 +2,19 @@ import { DataTypes } from "sequelize";
 
 function NodeDetails(sequelize) {
     return sequelize.define("NodeDetails", {
-        name: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
         business_node_id: {
             type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        name: {
+            type: DataTypes.STRING,
             allowNull: false
         },
         location: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        address: {                      // this store address, state_id, district_id, lat, log
+        address: {                      // this store address, state, district, lat, log
             type: DataTypes.JSONB,
             allowNull: true,
             defaultValue: {},
@@ -34,6 +34,11 @@ function NodeDetails(sequelize) {
         desc: {
             type: DataTypes.TEXT,
             allowNull: true,
+        },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: {},
         },
     })
 }
