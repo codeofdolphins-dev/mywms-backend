@@ -14,7 +14,7 @@ export function getRootMigrator(sequelize) {
             glob: path.join(__dirname, '../migrations/root/*.js').replace(/\\/g, '/'),
         },
         context: sequelize.getQueryInterface(),
-        storage: new SequelizeStorage({      }),
+        storage: new SequelizeStorage({ sequelize }),
         logger: console,
     });
 }
