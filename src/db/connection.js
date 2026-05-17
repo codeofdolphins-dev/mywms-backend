@@ -54,7 +54,7 @@ const connectRootDB = async () => {
 
         // step 2 seeding
         const recordCount = await models.Role.count();
-        if (recordCount.length === 0) {
+        if (recordCount === 0) {
             console.log("👑 💾 Start data seeding...");
             await dataSeederRoot(models);
             console.log("👑 ✅ Data seeded Successfully.");

@@ -8,8 +8,6 @@ export async function up({ context: queryInterface }) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        createdAt: { type: DataTypes.DATE, allowNull: false },
-        updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
 
 
@@ -22,8 +20,6 @@ export async function up({ context: queryInterface }) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        createdAt: { type: DataTypes.DATE, allowNull: false },
-        updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
 
 
