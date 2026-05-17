@@ -1,11 +1,8 @@
 import { DataTypes } from 'sequelize';
 
 export async function up({ context: queryInterface }) {
-    // ============================================
-    // Tables with NO foreign keys first
-    // ============================================
 
-    /** TIER 1 */
+    /** ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ TIER 1 ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ */
     await queryInterface.createTable('Permissions', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         permission: {
@@ -48,7 +45,10 @@ export async function up({ context: queryInterface }) {
         },
         parent_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: true,
+            references: { model: 'Categories', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         status: {
             type: DataTypes.BOOLEAN,
@@ -173,16 +173,24 @@ export async function up({ context: queryInterface }) {
         updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
 
+
+
     /** ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ TIER 2 ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ */
     await queryInterface.createTable('RolePermissions', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         roleId: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Roles', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         permissionId: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Permissions', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -253,18 +261,16 @@ export async function up({ context: queryInterface }) {
         userId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Users',
-                key: 'id'
-            }
+            references: { model: 'Users', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         roleId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Roles',
-                key: 'id'
-            }
+            references: { model: 'Roles', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -360,7 +366,10 @@ export async function up({ context: queryInterface }) {
         },
         tenant_business_flow_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: true,
+            references: { model: 'TenantBusinessFlows', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         name: {
             type: DataTypes.STRING,
@@ -384,6 +393,9 @@ export async function up({ context: queryInterface }) {
         vendor_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
+            references: { model: 'Vendors', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         description: {
             type: DataTypes.TEXT,
@@ -410,39 +422,14 @@ export async function up({ context: queryInterface }) {
     });
 
 
-    await queryInterface.createTable('NodeUsers', {
-        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        user_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        node_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        store_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        department: {
-            type: DataTypes.ENUM("purchase", "sales", "both"),
-            defaultValue: null,
-            allowNull: true
-        },
-        isNodeAdmin: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
-        },
-        createdAt: { type: DataTypes.DATE, allowNull: false },
-        updatedAt: { type: DataTypes.DATE, allowNull: false },
-    });
-
-
     await queryInterface.createTable('NodeDetails', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         business_node_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         name: {
             type: DataTypes.STRING,
@@ -488,6 +475,9 @@ export async function up({ context: queryInterface }) {
         business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         name: {
             type: DataTypes.STRING,
@@ -519,6 +509,39 @@ export async function up({ context: queryInterface }) {
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
+
+
+    await queryInterface.createTable('NodeUsers', {
+        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        user_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        node_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: { model: 'ManufacturingUnits', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        department: {
+            type: DataTypes.ENUM("purchase", "sales", "both"),
+            defaultValue: null,
+            allowNull: true
+        },
+        isNodeAdmin: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        createdAt: { type: DataTypes.DATE, allowNull: false },
+        updatedAt: { type: DataTypes.DATE, allowNull: false },
+    });
+
+
 
     /** ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ TIER 4 ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ */
     await queryInterface.createTable('Products', {
@@ -558,15 +581,21 @@ export async function up({ context: queryInterface }) {
         },
         package_type: {
             type: DataTypes.STRING,
-            allowNull: true
+            allowNull: true,
+            references: { model: 'PackageTypes', key: 'name' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         measure: {
             type: DataTypes.STRING,
-            allowNull: true,
+            allowNull: true
         },
         unit_type: {
             type: DataTypes.STRING,
             allowNull: true,
+            references: { model: 'UnitTypes', key: 'name' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         description: {
             type: DataTypes.STRING,
@@ -611,16 +640,25 @@ export async function up({ context: queryInterface }) {
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
 
         // --- 2. LOCATION TRACKING ---
         location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         store_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
+            references: { model: 'ManufacturingUnits', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         location_type: {
             type: DataTypes.ENUM("mfg_unit", "business_node"),
@@ -685,11 +723,17 @@ export async function up({ context: queryInterface }) {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         category_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Categories', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         product_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -704,7 +748,10 @@ export async function up({ context: queryInterface }) {
         },
         buyer_business_node_id: {        // Location A (requester)
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         title: {
             type: DataTypes.STRING,
@@ -720,7 +767,10 @@ export async function up({ context: queryInterface }) {
         },
         requisition_category_id: {
             type: DataTypes.INTEGER,
-            allowNull: true
+            allowNull: true,
+            references: { model: 'RequisitionCategories', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         type: {
             type: DataTypes.ENUM("internal", "external"),
@@ -732,7 +782,10 @@ export async function up({ context: queryInterface }) {
         },
         created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Users', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         status: {
             type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg", "dispatched"),
@@ -805,10 +858,16 @@ export async function up({ context: queryInterface }) {
         requisition_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'Requisitions', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         brand: {
             type: DataTypes.STRING,
@@ -845,15 +904,24 @@ export async function up({ context: queryInterface }) {
         ledger_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
+            references: { model: 'NodeStockLedgers', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
 
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         batch_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            references: { model: 'Batches', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
 
         qty: {
@@ -881,7 +949,10 @@ export async function up({ context: queryInterface }) {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         finished_product_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         finished_product_barcode: {
             type: DataTypes.STRING,
@@ -893,7 +964,10 @@ export async function up({ context: queryInterface }) {
         },
         output_uom: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'UnitTypes', key: 'name' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         desc: {
             type: DataTypes.TEXT,
@@ -912,11 +986,17 @@ export async function up({ context: queryInterface }) {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         bom_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'BOMs', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         raw_product_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         required_qty: {
             type: DataTypes.DECIMAL(10, 2),
@@ -940,7 +1020,10 @@ export async function up({ context: queryInterface }) {
         requisition_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            unique: true
+            unique: true,
+            references: { model: 'Requisitions', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         type: {
             type: DataTypes.ENUM("internal", "external"),
@@ -952,7 +1035,10 @@ export async function up({ context: queryInterface }) {
         },
         to_business_node_id: {   // Location A (requester)
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         status: {
             type: DataTypes.ENUM("draft", "submitted", "accepted", "rejected", "expired"),
@@ -975,7 +1061,10 @@ export async function up({ context: queryInterface }) {
         },
         created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'Users', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -1012,7 +1101,10 @@ export async function up({ context: queryInterface }) {
         // Internal Node ID of the company/location selling the goods
         seller_business_node_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: false,
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         // Central/Internal Node ID of the company/location buying the goods
         buyer_business_node_id: {
@@ -1052,11 +1144,6 @@ export async function up({ context: queryInterface }) {
             allowNull: true,
             defaultValue: {}
         },
-        createdAt: { type: DataTypes.DATE, allowNull: false },
-        updatedAt: { type: DataTypes.DATE, allowNull: false },
-    });
-    await queryInterface.createTable('GRNs', {
-        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
@@ -1247,48 +1334,55 @@ export async function up({ context: queryInterface }) {
     });
 
 
-    await queryInterface.createTable('GRNItems', {
+    await queryInterface.createTable('GRNs', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        grn_id: {
+        grn_no: {
+            type: DataTypes.STRING,
+            unique: true,
+            allowNull: true
+        },
+        purchase_order: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            references: { model: 'PurchasOrders', key: 'po_no' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        grn_type: {
+            type: DataTypes.ENUM("purchase", "transfer", "return"),
+            allowNull: false
+        },
+        sender_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        receiver_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: { model: 'GRNs', key: 'id' },
+            references: { model: 'BusinessNodes', key: 'id' },
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
-        purchase_order_item_id: {
+        mfg_unit_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
-            references: { model: 'PurchaseOrderItems', key: 'id' },
+            references: { model: 'ManufacturingUnits', key: 'id' },
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
-        product_id: {
+        received_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        status: {
+            type: DataTypes.ENUM("draft", "accepted", "cancelled"),
+            defaultValue: "accepted"
+        },
+        created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false,
-            references: { model: 'Products', key: 'id' },
-            onDelete: 'CASCADE',
+            references: { model: 'Users', key: 'id' },
+            onDelete: 'SET NULL',
             onUpdate: 'CASCADE',
-        },
-        ordered_qty: {
-            type: DataTypes.DECIMAL(18, 2),
-            allowNull: true,
-            defaultValue: 0
-        },
-        shortage_qty: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 0
-        },
-        damage_qty: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 0
-        },
-        received_qty: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 0
         },
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -1514,14 +1608,12 @@ export async function up({ context: queryInterface }) {
     });
 
 
-
-    /** ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ TIER 7 ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ */
     await queryInterface.createTable('PurchaseOrderItems', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         purchase_order_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: { model: 'PurchaseOrders', key: 'id' },
+            references: { model: 'PurchasOrders', key: 'id' },
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
@@ -1557,6 +1649,57 @@ export async function up({ context: queryInterface }) {
         createdAt: { type: DataTypes.DATE, allowNull: false },
         updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
+
+
+
+    /** ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ TIER 7 ⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠⨠ */
+    await queryInterface.createTable('GRNItems', {
+        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        grn_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: { model: 'GRNs', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        purchase_order_item_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: { model: 'PurchaseOrderItems', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        product_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        ordered_qty: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: true,
+            defaultValue: 0
+        },
+        shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
+        },
+        damage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
+        },
+        received_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
+        },
+        createdAt: { type: DataTypes.DATE, allowNull: false },
+        updatedAt: { type: DataTypes.DATE, allowNull: false },
+    });
+
 
 
     await queryInterface.createTable('GRNItemBatches', {
@@ -1778,7 +1921,7 @@ export async function up({ context: queryInterface }) {
         fg_store_id: {
             type: DataTypes.INTEGER,
             allowNull: false, // The destination location (FG Store)
-            references: { model: 'ManufacturingStores', key: 'id' },
+            references: { model: 'ManufacturingUnits', key: 'id' },
             onDelete: 'CASCADE',
             onUpdate: 'CASCADE',
         },
@@ -1839,9 +1982,50 @@ export async function up({ context: queryInterface }) {
 }
 
 export async function down({ context: queryInterface }) {
-    // Drop in REVERSE order (children first, parents last)
+    await queryInterface.dropTable('ProductionReceipts');
+    await queryInterface.dropTable('ProductionOrderItems');
+    await queryInterface.dropTable('TransferOrderAllocations');
+    await queryInterface.dropTable('TransferOrderItems');
+    await queryInterface.dropTable('OutwardAllocations');
+    await queryInterface.dropTable('OutwardItems');
+    await queryInterface.dropTable('GRNItemBatches');
+    await queryInterface.dropTable('PurchaseOrderItems');
+    await queryInterface.dropTable('ProductionOrders');
+    await queryInterface.dropTable('TransferOrders');
+    await queryInterface.dropTable('Outwards');
+    await queryInterface.dropTable('GRNItems');
+    await queryInterface.dropTable('SalesOrderItems');
+    await queryInterface.dropTable('PurchasOrders');
+    await queryInterface.dropTable('RequisitionSuppliers');
+    await queryInterface.dropTable('QuotationItems');
+    await queryInterface.dropTable('GRNs');
+    await queryInterface.dropTable('SalesOrders');
+    await queryInterface.dropTable('Quotations');
+    await queryInterface.dropTable('BOMItems');
+    await queryInterface.dropTable('BOMs');
+    await queryInterface.dropTable('NodeStockLedgerItems');
+    await queryInterface.dropTable('RequisitionItems');
+    await queryInterface.dropTable('NodeStockLedgers');
+    await queryInterface.dropTable('Requisitions');
+    await queryInterface.dropTable('CategoryProducts');
+    await queryInterface.dropTable('Batches');
     await queryInterface.dropTable('Products');
-    // ... all other tables ...
+    await queryInterface.dropTable('NodeDetails');
+    await queryInterface.dropTable('NodeUsers');
+    await queryInterface.dropTable('ManufacturingUnits');
+    await queryInterface.dropTable('Brands');
+    await queryInterface.dropTable('BusinessNodes');
+    await queryInterface.dropTable('Vendors');
+    await queryInterface.dropTable('TenantBusinessFlows');
+    await queryInterface.dropTable('UserRoles');
+    await queryInterface.dropTable('Users');
+    await queryInterface.dropTable('RolePermissions');
+    await queryInterface.dropTable('HSNs');
+    await queryInterface.dropTable('RequisitionCategories');
+    await queryInterface.dropTable('BusinessNodeTypes');
+    await queryInterface.dropTable('PackageTypes');
+    await queryInterface.dropTable('UnitTypes');
+    await queryInterface.dropTable('Categories');
     await queryInterface.dropTable('Roles');
     await queryInterface.dropTable('Permissions');
 }

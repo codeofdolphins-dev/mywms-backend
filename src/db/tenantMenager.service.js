@@ -12,6 +12,7 @@ import {
 } from "../models/association.js";
 import { permissions, roles } from "../../public/dataset.js";
 import { dataSeederTenant } from "../helper/seeder.js";
+import { getTenantMigrator } from "./migrator.js";
 
 let rootCache = null;
 
@@ -83,7 +84,11 @@ export async function generateDatabase(dbName) {
 
         const { sequelize, models } = await getTenantConnection(dbName);
 
-        await sequelize.sync();
+        // await sequelize.sync();
+
+        const tenantMigrator = getTenantMigrator(sequelize);
+        await tenantMigrator.up();
+
         console.log("👷 💾 Start data seeding...");
         await dataSeederTenant(models)
         // await models.Permission.bulkCreate(permissions);
