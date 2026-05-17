@@ -100,7 +100,7 @@ const defineRootAssociations = (models) => {
     });
 
 
-    // tenantsName ↔ quotation  =>> Vendor
+    // tenantsName ↔ quotation  =>> vendor
     TenantsName.hasMany(RfqQuotation, {
         foreignKey: "vendor_tenant",
         as: "quotations",
@@ -464,7 +464,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // BusinessNode ↔ NodeDetails
+    // businessNode ↔ nodeDetails
     BusinessNode.hasOne(NodeDetails, {
         foreignKey: "business_node_id",
         as: "nodeDetails",
@@ -653,7 +653,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // quotation <-> User
+    // quotation <-> user
     Quotation.belongsTo(User, {
         foreignKey: "created_by",
         as: "quotationCreated",
@@ -1108,7 +1108,7 @@ const defineTenantAssociations = (models) => {
         as: "createdBy",
     });
 
-    // UnitType <-> Product
+    // UnitType <-> product
     UnitType.hasMany(Product, {
         foreignKey: "unit_type",
         as: "unitProducts",
@@ -1124,7 +1124,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // PackageType <-> Product
+    // PackageType <-> product
     PackageType.hasMany(Product, {
         foreignKey: "package_type",
         as: "productPackage",
@@ -1140,7 +1140,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    // BusinessNodeType <-> BusinessNode
+    // businessNodeType <-> businessNode
     BusinessNodeType.hasMany(BusinessNode, {
         foreignKey: "node_type_code",
         as: "nodes",
