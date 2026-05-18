@@ -3,111 +3,126 @@ import { DataTypes } from 'sequelize';
 /** Migration: create-direct-transfer-models */
 
 export async function up({ context: queryInterface }) {
-    // Create Direct transfers table
+
     await queryInterface.createTable('DirectTransfers', {
         id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true, },
-        tenant_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            references: {
-                model: 'Tenants',
-                key: 'id',
-            },
+        dir_trans_no: {
+            type: DataTypes.STRING,
+            unique: true,
+            allowNull: true
         },
-        from_facility_id: {
+        from_location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Facilities',
-                key: 'id',
-            },
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
-        to_facility_id: {
+        from_mfg_unit_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: { model: 'ManufacturingUnits', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        target_location_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Facilities',
-                key: 'id',
-            },
+            references: { model: 'BusinessNodes', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        transfer_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
         },
         status: {
-            type: DataTypes.ENUM('pending', 'sent', 'received', 'cancelled'),
-            allowNull: false,
-            defaultValue: 'pending',
+            type: DataTypes.ENUM("draft", "send", "accepted", "return", "cancelled"),
+            defaultValue: "send"
         },
-        total_items: {
+        created_by: {
             type: DataTypes.INTEGER,
-            allowNull: false,
-            defaultValue: 0,
+            references: { model: 'Users', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
-        total_quantity: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: false,
-            defaultValue: 0,
-        },
-        created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
-        updated_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+        createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+        updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
     });
 
-    // Create Direct Transfer Items table
+
     await queryInterface.createTable('DirectTransferItems', {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
-        },
-        transfer_id: {
+        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true, },
+        dir_transfer_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'DirectTransfers',
-                key: 'id',
-            },
+            references: { model: 'DirectTransfers', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         product_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Products',
-                key: 'id',
-            },
+            references: { model: 'Products', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
+        },
+        total_damage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
+        },
+        total_shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
+        },
+        total_send_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
+        },
+        is_return: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+        updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+    });
+
+
+    await queryInterface.createTable("DirectTransferAllocations", {
+        id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        dir_transfer_item_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: { model: 'DirectTransferItems', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
         batch_id: {
             type: DataTypes.INTEGER,
-            allowNull: true,
-            references: {
-                model: 'Batches',
-                key: 'id',
-            },
+            allowNull: false,
+            references: { model: 'Batches', key: 'id' },
+            onDelete: 'CASCADE',
+            onUpdate: 'CASCADE',
         },
-        quantity: {
+        damage_qty: {
             type: DataTypes.DECIMAL(10, 2),
-            allowNull: false,
+            allowNull: true
         },
-        sku: {
-            type: DataTypes.STRING(50),
-            allowNull: false,
+        shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
         },
-        item_name: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
+        send_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true
         },
-        created_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW,
-        },
-        updated_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW,
-        },
+        createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+        updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     });
 }
 
 export async function down({ context: queryInterface }) {
-    // Drop tables in reverse order
+    await queryInterface.dropTable('DirectTransferAllocations');
     await queryInterface.dropTable('DirectTransferItems');
-    await queryInterface.dropTable('DirectTransfers');
-    // await queryInterface.removeColumn('Products', 'shelf_life');
+    await queryInterface.dropTable('DirectTransfers')
 }
