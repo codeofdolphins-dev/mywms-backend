@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 
-function DirectTransfer(sequelize) {
-    return sequelize.define("DirectTransfer", {
-        transfer_id: {
+function DirectTransferItem(sequelize) {
+    return sequelize.define("DirectTransferItem", {
+        dir_transfer_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -22,7 +22,11 @@ function DirectTransfer(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true
         },
+        is_return: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        }
     });
 
 }
-export default DirectTransfer;
+export default DirectTransferItem;

@@ -35,6 +35,7 @@ import transferOrderApi from "./transferOrder.route.js";
 import productionOrderApi from "./productionOrder.route.js";
 import productionReceiptApi from "./productionReceipt.route.js";
 import inventoryApi from "./inventory.route.js";
+import directTransferApi from "./directTransfer.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -79,6 +80,7 @@ router.use("/transfer-order", transferOrderApi);
 router.use("/production-order", productionOrderApi);
 router.use("/production-receipt", productionReceiptApi);
 router.use("/inventory", inventoryApi);
+router.use("/direct-transfer", directTransferApi);
 
 
 

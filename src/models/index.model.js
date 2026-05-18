@@ -62,6 +62,9 @@ import TransferOrderAllocation from "./transferOrderAllocation.model.js";
 import ProductionOrder from "./productionOrder.model.js";
 import ProductionOrderItem from "./productionOrderItem.model.js";
 import ProductionReceipt from "./productionReceipt.model.js";
+import DirectTransfer from "./directTransfer.model.js";
+import DirectTransferItem from "./directTransferItem.model.js";
+import DirectTransferAllocation from "./directTransferAllocation.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -139,6 +142,9 @@ const defineTenantModels = (sequelize) => {
     ProductionOrder(sequelize);
     ProductionOrderItem(sequelize);
     ProductionReceipt(sequelize);
+    DirectTransfer(sequelize);
+    DirectTransferItem(sequelize);
+    DirectTransferAllocation(sequelize);
 
     return sequelize.models;
 }

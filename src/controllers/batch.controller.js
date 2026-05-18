@@ -1,6 +1,7 @@
 import { generateBatch, generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ExcelJS from "exceljs";
+import { getUserContext } from "../utils/getUserContext.js";
 
 
 export const bulkOpeningStockInsertion = asyncHandler(async (req, res) => {
@@ -97,4 +98,31 @@ export const bulkOpeningStockInsertion = asyncHandler(async (req, res) => {
         console.log(error);
         return res.status(400).json({ success: false, code: 400, message: error.message })
     };
+});
+
+export const getBatch = asyncHandler(async (req, res) => {
+    const { Batch } = req.dbModels;
+    try {
+        const { product_id } = req.params;
+        if (!product_id) throw new Error("Product id is required!!!");
+
+        const userDetails = await getUserContext(req);
+
+        const location_id = req.activeNode;
+        const store_id = userDetails?.activeNode?.store?.id;
+
+        const batch = await Batch.findAll({
+            where: {
+                product_id: Number(product_id),
+                location_id,
+                is_active: true,
+                ...(store_id && { store_id })
+            }
+        });
+
+        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: batch });
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ success: false, code: 400, message: error.message })
+    }
 });

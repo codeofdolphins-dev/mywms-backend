@@ -428,7 +428,10 @@ const defineTenantAssociations = (models) => {
         TransferOrderAllocation,
         ProductionOrder,
         ProductionOrderItem,
-        ProductionReceipt
+        ProductionReceipt,
+        DirectTransfer,
+        DirectTransferItem,
+        DirectTransferAllocation,
 
 
     } = models;
@@ -1096,6 +1099,130 @@ const defineTenantAssociations = (models) => {
     });
 
 
+    /************* directTransfer ********************/
+    // directTransfer <-> businessNode
+    DirectTransfer.belongsTo(BusinessNode, {
+        foreignKey: "from_location_id",
+        as: "fromLocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(DirectTransfer, {
+        foreignKey: "from_location_id",
+        as: "outgoingTransfers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // directTransfer <-> manufacturingUnit
+    DirectTransfer.belongsTo(ManufacturingUnit, {
+        foreignKey: "from_mfg_unit_id",
+        as: "fromManufacturingUnit",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(DirectTransfer, {
+        foreignKey: "from_mfg_unit_id",
+        as: "manufacturingUnitTransfers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // directTransfer <-> businessNode
+    DirectTransfer.belongsTo(BusinessNode, {
+        foreignKey: "to_location_id",
+        as: "toLocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(DirectTransfer, {
+        foreignKey: "to_location_id",
+        as: "incomingTransfers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // directTransfer <-> user
+    DirectTransfer.belongsTo(User, {
+        foreignKey: "created_by",
+        as: "transferCreator",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(DirectTransfer, {
+        foreignKey: "created_by",
+        as: "createdTransfers",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+
+    /************* directTransferItem ********************/
+    // directTransferItem <-> directTransfer
+    DirectTransferItem.belongsTo(DirectTransfer, {
+        foreignKey: "dir_transfer_id",
+        as: "directTransfer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    DirectTransfer.hasMany(DirectTransferItem, {
+        foreignKey: "dir_transfer_id",
+        as: "transferItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // directTransferItem <-> product
+    DirectTransferItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "transferItemProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(DirectTransferItem, {
+        foreignKey: "product_id",
+        as: "directTransferItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /************* directTransferAllocation ********************/
+    // directTransferAllocation <-> directTransferItem
+    DirectTransferAllocation.belongsTo(DirectTransferItem, {
+        foreignKey: "dir_transfer_item_id",
+        as: "transferItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    DirectTransferItem.hasMany(DirectTransferAllocation, {
+        foreignKey: "dir_transfer_item_id",
+        as: "allocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // directTransferAllocation <-> batch
+    DirectTransferAllocation.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "allocationBatch",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Batch.hasMany(DirectTransferAllocation, {
+        foreignKey: "batch_id",
+        as: "transferAllocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
     // ********************************************Many-To-One*********************************
 
     // user <-> requisition
@@ -1427,7 +1554,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
     // user ↔ productionOrder
     User.hasMany(ProductionOrder, {
         foreignKey: "created_by",
@@ -1501,7 +1628,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
     // user ↔ productionReceipt
     User.hasMany(ProductionReceipt, {
         foreignKey: "created_by",

@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 
 function DirectTransfer(sequelize) {
     return sequelize.define("DirectTransfer", {
-        trans_no: {
+        dir_trans_no: {
             type: DataTypes.STRING,
             unique: true,
             allowNull: true
@@ -15,7 +15,7 @@ function DirectTransfer(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true
         },
-        to_location_id: {
+        target_location_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },

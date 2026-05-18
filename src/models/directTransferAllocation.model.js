@@ -2,7 +2,7 @@ import { DataTypes } from "sequelize";
 
 function DirectTransferAllocation(sequelize) {
     return sequelize.define("DirectTransferAllocation", {
-        transfer_item_id: {
+        dir_transfer_item_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -18,7 +18,7 @@ function DirectTransferAllocation(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true
         },
-        alloted_qty: {
+        send_qty: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true
         },
