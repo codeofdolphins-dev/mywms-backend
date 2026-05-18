@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "database_migration",
+    "development",
+    "experimentalAI",
+    "main"
+  ],
+  "parent": {
+    "database_migration": "main",
+    "development": "main",
+    "experimentalAI": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "database_migration",
+    "development",
+    "experimentalAI"
+  ]
+}
