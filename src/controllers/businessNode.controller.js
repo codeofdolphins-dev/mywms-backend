@@ -110,13 +110,12 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
 export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", noLimit = false, search = "", isAllowOwner = false, isAttachCurrentNode = true } = req.query;
+        let { page = 1, limit = 10, id = "", noLimit = false, search = "", isAllowOwner = "false", isAttachCurrentNode = "true" } = req.query;
 
-        isAttachCurrentNode = isAttachCurrentNode === "true" ? true : false;
+        isAttachCurrentNode = isAttachCurrentNode == "true" ? true : false;
+        isAllowOwner = isAllowOwner == "true" ? true : false;
 
         const currentNode = req.activeNode;
-
-        console.log("isAttachCurrentNode", typeof (isAttachCurrentNode))
 
         page = Number(page);
         limit = Number(limit);
@@ -139,7 +138,7 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
                     model: BusinessNode,
                     as: "businessNode",
                     where: {
-                        ...(Boolean(isAllowOwner) ? {} : { node_type_code: { [Op.ne]: null } }),
+                        ...(isAllowOwner ? {} : { node_type_code: { [Op.ne]: null } }),
                         ...(isAttachCurrentNode ? {} : { id: { [Op.ne]: currentNode } })
                     },
                     include: [

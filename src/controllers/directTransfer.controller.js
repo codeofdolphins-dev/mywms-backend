@@ -2,6 +2,7 @@ import { generateBatch, generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ExcelJS from "exceljs";
 import { getUserContext } from "../utils/getUserContext.js";
+import { createGrn_items_internal } from "../services/createGrn.service.js";
 
 
 // GET
@@ -53,7 +54,7 @@ export const createRecord = asyncHandler(async (req, res) => {
 
         /** Create main transfer record */
         const directTransfer = await DirectTransfer.create({
-            from_location_id: currentLocation.id,
+            from_location_id: currentLocation,
             ...(storeId && { from_mfg_unit_id: storeId }),
             target_location_id: Number(target_location_id),
             transfer_date: new Date(),
@@ -63,6 +64,7 @@ export const createRecord = asyncHandler(async (req, res) => {
         directTransfer.dir_trans_no = generateNo("DIR", directTransfer.id);
         await directTransfer.save({ transaction });
 
+        let allocatedItems = [];
         /** Process all items */
         for (const item of items) {
             const { product_id, barcode, allocations } = item;
@@ -85,6 +87,7 @@ export const createRecord = asyncHandler(async (req, res) => {
             }, { transaction });
 
             let total_send_qty = 0;
+            let itemAllocatedBatches = [];
 
             for (const alloc of allocations) {
                 const { batch_id, send_qty } = alloc;
@@ -112,18 +115,47 @@ export const createRecord = asyncHandler(async (req, res) => {
                     return res.status(400).json({ success: false, code: 400, message: `Insufficient quantity in batch ${batch.batch_no || batch.id}. Available: ${batch.available_qty}, Requested: ${send_qty}!!!` });
                 }
 
+                /** Create DirectTransferAllocation record */
                 await DirectTransferAllocation.create({
                     dir_transfer_item_id: directTransferItem.id,
                     batch_id: Number(batch_id),
                     send_qty: Number(send_qty)
                 }, { transaction });
 
+                batch.available_qty = Number(batch.available_qty) - Number(send_qty);
+                await batch.save({ transaction });
+
+                itemAllocatedBatches.push({
+                    batch_no: batch.batch_no,
+                    allocated_qty: Number(send_qty),
+                    expiry_date: batch.expiry_date
+                });
+
                 total_send_qty += Number(send_qty);
             }
 
+            if (itemAllocatedBatches.length > 0) {
+                allocatedItems.push({
+                    vendor_product_id: product.id,
+                    requested_qty: total_send_qty,
+                    allocated_batches: itemAllocatedBatches
+                });
+            };
+            
             directTransferItem.total_send_qty = total_send_qty;
             await directTransferItem.save({ transaction });
         }
+
+        await createGrn_items_internal(
+            req,
+            transaction,
+            {
+                store_id: storeId || null,
+                seller_business_node_id: currentLocation,
+                buyer_business_node_id: Number(target_location_id)
+            },
+            allocatedItems
+        );
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created Successfully.", data: directTransfer });

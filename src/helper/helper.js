@@ -44,8 +44,12 @@ export async function fetchNodeDetails(dbObject, nodeId) {
                 },
             ]
         });
+        if (!node) return null;
+        
         node = node.toJSON();
-        node.businessNodeUser = node.businessNodeUser[0];
+        if (node.businessNodeUser && Array.isArray(node.businessNodeUser)) {
+            node.businessNodeUser = node.businessNodeUser[0];
+        }
 
         return node;
 

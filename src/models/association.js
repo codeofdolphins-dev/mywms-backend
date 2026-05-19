@@ -1132,13 +1132,13 @@ const defineTenantAssociations = (models) => {
 
     // directTransfer <-> businessNode
     DirectTransfer.belongsTo(BusinessNode, {
-        foreignKey: "to_location_id",
+        foreignKey: "target_location_id",
         as: "toLocation",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     BusinessNode.hasMany(DirectTransfer, {
-        foreignKey: "to_location_id",
+        foreignKey: "target_location_id",
         as: "incomingTransfers",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
