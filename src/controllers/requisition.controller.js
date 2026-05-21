@@ -423,7 +423,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             buyer_tenant: dbName,
             pr_reference_code: requisition_no,
             title: title?.trim(),
-            priority,
+            ...(priority && { priority: priority.toLowerCase() }),
             note: notes?.trim(),
             status: "open",
             ...(required_by_date && { submission_deadline: new Date(required_by_date) }),

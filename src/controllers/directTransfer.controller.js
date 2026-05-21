@@ -1,35 +1,101 @@
-import { generateBatch, generateNo } from "../helper/generate.js";
+import { Op } from "sequelize";
+import { generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import ExcelJS from "exceljs";
 import { getUserContext } from "../utils/getUserContext.js";
 import { createGrn_items_internal } from "../services/createGrn.service.js";
 
 
 // GET
 export const list = asyncHandler(async (req, res) => {
-    const { Batch } = req.dbModels;
+    const { DirectTransfer, DirectTransferItem, DirectTransferAllocation, Product, Batch, BusinessNode, ManufacturingUnit, User } = req.dbModels;
+
     try {
-        const { product_id } = req.params;
-        if (!product_id) throw new Error("Product id is required!!!");
+        let { id = "", page = 1, limit = 10, trans_no = "", status = "" } = req.query;
 
-        const userDetails = await getUserContext(req);
+        page = parseInt(page, 10);
+        limit = parseInt(limit, 10);
+        const offset = (page - 1) * limit;
 
-        const location_id = req.activeNode;
-        const store_id = userDetails?.activeNode?.store?.id;
+        const currentLocation = req.activeNode;
 
-        const batch = await Batch.findAll({
+
+        const directTransfers = await DirectTransfer.findAndCountAll({
             where: {
-                product_id: Number(product_id),
-                location_id,
-                is_active: true,
-                ...(store_id && { store_id })
-            }
+                ...(id && { id: Number(id) }),
+                ...(trans_no && { dir_trans_no: { [Op.iLike]: `${trans_no?.trim()}%` } }),
+                from_location_id: currentLocation,
+                ...(status && { status: status?.toLowercase() })
+            },
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "fromLocation",
+                    attributes: ["id", "name", "node_type_code"]
+                },
+                {
+                    model: BusinessNode,
+                    as: "toLocation",
+                    attributes: ["id", "name", "node_type_code"]
+                },
+                {
+                    model: ManufacturingUnit,
+                    as: "fromManufacturingUnit",
+                    attributes: ["id", "name", "store_type"]
+                },
+                {
+                    model: User,
+                    as: "transferCreator",
+                    attributes: ["id", "name", "email"]
+                },
+                {
+                    model: DirectTransferItem,
+                    as: "transferItems",
+                    include: [
+                        {
+                            model: Product,
+                            as: "transferItemProduct"
+                        },
+                        {
+                            model: DirectTransferAllocation,
+                            as: "allocations",
+                            include: [
+                                {
+                                    model: Batch,
+                                    as: "allocationBatch"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+            distinct: true
         });
 
-        return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: batch });
+        if (!directTransfers) throw new Error("Fetch failed!!!");
+
+        const totalItems = directTransfers.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const paginationInfo = {
+            totalItems,
+            totalPages,
+            currentPage: page,
+            limit
+        };
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: directTransfers.rows,
+            pagination: paginationInfo
+        });
     } catch (error) {
         console.log(error);
-        return res.status(400).json({ success: false, code: 400, message: error.message })
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -141,7 +207,7 @@ export const createRecord = asyncHandler(async (req, res) => {
                     allocated_batches: itemAllocatedBatches
                 });
             };
-            
+
             directTransferItem.total_send_qty = total_send_qty;
             await directTransferItem.save({ transaction });
         }

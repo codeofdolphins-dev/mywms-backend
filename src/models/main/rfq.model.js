@@ -19,7 +19,7 @@ function RFQ(sequelize) {
             allowNull: true,
         },
         priority: {
-            type: DataTypes.STRING,
+            type: DataTypes.ENUM("low", "normal", "high"),
             allowNull: true,
         },
         note: {

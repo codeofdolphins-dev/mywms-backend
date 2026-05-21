@@ -12,7 +12,7 @@ export const allRfqList = asyncHandler(async (req, res) => {
     // console.log(dbName)
 
     try {
-        let { page = 1, limit = 10, id = "", rfq_no = "", title = "" } = req.query;
+        let { page = 1, limit = 10, id = "", search = "", status = "open", priority = "all" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -20,8 +20,15 @@ export const allRfqList = asyncHandler(async (req, res) => {
         const rfq = await RFQ.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
-                ...(rfq_no && { rfq_no }),
-                ...(title && { title: title?.trim() }),
+                ...(search?.trim() ? {
+                    [Op.or]: [
+                        { rfq_no: { [Op.like]: `%${search?.trim()}%` } },
+                        { title: { [Op.like]: `%${search?.trim()}%` } },
+                    ]
+                } : {
+                    status: status?.toLowerCase().trim(),
+                    ...(priority?.toLowerCase().trim() !== "all" && { priority: priority?.toLowerCase().trim() })
+                }),
             },
             include: [
                 {

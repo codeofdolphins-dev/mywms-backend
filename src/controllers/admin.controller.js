@@ -87,7 +87,7 @@ export const upsertCompanyDetails = asyncHandler(async (req, res) => {
         return res.status(isNewlyCreated ? 201 : 200).json({
             success: true,
             code: isNewlyCreated ? 201 : 200,
-            message: isNewlyCreated ? "Node details created successfully." : "Node details updated successfully.",
+            message: isNewlyCreated ? "Details created successfully." : "Details updated successfully.",
         });
 
     } catch (error) {

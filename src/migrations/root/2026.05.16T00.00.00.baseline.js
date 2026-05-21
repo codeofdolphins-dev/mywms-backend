@@ -273,8 +273,8 @@ export async function up({ context: queryInterface }) {
             allowNull: true,
         },
         priority: {
-            type: DataTypes.STRING,
-            allowNull: true,
+            type: DataTypes.ENUM("low", "normal", "high"),
+            defaultValue: 'normal',
         },
         note: {
             type: DataTypes.TEXT,
