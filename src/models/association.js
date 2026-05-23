@@ -432,6 +432,8 @@ const defineTenantAssociations = (models) => {
         DirectTransfer,
         DirectTransferItem,
         DirectTransferAllocation,
+        CostCategory,
+        CostCenter,
 
 
     } = models;
@@ -447,6 +449,21 @@ const defineTenantAssociations = (models) => {
     });
     Category.belongsTo(Category, {
         as: "parent",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* costCategory ********************/
+    // costCategory ↔ costCategory
+    CostCategory.hasMany(CostCategory, {
+        as: "subCostCategories",
+        foreignKey: "parent_id",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    CostCategory.belongsTo(CostCategory, {
+        as: "parentCostCategory",
         foreignKey: "parent_id",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
@@ -1207,7 +1224,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
     // directTransferAllocation <-> batch
     DirectTransferAllocation.belongsTo(Batch, {
         foreignKey: "batch_id",
@@ -1218,6 +1235,79 @@ const defineTenantAssociations = (models) => {
     Batch.hasMany(DirectTransferAllocation, {
         foreignKey: "batch_id",
         as: "transferAllocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* costCategory ********************/
+    // costCategory <-> businessNode
+    CostCategory.belongsTo(BusinessNode, {
+        foreignKey: "location_id",
+        as: "costCategoryLocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(CostCategory, {
+        foreignKey: "location_id",
+        as: "costCategories",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* costCenter ********************/
+    // costCenter <-> businessNode
+    CostCenter.belongsTo(BusinessNode, {
+        foreignKey: "location_id",
+        as: "costCenterLocation",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(CostCenter, {
+        foreignKey: "location_id",
+        as: "costCenters",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // costCenter <-> costCategory ( cost head )
+    CostCenter.belongsTo(CostCategory, {
+        foreignKey: "costHead_id",
+        as: "costHead",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    CostCategory.hasMany(CostCenter, {
+        foreignKey: "costHead_id",
+        as: "costCentersHead",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // costCenter <-> costCategory ( cost sub head )
+    CostCenter.belongsTo(CostCategory, {
+        foreignKey: "costSubHead_id",
+        as: "costSubHead",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    CostCategory.hasMany(CostCenter, {
+        foreignKey: "costSubHead_id",
+        as: "costCentersSubHead",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // costCenter <-> user
+    CostCenter.belongsTo(User, {
+        foreignKey: "creator_id",
+        as: "costCreator",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(CostCenter, {
+        foreignKey: "creator_id",
+        as: "costCentersCreatedBy",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

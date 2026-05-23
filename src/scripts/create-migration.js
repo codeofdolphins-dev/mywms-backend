@@ -34,12 +34,22 @@ export async function up({ context: queryInterface }) {
     //     allowNull: true,
     //     defaultValue: 0,
     // });
+        
+    // Example: create new table
+    // await queryInterface.createTable('tableName', {
+    //     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    //     createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+    //     updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+    // })
 }
 
 export async function down({ context: queryInterface }) {
     // Write the reverse of up() here
     // Example: Remove the column
     // await queryInterface.removeColumn('Products', 'shelf_life');
+    
+    // Example: remove new table
+    // await queryInterface.dropTable('tableName');
 }
 `;
 
