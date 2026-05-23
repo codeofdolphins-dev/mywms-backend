@@ -904,6 +904,7 @@ export const roles = [
   { role: "store_wip", is_default: true },
   { role: "store_fg", is_default: true },
   { role: "warehouse", is_default: true },
+  { role: "partner", is_default: true },
 ];
 
 export const businessNodeTypes = [

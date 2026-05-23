@@ -177,3 +177,16 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+export const deleteNode = asyncHandler(async (req, res) => {
+    const { BusinessNode } = req.dbModels;
+    try {
+        const { id } = req.params;
+        const node = await BusinessNode.destroy({ where: { id } });
+        if (!node) return res.status(500).json({ success: false, code: 500, message: "Deleted failed!!!" });
+        return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});

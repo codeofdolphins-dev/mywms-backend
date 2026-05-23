@@ -286,11 +286,6 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             }
         }
 
-        // if (isNodeAdmin !== undefined || isNodeAdmin !== "") {
-        //     const role = await Role.findOne({ where: { role: "warehouse" } })
-        //     if (role) roles.push(role.id);
-        // }
-
 
         /** check user */
         const isRegister = await User.findOne({ where: { email } });
@@ -344,16 +339,29 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
                 },
                 transaction
             });
+
+            // for root level department
             if (dept && roles.length > 0) {
                 await user.setRoles(roles, { transaction });
             }
+
+            // for manufacturing node
             if (storeType && roles.length > 0) {
                 await user.setRoles(roles, { transaction });
             }
-            if (node?.businessNode?.type?.category === "warehouse") {
-                const warehouseRole = await Role.findOne({ where: { role: "warehouse" } })
-                if (!warehouseRole) throw new Error("Warehouse role not found!!!")
-                await user.setRoles([warehouseRole.id], { transaction });
+
+            // for warehouse and partner node
+            if (isNodeAdmin && isNodeAdmin === "true") {
+                if (node?.businessNode?.type?.category === "warehouse") {
+                    const warehouseRole = await Role.findOne({ where: { role: "warehouse" } })
+                    if (!warehouseRole) throw new Error("Warehouse role not found!!!")
+                    await user.setRoles([warehouseRole.id], { transaction });
+                }
+                if (node?.businessNode?.type?.category === "partner") {
+                    const partnerRole = await Role.findOne({ where: { role: "partner" } })
+                    if (!partnerRole) throw new Error("Partner role not found!!!")
+                    await user.setRoles([partnerRole.id], { transaction });
+                }
             }
         }
 

@@ -21,7 +21,7 @@ let rootCache = null;
 // ----------------------
 const tenantCache = new LRUCache({
     max: 100, // keep max 100 tenants
-    ttl: 1000 * 60 * 10, // 10 minutes TTL
+    ttl: 1000 * 60 * 60, // 1 hour TTL
     dispose: async (value, key) => {
         console.log(`⏳ Closing tenant connection: ${key}`);
         try {
@@ -109,8 +109,10 @@ export async function getTenantConnection(dbName) {
     if (!dbName) throw new Error("Tenant db name is required!!!");
 
     // 1. Check cache
-    if (tenantCache.has(dbName)) {
-        return tenantCache.get(dbName);
+    const cachedTanent = tenantCache.get(dbName);
+    if (cachedTanent) {
+        console.log("Cache hit for tenant:", dbName);
+        return cachedTanent;
     }
 
     // 2. Verify DB exists

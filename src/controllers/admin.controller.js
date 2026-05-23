@@ -164,14 +164,80 @@ export const registerBusinessNode = asyncHandler(async (req, res) => {
     }
 });
 
-export const deleteNode = asyncHandler(async (req, res) => {
-    const { BusinessNode } = req.dbModels;
+export const updateBusinessNode = asyncHandler(async (req, res) => {
+    const { BusinessNode, NodeDetails, TenantBusinessFlow } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    const dbName = req.headers["x-tenant-id"];
+    const profile_image = req?.file?.filename || null;
     try {
         const { id } = req.params;
-        const node = await BusinessNode.destroy({ where: { id } });
-        if (!node) return res.status(500).json({ success: false, code: 500, message: "Deleted failed!!!" });
-        return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
+        let { full_name = "", location = "", address = "", state = "", district = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
+
+        if ([full_name, location, address, state, district, pincode, node].some(item => item === "")) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
+        }
+        node = JSON.parse(node);
+        state = JSON.parse(state);
+        district = JSON.parse(district);
+
+        // Find existing NodeDetails
+        const nodeDetails = await NodeDetails.findByPk(Number(id), { transaction });
+        if (!nodeDetails) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Node details not found!!!" });
+        }
+
+        // Find corresponding BusinessNode
+        const businessNode = await BusinessNode.findByPk(nodeDetails.business_node_id, { transaction });
+        if (!businessNode) {
+            if (profile_image) await deleteImage(profile_image, dbName);
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Business node not found!!!" });
+        }
+
+        const tenantBusinessFlow = await TenantBusinessFlow.findOne({ where: { node_type_code: node.code }, transaction });
+        if (!tenantBusinessFlow) {
+            throw new Error("Invalid business node type code!!!");
+        }
+
+        // Update business node
+        businessNode.name = `${node.name} - ${location}`;
+        businessNode.node_type_code = node.code;
+        businessNode.tenant_business_flow_id = tenantBusinessFlow.id;
+        await businessNode.save({ transaction });
+
+        // Update node details
+        nodeDetails.name = full_name;
+        nodeDetails.location = location;
+        nodeDetails.address = {
+            address,
+            state: state,
+            district: district,
+            pincode,
+            ...((lat && long) ? { lat, long } : {})
+        };
+        nodeDetails.gst_no = gst_no;
+        nodeDetails.license_no = license_no;
+        nodeDetails.desc = desc;
+
+        if (profile_image) {
+            if (nodeDetails.image) {
+                await deleteImage(nodeDetails.image, dbName);
+            }
+            nodeDetails.image = `${dbName}/${profile_image}`;
+        }
+        await nodeDetails.save({ transaction });
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Updated Successfully." });
+
     } catch (error) {
+        await transaction.rollback();
+        if (profile_image) await deleteImage(profile_image, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

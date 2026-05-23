@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteNode, registerBusinessNode, upsertCompanyDetails } from "../controllers/admin.controller.js";
+import { registerBusinessNode, updateBusinessNode, upsertCompanyDetails } from "../controllers/admin.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -11,11 +11,11 @@ const route = Router();
 
 route.route("/register-node").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("location:create"), registerBusinessNode);
 
+route.route("/update-node/:id").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("location:update"), updateBusinessNode);
+
 route.route("/update-details").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("company:update"), upsertCompanyDetails);
 
 route.use(defineUserScope, defineDbObject, verifyJWT);
-
-route.route("/delete/:id").delete(verifyPermission("location:delete"), deleteNode);
 
 
 export default route;
