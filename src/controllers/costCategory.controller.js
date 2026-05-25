@@ -6,7 +6,7 @@ export const costCategoryList = asyncHandler(async (req, res) => {
     const { CostCategory } = req.dbModels;
     const activeNodeId = req.activeNode;
     try {
-        let { page = 1, limit = 10, id = null, name = null, noLimit = false } = req.query;
+        let { page = 1, limit = 10, id = null, name = null, noLimit = false, isAdmin = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -23,7 +23,8 @@ export const costCategoryList = asyncHandler(async (req, res) => {
                                 : []
                         )
                     ]
-                } : { parent_id: null })
+                } : { parent_id: null }),
+                ...(!isAdmin && { location_id: activeNodeId })
             },
             include: {
                 model: CostCategory,

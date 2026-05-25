@@ -74,7 +74,7 @@ export const allRfqQuotationList = asyncHandler(async (req, res) => {
             message: "Fetched Successfully.",
             data: (!rfq_no || !id) ? rfqQuotation?.rows : rfqQuotation?.rows?.[0],
             ...((!rfq_no || !id) && {
-                meta: {
+                pagination: {
                     totalItems,
                     totalPages,
                     currentPage: page,

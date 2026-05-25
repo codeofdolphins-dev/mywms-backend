@@ -2,6 +2,11 @@ import { DataTypes } from "sequelize";
 
 function CostCenter(sequelize) {
     return sequelize.define("CostCenter", {
+        cost_no: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true
+        },
         location_id: {
             type: DataTypes.INTEGER,
             allowNull: true

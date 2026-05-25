@@ -8,6 +8,8 @@ import { fetchNodeDetails } from "../helper/helper.js";
 
 // GET
 export const allRequisitionList = asyncHandler(async (req, res) => {
+    const { models: { RFQ, RfqQuotation } } = await rootDB()
+
     const { Requisition, RequisitionItem, User, Product, UnitType, PackageType } = req.dbModels;
     const current_node = req.activeNode;
 
@@ -65,7 +67,7 @@ export const allRequisitionList = asyncHandler(async (req, res) => {
             ],
             limit,
             offset,
-            order: [["createdAt", "ASC"]],
+            order: [["createdAt", "DESC"]],
         });
         if (!requisition)
             return res.status(500).json({
@@ -77,11 +79,35 @@ export const allRequisitionList = asyncHandler(async (req, res) => {
         const totalItems = requisition.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+
+        /** format object */
+        const formattedRequisitions = await Promise.all(requisition.rows.map(async (rr) => {
+            const formatJSON = rr.toJSON();
+
+            const reqNo = formatJSON?.requisition_no;
+
+            const rfq = await RFQ.findOne({
+                where: {
+                    pr_reference_code: reqNo,
+                },
+                include: [
+                    {
+                        model: RfqQuotation,
+                        as: "rfqQuotations"
+                    }
+                ]
+            });
+
+            formatJSON.isAnyQuotation = rfq?.rfqQuotations?.length > 0 ? true : false;
+            formatJSON.receiveQuotationCount = rfq?.rfqQuotations?.length ?? 0;
+            return formatJSON;
+        }));
+
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: requisition.rows,
+            data: formattedRequisitions,
             meta: {
                 totalItems,
                 totalPages,
@@ -94,6 +120,7 @@ export const allRequisitionList = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 /** GET all receive requisition list  */
 export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
