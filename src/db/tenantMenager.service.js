@@ -102,6 +102,8 @@ export async function generateDatabase(dbName) {
     }
 }
 
+const pendingConnections = new Map();
+
 // ----------------------
 // 🔹 Get Tenant Connection (with LRU cache)
 // ----------------------
@@ -115,33 +117,48 @@ export async function getTenantConnection(dbName) {
         return cachedTanent;
     }
 
-    // 2. Verify DB exists
-    const isDBExist = await checkDBExists(dbName);
-    if (!isDBExist) throw new Error(`Database ${dbName} does not exist!!!!`);
+    // 2. Check if connection is already in progress
+    if (pendingConnections.has(dbName)) {
+        console.log("Waiting for pending connection to complete for tenant:", dbName);
+        return pendingConnections.get(dbName);
+    }
 
-    // 3. Create Sequelize instance
-    const sequelize = new Sequelize(
-        dbName,
-        process.env.PG_DB_USER,
-        process.env.PG_DB_PASSWORD,
-        {
-            host: process.env.PG_DB_HOST,
-            port: process.env.PG_DB_PORT,
-            dialect: "postgres",
-            pool: { min: 1, max: 5 },
-            logging: console.log,
+    // 3. Create connection promise
+    const connectionPromise = (async () => {
+        try {
+            // Verify DB exists
+            const isDBExist = await checkDBExists(dbName);
+            if (!isDBExist) throw new Error(`Database ${dbName} does not exist!!!!`);
+
+            // Create Sequelize instance
+            const sequelize = new Sequelize(
+                dbName,
+                process.env.PG_DB_USER,
+                process.env.PG_DB_PASSWORD,
+                {
+                    host: process.env.PG_DB_HOST,
+                    port: process.env.PG_DB_PORT,
+                    dialect: "postgres",
+                    pool: { min: 1, max: 5 },
+                    logging: console.log,
+                }
+            );
+
+            // Define models + associations
+            const models = defineTenantModels(sequelize);
+            defineTenantAssociations(models);
+
+            const tenant = { sequelize, models };
+            tenantCache.set(dbName, tenant);
+            return tenant;
+        } finally {
+            // Always clean up pending map
+            pendingConnections.delete(dbName);
         }
-    );
+    })();
 
-    // 4. Define models + associations
-    const models = defineTenantModels(sequelize);
-    defineTenantAssociations(models);
-
-    // 5. Save in cache
-    const tenant = { sequelize, models };
-    tenantCache.set(dbName, tenant);
-
-    return tenant;
+    pendingConnections.set(dbName, connectionPromise);
+    return connectionPromise;
 }
 
 // ----------------------

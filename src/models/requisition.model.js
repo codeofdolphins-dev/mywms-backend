@@ -34,6 +34,10 @@ function Requisition(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true,
         },
+        price_limit_type: {
+            type: DataTypes.ENUM("upper_limit", "lower_limit"),
+            allowNull: true
+        },
         created_by: {
             type: DataTypes.INTEGER,
             allowNull: false

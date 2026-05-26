@@ -20,6 +20,7 @@ export const allRequisitionList = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const requisition = await Requisition.findAndCountAll({
+            distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
                 ...(requisition_no && { requisition_no }),
@@ -418,7 +419,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { title = "", requisition_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", } = req.body;
+        const { title = "", requisition_category_id = "", required_by_date = "", priority = "", notes = "", total = "", items = "", limit_type = "" } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
@@ -437,6 +438,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             type: "external",
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             created_by: parseInt(userDetails.id, 10),
+            ...(limit_type !== "" && { price_limit_type: limit_type.toLowerCase() }),
             ...(priority && { priority: priority.toLowerCase() }),
         }, { transaction });
 
@@ -487,7 +489,8 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
                 product_name: product.name,
                 qty: item.reqQty,
                 uom: product.unit_type,
-                price_limit: item.priceLimit
+                ...(limit_type !== "" && { price_limit_type: limit_type.toLowerCase() }),
+                price_limit: item.priceLimit,
             }, { transaction: rootTransaction });
         }
 

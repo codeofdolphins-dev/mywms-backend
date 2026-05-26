@@ -12,23 +12,20 @@ export const allRfqList = asyncHandler(async (req, res) => {
     // console.log(dbName)
 
     try {
-        let { page = 1, limit = 10, id = "", search = "", status = "open", priority = "all" } = req.query;
+        let { page = 1, limit = 10, id = "", rfq_no = "", location = "", company = "", status = "open", priority = "all" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
         const rfq = await RFQ.findAndCountAll({
+            distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
-                ...(search?.trim() ? {
-                    [Op.or]: [
-                        { rfq_no: { [Op.like]: `%${search?.trim()}%` } },
-                        { title: { [Op.like]: `%${search?.trim()}%` } },
-                    ]
-                } : {
-                    status: status?.toLowerCase().trim(),
-                    ...(priority?.toLowerCase().trim() !== "all" && { priority: priority?.toLowerCase().trim() })
-                }),
+                ...(priority?.toLowerCase().trim() !== "all" && { priority: priority?.toLowerCase().trim() }),
+                ...(rfq_no?.trim() && { rfq_no: { [Op.like]: `%${rfq_no?.trim()}%` } }),
+                ...(status && { status: status?.toLowerCase().trim() }),
+                ...(company?.trim() && { "meta.name": { [Op.like]: `%${company.trim()}%` } }),
+                ...(location?.trim() && { "meta.nodeDetails.location": { [Op.like]: `%${location.trim()}%` } }),
             },
             include: [
                 {

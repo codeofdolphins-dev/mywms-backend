@@ -20,6 +20,7 @@ const allBlanketOrderList = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const blanketOrder = await BlanketOrder.findAndCountAll({
+            distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
                 ...(bpo_no && { bpo_no: bpo_no.trim() }),
@@ -157,6 +158,8 @@ export const createIndent = asyncHandler(async (req, res) => {
     const buyerTransaction = await req.dbObject.transaction();
     const dbName = req.headers["x-tenant-id"];
 
+    // return;
+
     /** supplier DB */
     let VendorTransaction = null;
 
@@ -230,6 +233,19 @@ export const createIndent = asyncHandler(async (req, res) => {
                 remain_contracted_qty: Sequelize.literal(`remain_contracted_qty - ${release_qty}`)
             }, { where: { id: Number(bpo_item_id) }, transaction: rootTransaction });
         };
+
+        /** check if all items of the blanket order are fully consumed */
+        const activeItemsCount = await BlanketOrderItem.count({
+            where: {
+                bpo_id: blanketOrder.id,
+                remain_contracted_qty: { [Op.gt]: 0 }
+            },
+            transaction: rootTransaction
+        });
+
+        if (activeItemsCount === 0) {
+            await blanketOrder.update({ status: "closed" }, { transaction: rootTransaction });
+        }
 
 
 

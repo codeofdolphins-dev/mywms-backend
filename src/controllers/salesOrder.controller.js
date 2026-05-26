@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET - All Sales Order List
 export const allSalesOrderList = asyncHandler(async (req, res) => {
-    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails, Vendor } = req.dbModels;
+    const { SalesOrder, SalesOrderItem, BusinessNode, NodeDetails, Vendor, Product } = req.dbModels;
 
     try {
         let { page = 1, limit = 10, soNo = "" } = req.query;
@@ -21,11 +21,18 @@ export const allSalesOrderList = asyncHandler(async (req, res) => {
                 {
                     model: SalesOrderItem,
                     as: "salesOrderItems",
+                    include: [
+                        {
+                            model: Product,
+                            as: "soi_product",
+                            attributes: ["id", "barcode", "name"]
+                        }
+                    ]
                 },
             ],
             limit,
             offset,
-            order: [["createdAt", "ASC"]],
+            order: [["createdAt", "DESC"]],
         });
         if (!salesOrder) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 

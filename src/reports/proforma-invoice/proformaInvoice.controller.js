@@ -5,9 +5,10 @@ import { Op } from "sequelize";
 import { updatePOStatus, updateSOStatus } from "../../services/updateStatus.service.js";
 
 export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
-
     const { models } = await rootDB();
     const { BpoIndent, BpoIndentItem, BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
+
+    const transaction = await req.dbObject.transaction();
 
     try {
         const { id = "", indent_no = "", po_id = "", so_id = "" } = req.body;
@@ -102,10 +103,21 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
 
         const pdf = await generatePDF("proforma-invoice", templateData);
 
+        // prevent to update the status if the sales order is already closed
+        let updateStatus = true;
+        if (so_id && req.dbModels?.SalesOrder) {
+            const salesOrder = await req.dbModels.SalesOrder.findByPk(Number(so_id));
+            if (salesOrder && salesOrder.status === "assign_fg") {
+                updateStatus = false;
+            }
+        }
 
         /** update PO & SO status */
-        const po = await updatePOStatus(indent, "poi_received");
-        await updateSOStatus(indent, "waiting_for_approval");
+        // const po = await updatePOStatus(indent, "poi_received", updateStatus);
+        // await updateSOStatus(indent, "waiting_for_approval", updateStatus);
+        const po = await updatePOStatus(indent, "approved", updateStatus);
+        await updateSOStatus(indent, "approved", updateStatus);
+
 
         const pdfBuffer = Buffer.from(pdf);
 

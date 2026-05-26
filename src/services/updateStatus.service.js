@@ -1,7 +1,7 @@
 import { getTenantConnection } from "../db/tenantMenager.service.js";
 
 /** update PO status */
-export const updatePOStatus = async (indentData, status) => {
+export const updatePOStatus = async (indentData, status, updateStatus = true) => {
     const { sequelize, models } = await getTenantConnection(indentData.buyer_tenant);
     const { PurchasOrder } = models;
     const transaction = await sequelize.transaction();
@@ -9,6 +9,10 @@ export const updatePOStatus = async (indentData, status) => {
     try {
         const po = await PurchasOrder.findByPk(indentData.buyer_po_id);
         if (!po) throw new Error("PO not found");
+
+        // no need to update status if status is already closed
+        if (!updateStatus) return po;
+
         po.status = status;
         await po.save({ transaction });
 
@@ -23,7 +27,11 @@ export const updatePOStatus = async (indentData, status) => {
 };
 
 /** update So status */
-export const updateSOStatus = async (indentData, status) => {
+export const updateSOStatus = async (indentData, status, updateStatus = true) => {
+
+    // no need to update status if status is already closed
+    if (!updateStatus) return;
+
     const { sequelize, models } = await getTenantConnection(indentData.vendor_tenant);
     const { SalesOrder } = models;
     const transaction = await sequelize.transaction();

@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { rootDB } from "../../db/tenantMenager.service.js";
+import { getTenantConnection, rootDB } from "../../db/tenantMenager.service.js";
 import { generateNo } from "../../helper/generate.js";
 
 
@@ -18,6 +18,7 @@ export const allBlanketOrderList = asyncHandler(async (req, res) => {
         const offset = (page - 1) * limit;
 
         const blanketOrder = await BlanketOrder.findAndCountAll({
+            distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
                 ...(bpo_no && { bpo_no: bpo_no.trim() }),
@@ -64,13 +65,36 @@ export const allBlanketOrderList = asyncHandler(async (req, res) => {
         const totalItems = blanketOrder.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        const formateData = await Promise.all(blanketOrder.rows?.map(async (row) => {
+            const i = row.toJSON();
+
+            const buyerConnection = i.buyer_tenant ? await getTenantConnection(i.buyer_tenant).catch(() => null) : null;
+            const vendorConnection = i.vendor_tenant ? await getTenantConnection(i.vendor_tenant).catch(() => null) : null;
+
+            i.blanketOrderItems = await Promise.all((i.blanketOrderItems || [])?.map(async (a) => {
+                const buyer_product = (buyerConnection && a.buyer_product_id)
+                    ? await buyerConnection.models.Product.findByPk(a.buyer_product_id, { attributes: ["id", "name", "barcode"] }).catch(() => null)
+                    : null;
+                const vendor_product = (vendorConnection && a.vendor_product_id)
+                    ? await vendorConnection.models.Product.findByPk(a.vendor_product_id, { attributes: ["id", "name", "barcode"] }).catch(() => null)
+                    : null;
+
+                return {
+                    ...a,
+                    buyer_product: buyer_product ? buyer_product.toJSON() : null,
+                    vendor_product: vendor_product ? vendor_product.toJSON() : null
+                };
+            }));
+            return i;
+        }))
+
         return res.status(200).json({
             success: true,
             code: 200,
             message: "Fetched Successfully.",
-            data: (id || bpo_no || noLimit) ? blanketOrder?.rows?.[0] : blanketOrder?.rows,
+            data: (id || bpo_no || noLimit) ? formateData?.[0] : formateData,
             ...(!(id || bpo_no || noLimit) && {
-                meta: {
+                pagenation: {
                     totalItems,
                     totalPages,
                     currentPage: page,

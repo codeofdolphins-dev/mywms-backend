@@ -4,7 +4,7 @@ import { generateNo } from "../helper/generate.js";
 
 // GET
 export const allPurchasOrderList = asyncHandler(async (req, res) => {
-    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, Vendor } = req.dbModels;
+    const { PurchasOrder, PurchaseOrderItem, User, BusinessNode, NodeDetails, Vendor, Product } = req.dbModels;
     const current_node = req.activeNode;
 
     // console.log(current_node)
@@ -32,6 +32,13 @@ export const allPurchasOrderList = asyncHandler(async (req, res) => {
                 {
                     model: PurchaseOrderItem,
                     as: "purchasOrderItems",
+                    include: [
+                        {
+                            model: Product,
+                            as: "poi_product",
+                            attributes: ["id", "barcode", "name"]
+                        }
+                    ]
                 },
             ],
             limit,

@@ -22,6 +22,10 @@ function RFQItem(sequelize) {
             type: DataTypes.STRING,
             allowNull: true,
         },
+        price_limit_type: {
+            type: DataTypes.ENUM("upper_limit", "lower_limit"),
+            allowNull: true,
+        },
         price_limit: {
             type: DataTypes.DECIMAL(18, 2),
             defaultValue: 0.00,
