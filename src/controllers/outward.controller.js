@@ -190,10 +190,10 @@ export const createOutward = asyncHandler(async (req, res) => {
     try {
         const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "" } = req.body;
 
-        if (!store_id) {
-            await transaction.rollback()
-            return res.status(400).json({ success: false, code: 400, message: "FG Store is required!!!" });
-        };
+        // if (!store_id) {
+        //     await transaction.rollback()
+        //     return res.status(400).json({ success: false, code: 400, message: "FG Store is required!!!" });
+        // };
         if (items.length <= 0) {
             await transaction.rollback()
             return res.status(400).json({ success: false, code: 400, message: "Items fields are should not be empty!!!" });
@@ -213,6 +213,7 @@ export const createOutward = asyncHandler(async (req, res) => {
         }
 
         /** only trigger if req_no is passed, and check if requisition is exists or not */
+        let sellerBusinessNodeId = null;
         if (req_no) {
             const requisition = await Requisition.findOne({
                 where: { requisition_no: req_no?.trim() }
@@ -230,34 +231,39 @@ export const createOutward = asyncHandler(async (req, res) => {
 
             requisition.status = "assign_fg";
             await requisition.save({ transaction });
+
+            sellerBusinessNodeId = reqSupplier.supplier_business_node_id;
         }
 
 
-        const store = await ManufacturingUnit.findOne({
-            where: {
-                id: Number(store_id),
-                store_type: "fg_store"
+        let store = null;
+        if (store_id) {
+            store = await ManufacturingUnit.findOne({
+                where: {
+                    id: Number(store_id),
+                    store_type: "fg_store"
+                }
+            });
+            if (!store) {
+                await transaction.rollback()
+                return res.status(404).json({ success: false, code: 404, message: "FG Store not found!!!" });
             }
-        });
-        if (!store) {
-            await transaction.rollback()
-            return res.status(404).json({ success: false, code: 404, message: "FG Store not found!!!" });
         }
 
         // Step 1: Create Outward header
         const outward = await Outward.create({
+            seller_business_node_id: store_id ? store.business_node_id : sellerBusinessNodeId,
+
             ...(salesOrder && { sales_order_id: salesOrder.id }),
-
-            seller_business_node_id: store.business_node_id,
-            store_id: store.id,
+            ...(store_id && { store_id: store.id }),
             buyer_business_node_id: salesOrder ? salesOrder.buyer_business_node_id : buyer_business_node_id,
-
-            type,
             priority,
+            type,
+            note,
+
             ...(req_no && { pr_no: req_no }),
             required_by: new Date(salesOrder ? salesOrder.required_by : required_by_date),
             meta: salesOrder ? salesOrder.meta : null,
-            note,
         }, { transaction });
 
         outward.outward_no = generateNo("OUT", outward.id);

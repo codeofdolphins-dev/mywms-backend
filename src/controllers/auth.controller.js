@@ -59,7 +59,12 @@ export const register_company = asyncHandler(async (req, res) => {
 
         if ([email, password, name].some(field => field === "")) throw new Error("All fields are required!!!");
 
-        const companyRole = await Role.findOne({ where: { role: "company" }, transaction });
+        const companyRole = await Role.findOne({
+            where: {
+                role: dbName === "mywms" ? "owner" : "company"
+            },
+            transaction
+        });
         if (!companyRole) throw new Error("Role 'company/owner' not found. Make sure roles are seeded.");
 
         const isRegister = await User.findOne({ where: { email }, transaction });

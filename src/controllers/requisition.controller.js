@@ -129,7 +129,6 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
     const { BusinessNode, Requisition, NodeDetails, RequisitionItem, Product, UnitType, PackageType } = req.dbModels;
 
     const current_node = req.activeNode;
-    console.log("current_node", current_node)
 
     try {
         let { page = 1, limit = 10, id = "", requisition_no = "", title = "", sortBy = "" } = req.query;
@@ -172,10 +171,10 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
 
         // No data guard
         if (!rows.length) {
-            return res.status(200).json({
-                success: true,
-                code: 200,
-                message: "Fetched Successfully.",
+            return res.status(400).json({
+                success: false,
+                code: 400,
+                message: "Fetched Failed.",
                 data: [],
                 meta: {
                     total: 0,

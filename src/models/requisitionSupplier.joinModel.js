@@ -16,7 +16,7 @@ function RequisitionSupplier(sequelize) {
             allowNull: false,
         },
         status: {
-            type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign_fg"),
+            type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign_fg", "Waiting_for_dispatched"),
             defaultValue: "sent",
         },
     });
