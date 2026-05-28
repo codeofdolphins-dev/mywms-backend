@@ -99,8 +99,8 @@ export const allProductList = asyncHandler(async (req, res) => {
 
 
 // POST
-export const createFinishedProduct = asyncHandler(async (req, res) => {
-    // console.log(req.body); return
+export const createProduct = asyncHandler(async (req, res) => {
+    // console.log(req.body); return    
 
     const { Product, HSN, Category, Brand, PackageType, UnitType } = req.dbModels;
     const transaction = await req.dbObject.transaction();
@@ -142,7 +142,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
         /** check hsn is exists */
         let hsn = null;
-        if (hsn_id) {
+        if (hsn_id !== "") {
             hsn = await HSN.findByPk(Number(hsn_id));
             if (!hsn) {
                 await deleteImage(photo, dbName);
@@ -152,7 +152,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
         }
 
         /** check brand is exists */
-        if (brand_id) {
+        if (brand_id !== "") {
             const existingBrand = await Brand.findOne({ where: { id: Number(brand_id) } });
             if (!existingBrand) {
                 await deleteImage(photo, dbName);
@@ -163,7 +163,7 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
 
         /** check categories is exists */
         let existingCategories = null;
-        if (categories) {
+        if (categories !== "") {
             existingCategories = await Category.findAll({
                 where: {
                     id: {
@@ -192,12 +192,12 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         }
 
-        if (has_expiry) {
-            if ((has_expiry == "true") && !shelf_life) {
-                if (photo) await deleteImage(photo, dbName);
-                await transaction.rollback();
-                return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
-            }
+        const hasExpiryBool = has_expiry === "true" || has_expiry === true;
+
+        if (hasExpiryBool && !shelf_life) {
+            if (photo) await deleteImage(photo, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
         }
 
         const product = await Product.create({
@@ -206,8 +206,8 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
             sku,
             barcode,
             ...(brand_id && { brand_id: Number(brand_id) }),
-            has_expiry: Boolean(has_expiry),
-            ...(has_expiry && { shelf_life: Number(shelf_life) }),
+            has_expiry: hasExpiryBool,
+            ...(hasExpiryBool && { shelf_life: Number(shelf_life) }),
             package_type: packageType.name,
             measure,
             unit_type: unitType.name,
@@ -237,6 +237,9 @@ export const createFinishedProduct = asyncHandler(async (req, res) => {
     }
 });
 
+
+
+/** depricated */
 export const createRawProduct = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
@@ -246,7 +249,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
     let photo = req?.file?.filename || null;
 
     try {
-        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", sku = "" } = req.body;
+        let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", sku = "", has_expiry = false, shelf_life = "" } = req.body;
 
         if ([name, unit_type_id].some(item => item === "")) {
             if (photo) await deleteImage(photo, dbName);
@@ -275,6 +278,14 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `Product already exists!!!` });
         };
 
+        const hasExpiryBool = has_expiry === "true" || has_expiry === true;
+
+        if (hasExpiryBool && !shelf_life) {
+            if (photo) await deleteImage(photo, dbName);
+            await transaction.rollback();
+            return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
+        }
+
         const product = await Product.create({
             name: name?.trim(),
             sku,
@@ -282,6 +293,8 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             unit_type: unitType.name,
             description,
             reorder_level: Number(reorder_level),
+            has_expiry: hasExpiryBool,
+            ...(hasExpiryBool && { shelf_life: Number(shelf_life) }),
             product_type: "raw",
             ...(photo ? { photo: `${dbName}/${photo}` } : null)
         }, { transaction });
@@ -300,6 +313,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
 
 // DELETE
 export const deleteProduct = asyncHandler(async (req, res) => {

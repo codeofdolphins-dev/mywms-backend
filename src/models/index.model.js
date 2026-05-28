@@ -67,6 +67,7 @@ import DirectTransferItem from "./directTransferItem.model.js";
 import DirectTransferAllocation from "./directTransferAllocation.model.js";
 import CostCategory from "./costCategory.model.js";
 import CostCenter from "./costCenter.model.js";
+import Store from "./store.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -149,6 +150,7 @@ const defineTenantModels = (sequelize) => {
     DirectTransferAllocation(sequelize);
     CostCategory(sequelize);
     CostCenter(sequelize);
+    Store(sequelize);
 
     return sequelize.models;
 }

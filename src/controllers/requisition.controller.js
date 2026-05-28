@@ -171,15 +171,15 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
 
         // No data guard
         if (!rows.length) {
-            return res.status(400).json({
-                success: false,
-                code: 400,
-                message: "Fetched Failed.",
+            return res.status(200).json({
+                success: true,
+                code: 200,
+                message: "No Requisition List Found.",
                 data: [],
-                meta: {
+                pagination: {
                     total: 0,
                     page,
-                    pageSize: limit,
+                    limit,
                     totalPages: 0,
                 },
             });
@@ -238,12 +238,13 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
         });
 
 
-        if (!requisitions)
+        if (!requisitions) {
             return res.status(500).json({
                 success: false,
                 code: 500,
                 message: "Fetched failed!!!",
             });
+        }
 
         const totalItems = count;
         const totalPages = Math.ceil(totalItems / limit);
@@ -270,10 +271,10 @@ export const allReceiveRequisitionList = asyncHandler(async (req, res) => {
             message: "Fetched Successfully.",
             data: formattedRequisitions,
             pagination: {
-                totalItems,
-                currentPage: page,
-                totalPages,
+                total: totalItems,
+                page,
                 limit,
+                totalPages,
             },
         });
     } catch (error) {

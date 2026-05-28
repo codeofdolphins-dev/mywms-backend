@@ -169,15 +169,15 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     // console.log(req.body); return
 
-    const { BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, ProductMapping } = models;
+    const { RFQ, BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const { Requisition } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
-        if ([rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
+        const { rfq_id = "", rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
+        if ([rfq_id, rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
         const revision = await RfqQuotationRevision.findByPk(Number(rfq_quotation_revision_id));
         if (!revision) {
@@ -232,6 +232,16 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
                 unit_price,
             }, { transaction: rootTransaction });
         };
+
+        /** update RFQ status to closed */
+        const rfq = await RFQ.findByPk(Number(rfq_id));
+        if (!rfq) {
+            await rootTransaction.rollback();
+            await transaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "RFQ record not found!!!" });
+        }
+        rfq.status = "closed";
+        await rfq.save({ transaction: rootTransaction });
 
         /** update requisition status */
         const requisition = await Requisition.findOne({ where: { requisition_no: pr_reference_code } });

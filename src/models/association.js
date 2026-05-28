@@ -434,6 +434,7 @@ const defineTenantAssociations = (models) => {
         DirectTransferAllocation,
         CostCategory,
         CostCenter,
+        Store
 
 
     } = models;
@@ -1308,6 +1309,22 @@ const defineTenantAssociations = (models) => {
     User.hasMany(CostCenter, {
         foreignKey: "creator_id",
         as: "costCentersCreatedBy",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    /************* store ********************/
+    // store <-> businessNode
+    Store.belongsTo(BusinessNode, {
+        foreignKey: "node_id",
+        as: "storeBusinessNode",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Store, {
+        foreignKey: "node_id",
+        as: "stores",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
