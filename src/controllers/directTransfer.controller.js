@@ -111,6 +111,69 @@ export const list = asyncHandler(async (req, res) => {
     }
 });
 
+/** get list of next sequence nodes */
+export const getCreateDirectTransferContext = asyncHandler(async (req, res) => {
+    const { BusinessNode, TenantBusinessFlow, NodeDetails } = req.dbModels;
+
+    try {
+        const activeNode = req.activeNode;
+        if (!activeNode) throw new Error("Active node not found!!!");
+
+        /** get total count of business flow */
+        const count = await TenantBusinessFlow.count();
+
+        /** Get Current Node with their parent flow */
+        const node = await BusinessNode.findByPk(Number(activeNode), {
+            include: [
+                {
+                    model: TenantBusinessFlow,
+                    as: "parentFlow",
+                    attributes: ["sequence"]
+                }
+            ]
+        });
+
+        const currentSeq = node?.parentFlow?.sequence;
+        if (currentSeq === count) {
+            return res.status(400).json({
+                success: false,
+                code: 400,
+                message: "This is the last sequence, cannot create direct transfer!!!"
+            });
+        }
+
+        const nextNodes = await BusinessNode.findAll({
+            distinct: true,
+            include: [
+                {
+                    model: TenantBusinessFlow,
+                    as: "parentFlow",
+                    where: {
+                        sequence: currentSeq + 1
+                    },
+                    order: [["sequence", "DESC"]]
+                },
+                {
+                    model: NodeDetails,
+                    as: "nodeDetails"
+                }
+            ]
+        });
+
+        const formatRes = nextNodes.map(item => {
+            item = item.toJSON();
+            delete item.parentFlow;
+            return item.nodeDetails;
+        });
+
+        return res.status(200).json({ success: true, code: 200, data: formatRes, message: "Data fetched successfully" });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 // POST
 export const createRecord = asyncHandler(async (req, res) => {
@@ -139,7 +202,8 @@ export const createRecord = asyncHandler(async (req, res) => {
             created_by: userDetails.id
         }, { transaction });
 
-        directTransfer.dir_trans_no = generateNo("DIR", directTransfer.id);
+        const transNo = generateNo("DIR", directTransfer.id);
+        directTransfer.dir_trans_no = transNo;
         await directTransfer.save({ transaction });
 
         let allocatedItems = [];
@@ -232,7 +296,8 @@ export const createRecord = asyncHandler(async (req, res) => {
                 seller_business_node_id: currentLocation,
                 buyer_business_node_id: Number(target_location_id)
             },
-            allocatedItems
+            allocatedItems,
+            transNo
         );
 
         await transaction.commit();

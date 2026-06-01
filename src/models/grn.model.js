@@ -32,8 +32,12 @@ function GRN(sequelize) {
             allowNull: true
         },
         status: {
-            type: DataTypes.ENUM("draft", "accepted", "cancelled"),
+            type: DataTypes.ENUM("draft", "accepted", "cancelled", "return"),
             defaultValue: "accepted"
+        },
+        reference: {
+            type: DataTypes.JSONB,
+            defaultValue: {}
         },
         created_by: {
             type: DataTypes.INTEGER

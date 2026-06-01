@@ -112,7 +112,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = []) 
 }
 
 
-export async function createGrn_items_internal(req, transaction, outward, allocatedItems = []) {
+export async function createGrn_items_internal(req, transaction, outward, allocatedItems = [], transNo = "") {
 
     // for (const i of allocatedItems) {
     //     console.log("allocatedItems", i);
@@ -135,6 +135,7 @@ export async function createGrn_items_internal(req, transaction, outward, alloca
             ...(store && { mfg_unit_id: outward?.store_id }),
             receiver_id: outward.buyer_business_node_id,
             status: "draft",
+            ...(transNo && { reference: { directTransferNo: transNo } })
         }, { transaction });
 
         if (allocatedItems && allocatedItems.length > 0) {

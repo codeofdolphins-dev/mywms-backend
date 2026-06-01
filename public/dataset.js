@@ -998,36 +998,36 @@ export const permissions = [
   { permission: "unit:read" },
   { permission: "unit:update" },
   { permission: "unit:delete" },
-  
-  
+
+
   // productionOrder
   { permission: "productionOrder:create" },
   { permission: "productionOrder:read" },
   { permission: "productionOrder:update" },
   { permission: "productionOrder:delete" },
-  
-  
+
+
   // productionReceipt
   { permission: "productionReceipt:create" },
   { permission: "productionReceipt:read" },
   { permission: "productionReceipt:update" },
   { permission: "productionReceipt:delete" },
-  
-  
+
+
   // transferOrder
   { permission: "transferOrder:create" },
   { permission: "transferOrder:read" },
   { permission: "transferOrder:update" },
   { permission: "transferOrder:delete" },
 
-  
+
   // store
   { permission: "store:create" },
   { permission: "store:read" },
   { permission: "store:update" },
   { permission: "store:delete" },
-  
-  
+
+
   // rfq-quotation
   { permission: "rfq-quotation:create" },
   { permission: "rfq-quotation:read" },
@@ -1037,4 +1037,10 @@ export const permissions = [
   // rfq-blanket-order
   { permission: "rfq-blanket-order:create" },
   { permission: "rfq-blanket-order:read" },
+
+  // directTransfer
+  { permission: "direct-transfer:read" },
+  { permission: "direct-transfer:create" },
+  { permission: "direct-transfer:update" },
+  { permission: "direct-transfer:delete" },
 ]

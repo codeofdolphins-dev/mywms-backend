@@ -3,19 +3,24 @@ dotenv.config();
 // import "./db/config.js";
 import { app } from './app.js';
 import connectRootDB from './db/connection.js';
+import { initSchedule } from './jobs/index.js';
 
 connectRootDB()
-.then(() => {
-    const port = process.env.PORT || 4000;
+    .then(() => {
+        const port = process.env.PORT || 4000;
 
-    app.listen(port, () => {
-        console.log(`app is running on port: ${port}`);
+        app.listen(port, () => {
+            console.log(`app is running on port: ${port}`);
 
+            /** setup Cron Jobs */
+            console.log("setup Cron Jobs...");
+            initSchedule();
+
+        })
     })
-})
-.catch(err => {
-    console.log("DB connection error: ", err);
-});
+    .catch(err => {
+        console.log("DB connection error: ", err);
+    });
 
 
 // import dotenv from "dotenv";

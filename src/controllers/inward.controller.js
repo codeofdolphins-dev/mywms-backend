@@ -548,7 +548,7 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
 
 // POST
 export const createInward = asyncHandler(async (req, res) => {
-    const { PurchasOrder, Product, Batch, GRN, GRNItem, GRNItemBatch, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
+    const { PurchasOrder, Product, Batch, GRN, GRNItem, GRNItemBatch, PurchaseOrderItem, NodeStockLedger, NodeStockLedgerItem, DirectTransfer, DirectTransferItem, DirectTransferAllocation } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     // console.log(req.body); return
@@ -564,11 +564,23 @@ export const createInward = asyncHandler(async (req, res) => {
         const grn = await GRN.findOne({ where: { grn_no } });
         if (!grn) throw new Error("GRN record not found!!");
 
+        // Retrieve DirectTransfer record if triggered by direct transfer
+        let directTransfer = null;
+        if (grn.reference && grn.reference.directTransferNo) {
+            const directTransferNo = grn.reference.directTransferNo;
+            directTransfer = await DirectTransfer.findOne({
+                where: { dir_trans_no: directTransferNo },
+                transaction
+            });
+        }
+
+        let hasDamageOrShortage = false;
+
         // Optionally find PO (po_no is not mandatory)
         let po = null;
         if (po_no) {
             po = await PurchasOrder.findOne({ where: { po_no } });
-        }
+        };
 
         // Create Ledger Header once per Inward
         const nodeStockLedger = await NodeStockLedger.create({
@@ -605,6 +617,31 @@ export const createInward = asyncHandler(async (req, res) => {
             const totalReceivedQty = allocations.reduce((sum, a) => sum + Number(a.r_qty || 0), 0);
             const totalDamageQty = allocations.reduce((sum, a) => sum + Number(a.d_qty || 0), 0);
             const totalShortageQty = allocations.reduce((sum, a) => sum + Number(a.s_qty || 0), 0);
+
+            if (totalDamageQty > 0 || totalShortageQty > 0) {
+                hasDamageOrShortage = true;
+            }
+
+            /** Process direct transfer item record if it exists */
+            let directTransferItem = null;
+            if (directTransfer) {
+                directTransferItem = await DirectTransferItem.findOne({
+                    where: {
+                        dir_transfer_id: directTransfer.id,
+                        product_id: product.id
+                    },
+                    transaction
+                });
+
+                if (directTransferItem) {
+                    const itemHasIssue = totalDamageQty > 0 || totalShortageQty > 0;
+                    await directTransferItem.update({
+                        total_damage_qty: totalDamageQty,
+                        total_shortage_qty: totalShortageQty,
+                        is_return: itemHasIssue
+                    }, { transaction });
+                }
+            }
 
             /** Process GRN item record */
             let grnItem = null;
@@ -716,13 +753,49 @@ export const createInward = asyncHandler(async (req, res) => {
                     unit_price: unitPrice,
                     total_value: Number(r_qty || 0) * unitPrice
                 }, { transaction });
+
+                /** update DirectTransferAllocation if it exists */
+                if (directTransferItem && batch_no) {
+                    const senderBatch = await Batch.findOne({
+                        where: {
+                            batch_no,
+                            product_id: product.id,
+                            location_id: directTransfer.from_location_id,
+                            ...(directTransfer.from_mfg_unit_id && { store_id: directTransfer.from_mfg_unit_id })
+                        },
+                        transaction
+                    });
+
+                    if (senderBatch) {
+                        const directTransferAllocation = await DirectTransferAllocation.findOne({
+                            where: {
+                                dir_transfer_item_id: directTransferItem.id,
+                                batch_id: senderBatch.id
+                            },
+                            transaction
+                        });
+
+                        if (directTransferAllocation) {
+                            await directTransferAllocation.update({
+                                damage_qty: Number(d_qty || 0),
+                                shortage_qty: Number(s_qty || 0)
+                            }, { transaction });
+                        }
+                    }
+                }
             }
         }
 
-        grn.status = "accepted";
+        grn.status = hasDamageOrShortage ? "return" : "accepted";
         grn.received_date = new Date();
         grn.created_by = userDetails.id;
         await grn.save({ transaction });
+
+        /** update direct transfer status */
+        if (directTransfer) {
+            const newStatus = hasDamageOrShortage ? "return" : "accepted";
+            await directTransfer.update({ status: newStatus }, { transaction });
+        }
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully" });
