@@ -3,6 +3,7 @@ import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 import { generateBatch, generateNo } from "../helper/generate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getUserContext } from "../utils/getUserContext.js";
+import { updateOutwardFromInward } from "../services/updateOutwardFromInward.service.js";
 
 
 // GET
@@ -798,6 +799,26 @@ export const createInward = asyncHandler(async (req, res) => {
         }
 
         await transaction.commit();
+
+        /** Update seller's outward record with damage/shortage (cross-tenant) */
+        if (hasDamageOrShortage && grn.reference && grn.reference.outward_no) {
+            try {
+                // grn.reference.tenant is the buyer's own tenant — we need the SELLER's tenant
+                // The GRN's sender_id is the Vendor ID on the buyer's DB, and vendor.tenant holds the seller's tenant name
+                const { Vendor } = req.dbModels;
+                const vendor = await Vendor.findByPk(grn.sender_id);
+                if (vendor && vendor.tenant) {
+                    await updateOutwardFromInward(
+                        { tenant: vendor.tenant, outward_no: grn.reference.outward_no },
+                        items
+                    );
+                }
+            } catch (err) {
+                console.error("Failed to update seller outward record:", err);
+                // Non-blocking: buyer inward is already committed
+            }
+        }
+
         return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully" });
 
     } catch (error) {

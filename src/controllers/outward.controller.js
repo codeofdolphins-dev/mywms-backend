@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { generateNo } from "../helper/generate.js";
 import { createGrn_items_external, createGrn_items_internal } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -19,7 +20,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
         const outward = await Outward.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
-                ...(outward_no && { outward_no }),
+                ...(outward_no && { outward_no: { [Op.iLike]: `%${outward_no.trim()}%` } }),
                 ...(isAdmin ? {} : {
                     seller_business_node_id: activeNode.id,
                     ...(activeNode?.store && { store_id: activeNode.store.id })
@@ -39,7 +40,7 @@ export const allOutwardList = asyncHandler(async (req, res) => {
             ],
             limit,
             offset,
-            order: [["createdAt", "ASC"]]
+            order: [["createdAt", "DESC"]]
         });
         if (!outward) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
 
@@ -423,7 +424,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
         if (outward.type === "external") {
             const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
-            await createGrn_items_external(salesOrder, allocatedItems);
+            await createGrn_items_external(salesOrder, allocatedItems, outward_no);
         } else {
             await createGrn_items_internal(req, transaction, outward, allocatedItems);
 

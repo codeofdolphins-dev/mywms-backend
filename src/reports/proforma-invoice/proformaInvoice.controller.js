@@ -8,8 +8,6 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { BpoIndent, BpoIndentItem, BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
 
-    const transaction = await req.dbObject.transaction();
-
     try {
         const { id = "", indent_no = "", po_id = "", so_id = "" } = req.body;
 
@@ -79,7 +77,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
                     if (productIds && productIds.length > 0) {
                         const products = await BuyerModels.Product.findAll({
                             where: { id: { [Op.in]: [...new Set(productIds)] } },
-                            attributes: ["id", "name", "sku"]
+                            attributes: ["id", "name", "sku", "barcode", "hsn_code", "measure", "unit_type", "package_type"]
                         });
 
                         const productMap = new Map(products.map(p => [p.id, p.toJSON()]));

@@ -1,6 +1,6 @@
 import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 
-export async function createGrn_items_external(salesOrder, allocatedItems = []) {
+export async function createGrn_items_external(salesOrder, allocatedItems = [], outward_no = "") {
     const { models } = await rootDB();
     const { BpoIndent, ProductMapping } = models;
 
@@ -42,6 +42,10 @@ export async function createGrn_items_external(salesOrder, allocatedItems = []) 
             grn_type: "purchase",
             sender_id: vendor.id,
             status: "draft",
+            reference: {
+                tenant: indent.buyer_tenant,
+                outward_no: outward_no
+            },
             ...(store ?
                 {
                     receiver_id: store.business_node_id,
@@ -49,7 +53,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = []) 
                 } :
                 {
                     receiver_id: po.from_business_node_id
-                })
+                }),
         }, { transaction });
 
         if (allocatedItems && allocatedItems.length > 0) {

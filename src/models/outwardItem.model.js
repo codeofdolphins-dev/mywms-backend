@@ -24,6 +24,14 @@ function OutwardItem(sequelize) {
             allowNull: true,
             defaultValue: 0.00
         },
+        total_shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0
+        },
+        total_damage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0
+        },
         unit_price: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,

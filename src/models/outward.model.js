@@ -51,7 +51,7 @@ function Outward(sequelize) {
             defaultValue: "medium"
         },
         status: {
-            type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched"),
+            type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched", "return"),
             defaultValue: "pending"
         },
         required_by: {

@@ -238,7 +238,8 @@
                     <%= data.status?.toUpperCase() %>
                 </div>
                 <div style="margin-top: 8px; font-size: 12px; color: #666;">
-                    Date: <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %>
+                    Date: <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric" , month: "long" ,
+                        day: "numeric" }) %>
                 </div>
             </div>
         </div>
@@ -273,27 +274,37 @@
             <table class="info-table">
                 <tr>
                     <td class="label">BPO Reference:</td>
-                    <td><%= data.bpo?.bpo_no || '-' %></td>
-
-                    <td class="label">PR Reference:</td>
-                    <td><%= data.bpo?.pr_reference_code || '-' %></td>
-                </tr>
-                <tr>
-                    <td class="label">Indent No:</td>
-                    <td><%= data.indent_no || '-' %></td>
-
-                    <td class="label">BPO Valid Until:</td>
-                    <td><%= data.bpo?.valid_until ? new Date(data.bpo.valid_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : '-' %></td>
-                </tr>
-                <tr>
-                    <td class="label">Created On:</td>
                     <td>
-                        <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %>
+                        <%= data.bpo?.bpo_no || '-' %>
                     </td>
 
+                    <td class="label">PR Reference:</td>
+                    <td>
+                        <%= data.bpo?.pr_reference_code || '-' %>
+                    </td>
+                </tr>
+                <tr>
+                    <!-- <td class="label">Indent No:</td>
+                    <td><%= data.indent_no || '-' %></td> -->
+
+                    <td class="label">BPO Valid Until:</td>
+                    <td>
+                        <%= data.bpo?.valid_until ? new Date(data.bpo.valid_until).toLocaleDateString("en-US", {
+                            year: "numeric" , month: "long" , day: "numeric" }) : '-' %>
+                    </td>
+
+
+                    <td class="label">Created On:</td>
+                    <td>
+                        <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric" , month: "long" ,
+                            day: "numeric" }) %>
+                    </td>
+                </tr>
+                <tr>
                     <td class="label">Grand Total:</td>
                     <td style="font-weight: bold;">
-                        ₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                        ₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 }) %>
                     </td>
                 </tr>
             </table>
@@ -305,7 +316,10 @@
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Barcode</th>
                     <th>Product</th>
+                    <!-- <th>HSN</th> -->
+                    <th>Pack Size</th>
                     <th class="right">Release Qty</th>
                     <th class="right">Unit Price (₹)</th>
                     <th class="right">Line Total (₹)</th>
@@ -313,24 +327,54 @@
             </thead>
 
             <tbody>
-                <% let subTotal = 0; %>
-                <% data.bpoIndentItem?.forEach((item, index) => { %>
-                    <% subTotal += Number(item.line_total || 0); %>
-                    <tr>
-                        <td><%= index + 1 %></td>
-                        <td>
-                            <% if (item.product) { %>
-                                <strong><%= item.product.name %></strong>
-                                <% if (item.product.sku) { %><br><span style="color: #666; font-size: 11px;">SKU: <%= item.product.sku %></span><% } %>
-                            <% } else { %>
-                                ID: <%= item.bpo_item_id %>
-                            <% } %>
-                        </td>
-                        <td class="right"><%= Number(item.release_qty).toFixed(2) %></td>
-                        <td class="right"><%= Number(item.unit_price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-                        <td class="right"><%= Number(item.line_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
-                    </tr>
-                <% }) %>
+                <% let subTotal=0; %>
+                    <% data.bpoIndentItem?.forEach((item, index)=> { %>
+                        <% subTotal +=Number(item.line_total || 0); %>
+                            <tr>
+                                <td>
+                                    <%= index + 1 %>
+                                </td>
+                                <td>
+                                    <%= item.product?.barcode || '-' %>
+                                </td>
+                                <td>
+                                    <% if (item.product) { %>
+                                        <strong>
+                                            <%= item.product.name %>
+                                        </strong>
+                                        <% if (item.product.sku) { %><br><span
+                                                style="color: #666; font-size: 11px;">SKU: <%= item.product.sku %>
+                                            </span>
+                                            <% } %>
+                                                <% } else { %>
+                                                    ID: <%= item.bpo_item_id %>
+                                                        <% } %>
+                                </td>
+                                <!-- <td>
+                                    <%= item.product?.hsn_code || '-' %>
+                                </td> -->
+                                <td>
+                                    <% if (item.product?.measure) { %>
+                                        <%= item.product.measure %>
+                                            <%= item.product.unit_type || '' %>
+                                                <%= item.product.package_type || '' %>
+                                                    <% } else { %>
+                                                        -
+                                                        <% } %>
+                                </td>
+                                <td class="right">
+                                    <%= Number(item.release_qty).toFixed(2) %>
+                                </td>
+                                <td class="right">
+                                    <%= Number(item.unit_price).toLocaleString("en-IN", { minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="right">
+                                    <%= Number(item.line_total).toLocaleString("en-IN", { minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2 }) %>
+                                </td>
+                            </tr>
+                            <% }) %>
             </tbody>
         </table>
 
@@ -340,11 +384,15 @@
             <table class="total-table">
                 <tr>
                     <td>Sub Total:</td>
-                    <td class="right">₹ <%= subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    <td class="right">₹ <%= subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 }) %>
+                    </td>
                 </tr>
                 <tr class="grand-total">
                     <td>Grand Total:</td>
-                    <td class="right">₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></td>
+                    <td class="right">₹ <%= Number(data.grand_total).toLocaleString("en-IN", { minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 }) %>
+                    </td>
                 </tr>
             </table>
         </div>
@@ -353,15 +401,19 @@
         <!-- Note -->
         <div class="note">
             This is a <strong>Proforma Invoice</strong> generated against Blanket Purchase Order
-            <strong><%= data.bpo?.bpo_no || '' %></strong>.
+            <strong>
+                <%= data.bpo?.bpo_no || '' %>
+            </strong>.
             This is not a tax invoice and is for reference purposes only.
         </div>
 
 
-        <!-- Footer / Signatures -->
-        <div class="footer">
-            <div class="signature">Prepared By</div>
-            <div class="signature">Authorized Signatory</div>
+        <!-- Footer -->
+        <div class="footer" style="justify-content: center; margin-top: 50px;">
+            <div
+                style="font-size: 12px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 10px; width: 100%;">
+                This is a computer-generated document. No signature is required.
+            </div>
         </div>
 
     </div>
