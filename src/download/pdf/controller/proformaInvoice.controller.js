@@ -1,8 +1,9 @@
-import { asyncHandler } from "../../utils/asyncHandler.js";
-import { generatePDF } from "../pdf.service.js";
-import { rootDB, getTenantConnection } from "../../db/tenantMenager.service.js";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
+import { rootDB, getTenantConnection } from "../../../db/tenantMenager.service.js";
 import { Op } from "sequelize";
-import { updatePOStatus, updateSOStatus } from "../../services/updateStatus.service.js";
+import { updatePOStatus, updateSOStatus } from "../../../services/updateStatus.service.js";
+import { generatePDF } from "../../../utils/pdf.service.js"
+
 
 export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
     const { models } = await rootDB();

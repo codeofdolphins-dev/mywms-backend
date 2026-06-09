@@ -1,5 +1,5 @@
 import { Router } from "express";
-import pdfApi from "../../reports/routes/index.route.js"
+import pdfApi from "../pdf/routes/index.route.js"
 import excelApi from "../excel/routes/index.route.js"
 
 const router = Router();

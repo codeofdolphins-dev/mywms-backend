@@ -2,15 +2,13 @@ import cron from "node-cron";
 import { rfqExpiryWorker } from "./workers/rfqExpiry.worker.js";
 import { logWritter } from "../helper/logWritter.js";
 
-const cronTime = {
-    rfqExpiry: "0 0 * * *"
-}
 
-export function rfqExpiryJob() {
+
+export function rfqExpiryJob(time) {
     console.log("🔔 RFQ Expiry Job initialized...");
 
     // 1. RFQ Expiry Job
-    cron.schedule(cronTime.rfqExpiry, async () => {
+    cron.schedule(time, async () => {
         const startText = `⏳ [Cron]: Running RFQ Expiry at ${new Date()}`
         const endText = `✅ [Cron]: RFQ Expiry completed at ${new Date()}`
         const errorText = `❌ [Cron]: RFQ Expiry failed at ${new Date()}:`

@@ -12,7 +12,7 @@ import path from "path";
 export const generatePDF = async (template, data) => {
     const templatePath = path.join(
         process.cwd(),
-        `src/reports/templates/${template}.ejs`
+        `src/download/templates/${template}.ejs`
     );
 
     const html = await ejs.renderFile(templatePath, { data });

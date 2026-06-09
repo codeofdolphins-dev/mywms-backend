@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { generateProformaInvoicePDF } from "../proforma-invoice/proformaInvoice.controller.js";
+import { generateProformaInvoicePDF } from "../../download/pdf/controller/proformaInvoice.controller.js";
 
 const router = Router();
 

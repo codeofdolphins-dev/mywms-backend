@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../utils/asyncHandler.js";
-import { generatePDF } from "../pdf.service.js";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
+import { generatePDF } from "../../../utils/pdf.service.js"
 
 
 export const generateRequisitionPDF = asyncHandler(async (req, res) => {
