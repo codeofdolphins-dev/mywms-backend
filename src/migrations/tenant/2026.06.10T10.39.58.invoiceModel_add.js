@@ -7,11 +7,19 @@ export async function up({ context: queryInterface }) {
     await queryInterface.createTable('Invoices', {
         id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 
-        buyer_business_node_id: {
+        business_node_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
             references: {
                 model: 'BusinessNodes',
+                key: 'id',
+            },
+        },
+        store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'Stores',
                 key: 'id',
             },
         },
