@@ -2,40 +2,42 @@ import { DataTypes } from "sequelize";
 
 function Invoice(sequelize) {
     return sequelize.define("Invoice", {
-        po_id: {
+        parent_location_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true,
         },
-        warehouse_id: {
+        location_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        invoice_number: {
-            type: DataTypes.STRING,
             allowNull: false,
-            unique: true
+        },
+        
+        invoice_no: {
+            type: DataTypes.STRING,
+            unique: true,
         },
         invoice_date: {
-            type: DataTypes.DATEONLY,
-            allowNull: false
+            type: DataTypes.DATE,
         },
-        due_date: {
-            type: DataTypes.DATEONLY,
-            allowNull: true
-        },
-        status: {
-            type: DataTypes.ENUM("pending", "verified", "partially paid", "paid", "cancelled"),
-            defaultValue: "pending"
-        },
-        note: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        total: {
+        sub_total: {
             type: DataTypes.DECIMAL(18, 2),
+            allowNull: false,
             defaultValue: 0.00,
-            allowNull: true
-        }
+        },
+        total_tax_amount: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: false,
+            defaultValue: 0.00,
+        },
+        discount: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: false,
+            defaultValue: 0.00,
+        },
+        grand_total: {
+            type: DataTypes.DECIMAL(18, 2),
+            allowNull: false,
+            defaultValue: 0.00,
+        },
     });
 }
 export default Invoice;

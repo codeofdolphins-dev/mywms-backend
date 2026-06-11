@@ -1148,7 +1148,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
 
@@ -1187,7 +1187,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('RequisitionSuppliers', {
@@ -1212,7 +1212,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('PurchasOrders', {
@@ -1732,7 +1732,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('OutwardItems', {
@@ -1775,7 +1775,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('OutwardAllocations', {
@@ -1811,7 +1811,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('TransferOrderItems', {
@@ -1844,7 +1844,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('TransferOrderAllocations', {
@@ -1877,7 +1877,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('ProductionOrderItems', {
@@ -1903,7 +1903,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
 
         await queryInterface.createTable('ProductionReceipts', {
@@ -1980,7 +1980,7 @@ export async function up({ context: queryInterface }) {
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
-        });
+        }, { transaction });
 
         await transaction.commit();
     } catch (error) {
