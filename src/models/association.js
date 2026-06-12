@@ -308,7 +308,7 @@ const defineRootAssociations = (models) => {
     });
 
 
-    /** ******************* BpoIndentItem ************************ */
+    /** ******************* bpoIndentItem ************************ */
     // bpoIndent ↔ bpoIndentItem
     BpoIndent.hasMany(BpoIndentItem, {
         foreignKey: "indent_id",
@@ -434,7 +434,9 @@ const defineTenantAssociations = (models) => {
         DirectTransferAllocation,
         CostCategory,
         CostCenter,
-        Store
+        Store,
+        Invoice,
+        InvoiceItem,
 
 
     } = models;
@@ -1325,6 +1327,66 @@ const defineTenantAssociations = (models) => {
     BusinessNode.hasMany(Store, {
         foreignKey: "node_id",
         as: "stores",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+
+    /************* invoice ********************/
+    // invoice <-> businessNode
+    Invoice.belongsTo(BusinessNode, {
+        foreignKey: "seller_businessNode_id",
+        as: "seller",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Invoice, {
+        foreignKey: "seller_businessNode_id",
+        as: "invoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // invoice <-> outward
+    Invoice.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "invoiceOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Outward.hasMany(Invoice, {
+        foreignKey: "outward_id",
+        as: "outwardInvoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* invoiceItem ********************/
+    // invoice <-> invoiceItem
+    InvoiceItem.belongsTo(Invoice, {
+        foreignKey: "invoice_id",
+        as: "invoice",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Invoice.hasMany(InvoiceItem, {
+        foreignKey: "invoice_id",
+        as: "invoiceItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // Product <-> invoiceItem
+    InvoiceItem.belongsTo(Product, {
+        foreignKey: "seller_product_id",
+        as: "sellerProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(InvoiceItem, {
+        foreignKey: "seller_product_id",
+        as: "sellerInvoiceItems",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

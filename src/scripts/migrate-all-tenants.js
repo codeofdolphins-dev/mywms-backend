@@ -3,6 +3,7 @@ dotenv.config();
 
 import { rootDB, getTenantConnection } from '../db/tenantMenager.service.js';
 import { getRootMigrator, getTenantMigrator } from '../db/migrator.js';
+import { Op } from 'sequelize';
 
 async function migrateAll() {
     console.log('🚀 Starting migration for all databases...\n');
@@ -18,7 +19,9 @@ async function migrateAll() {
     console.log('👑 ✅ Root DB migrated\n');
 
     // 2. Get all tenant names
-    const tenants = await models.TenantsName.findAll();
+    const tenants = await models.TenantsName.findAll({
+        where: { tenant: { [Op.ne]: "mywms" } }
+    });
     console.log(`📦 Found ${tenants.length} tenant(s)\n`);
 
     // 3. Migrate each tenant

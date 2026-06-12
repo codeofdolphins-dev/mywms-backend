@@ -3,6 +3,7 @@ import { generateNo } from "../helper/generate.js";
 import { createGrn_items_external, createGrn_items_internal } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getUserContext } from "../utils/getUserContext.js";
+import { createInvoice } from "../services/createInvoice.service.js";
 
 
 // GET
@@ -424,6 +425,13 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
 
         if (outward.type === "external") {
             const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
+
+            // console.log("allocatedItems", allocatedItems)
+            // console.log("batch", allocatedItems[0].allocated_batches)
+            
+            await createInvoice(req, outward, salesOrder, allocatedItems, transaction);
+
+            
             await createGrn_items_external(salesOrder, allocatedItems, outward_no);
         } else {
             await createGrn_items_internal(req, transaction, outward, allocatedItems);
@@ -432,9 +440,10 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             requisition.status = "dispatched";
             await requisition.save({ transaction });
         }
-
-
-        await transaction.commit();
+        
+        
+        await transaction.rollback()
+        // await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
 
     } catch (error) {

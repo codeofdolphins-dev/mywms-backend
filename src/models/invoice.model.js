@@ -2,15 +2,34 @@ import { DataTypes } from "sequelize";
 
 function Invoice(sequelize) {
     return sequelize.define("Invoice", {
-        parent_location_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
+        seller_tenant: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
-        location_id: {
+        seller_businessNode_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        seller_store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         
+        
+        buyer_tenant: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        buyer_businessNode_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        // buyer_store_id: {
+        //     type: DataTypes.INTEGER,
+        //     allowNull: true,
+        // },
+
+
         invoice_no: {
             type: DataTypes.STRING,
             unique: true,
@@ -37,6 +56,11 @@ function Invoice(sequelize) {
             type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
             defaultValue: 0.00,
+        },
+
+        outward_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
         },
     });
 }
