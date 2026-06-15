@@ -62,6 +62,10 @@ function Outward(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
+        invoice_no: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         meta: {
             type: DataTypes.JSONB,
             allowNull: true,

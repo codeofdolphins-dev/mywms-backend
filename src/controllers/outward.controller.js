@@ -323,11 +323,6 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             return res.status(404).json({ success: false, code: 404, message: "Outward not found!!!" });
         };
 
-        /** update outward record */
-        outward.dispatch_date = new Date();
-        outward.status = "dispatched";
-        await outward.save({ transaction });
-
         /** update outward items */
         // Array to store validated items and allocated batches for the GRN service
         let allocatedItems = [];
@@ -400,6 +395,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                 itemAllocatedBatches.push({
                     batch_no: batchRecord.batch_no,
                     allocated_qty,
+                    mfg_date: batchRecord.mfg_date,
                     expiry_date: batchRecord.expiry_date
                 });
 
@@ -426,12 +422,9 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
         if (outward.type === "external") {
             const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
 
-            // console.log("allocatedItems", allocatedItems)
-            // console.log("batch", allocatedItems[0].allocated_batches)
-            
-            await createInvoice(req, outward, salesOrder, allocatedItems, transaction);
+            const invNo = await createInvoice(req, outward, salesOrder, allocatedItems, transaction);
+            outward.invoice_no = invNo;
 
-            
             await createGrn_items_external(salesOrder, allocatedItems, outward_no);
         } else {
             await createGrn_items_internal(req, transaction, outward, allocatedItems);
@@ -440,10 +433,15 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
             requisition.status = "dispatched";
             await requisition.save({ transaction });
         }
-        
-        
-        await transaction.rollback()
-        // await transaction.commit();
+
+        /** update outward record */
+        outward.dispatch_date = new Date();
+        outward.status = "dispatched";
+        await outward.save({ transaction });
+
+
+        // await transaction.rollback()
+        await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Created successfully." });
 
     } catch (error) {

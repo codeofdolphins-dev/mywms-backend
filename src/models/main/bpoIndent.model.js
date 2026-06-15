@@ -24,7 +24,7 @@ function BpoIndent(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true // Populated after the local PO is created
         },
-        supplier_so_id: {
+        supplier_so_id: {       // supplier & vendor both share same meaning here
             type: DataTypes.INTEGER,
             allowNull: true // Populated after the local SO is created
         },

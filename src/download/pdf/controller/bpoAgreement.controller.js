@@ -89,14 +89,6 @@ export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
             }
         }));
 
-
-        // return res.json({ data: formatData });
-
-
-
-
-        // console.log(templateData)
-
         const pdf = await generatePDF("bpo-agreement", formatData);
 
         // generatePDF already returns a Buffer — do NOT re-wrap with Buffer.from()
