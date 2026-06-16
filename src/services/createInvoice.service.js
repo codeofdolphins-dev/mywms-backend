@@ -93,7 +93,6 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
                     qty: allocated_qty,
                     itemLevel_sub_total: subTotal,
                     tax_rate: isExempt ? 0 : taxrate,
-                    tax_type: isExempt ? "noTax" : (isIntra ? "intra" : "inter"),
                     tax_amount: isExempt ? 0 : taxAmount,
                     itemLevel_grand_total: grandTotal
                 }, { transaction });
@@ -105,6 +104,7 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
         invoice.sub_total = header_sub_total;
         invoice.total_tax_amount = header_total_tax_amount;
         invoice.grand_total = header_grand_total;
+        invoice.tax_type = isIntra ? "intra" : "inter";
         await invoice.save({ transaction });
 
         return invNo;

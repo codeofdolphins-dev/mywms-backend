@@ -1347,6 +1347,20 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
+    
+    // invoice <-> manufacturingUnit
+    Invoice.belongsTo(ManufacturingUnit, {
+        foreignKey: "seller_store_id",
+        as: "dispatchStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(Invoice, {
+        foreignKey: "seller_store_id",
+        as: "muInvoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
     // invoice <-> outward
     Invoice.belongsTo(Outward, {

@@ -71,11 +71,6 @@ function InvoiceItem(sequelize) {
             allowNull: false,
             defaultValue: 0.00,
         },
-        tax_type: {
-            type: DataTypes.ENUM("intra", "inter", "noTax"),
-            allowNull: false,
-            defaultValue: "noTax",
-        },
         tax_amount: {
             type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
