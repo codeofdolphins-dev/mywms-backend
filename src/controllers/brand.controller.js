@@ -26,6 +26,9 @@ const allBrand = asyncHandler(async (req, res) => {
                         : [])
                 ]
             } : undefined,
+            attributes: {
+                exclude: ["vendor_id", "website", "origin_country"]
+            },
             ...(noLimt ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
@@ -127,7 +130,7 @@ const updateBrand = asyncHandler(async (req, res) => {
         if (website) brand.website = website;
         if (origin_country) brand.origin_country = origin_country;
         if (status) brand.status = status;
-        
+
         const isUpdate = await brand.save({ transaction });
         if (!isUpdate) throw new Error("Updation failed!!!");
 

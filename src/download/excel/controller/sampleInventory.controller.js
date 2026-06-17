@@ -8,7 +8,6 @@ export const sampleOpeningStock = asyncHandler(async (req, res) => {
 
     try {
         const { locationId = "", storeId = "", type = "" } = req.body;
-
         if (!locationId) throw new Error("location id must required!!!");
 
         const location = await BusinessNode.findByPk(
