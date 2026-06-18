@@ -563,13 +563,13 @@ const defineTenantAssociations = (models) => {
     Product.belongsTo(Brand, {
         foreignKey: "brand_id",
         as: "brand",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Brand.hasMany(Product, {
         foreignKey: "brand_id",
         as: "products",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 
@@ -593,14 +593,14 @@ const defineTenantAssociations = (models) => {
         targetKey: "hsn_code",
         as: "hsn",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
     HSN.hasMany(Product, {
         foreignKey: "hsn_code",
         sourceKey: "hsn_code",
         as: "products",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
 
     /************* requisition (PR) ********************/
@@ -1424,14 +1424,14 @@ const defineTenantAssociations = (models) => {
         as: "unitProducts",
         sourceKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
     Product.belongsTo(UnitType, {
         foreignKey: "unit_type",
         as: "unitRef",
         targetKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
 
     // PackageType <-> product
@@ -1439,14 +1439,14 @@ const defineTenantAssociations = (models) => {
         foreignKey: "package_type",
         as: "productPackage",
         sourceKey: "name",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Product.belongsTo(PackageType, {
         foreignKey: "package_type",
         as: "packageType",
         targetKey: "name",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 
@@ -1946,7 +1946,7 @@ const defineTenantAssociations = (models) => {
         as: "productCategories",
         foreignKey: "product_id",
         otherKey: "category_id",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Category.belongsToMany(Product, {
@@ -1957,7 +1957,7 @@ const defineTenantAssociations = (models) => {
         as: "categoryProducts",
         foreignKey: "category_id",
         otherKey: "product_id",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 

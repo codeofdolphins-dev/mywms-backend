@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
+import { makeSlug } from "../helper/helper.js";
 
 const allBrand = asyncHandler(async (req, res) => {
     const { Brand } = req.dbModels;
@@ -173,11 +174,3 @@ const deleteBrand = asyncHandler(async (req, res) => {
 });
 
 export { allBrand, createBrand, updateBrand, deleteBrand };
-
-// helper method
-function makeSlug(str) {
-    return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')   // replace spaces/special chars with -
-        .replace(/(^-|-$)/g, '');      // remove leading/trailing hyphens
-}

@@ -45,7 +45,7 @@ export async function fetchNodeDetails(dbObject, nodeId) {
             ]
         });
         if (!node) return null;
-        
+
         node = node.toJSON();
         if (node.businessNodeUser && Array.isArray(node.businessNodeUser)) {
             node.businessNodeUser = node.businessNodeUser[0];
@@ -56,4 +56,11 @@ export async function fetchNodeDetails(dbObject, nodeId) {
     } catch (error) {
         throw error;
     }
+}
+
+export function makeSlug(str) {
+    return str
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')   // replace spaces/special chars with -
+        .replace(/(^-|-$)/g, '');      // remove leading/trailing hyphens
 }

@@ -169,7 +169,7 @@ export async function up({ context: queryInterface }) {
             },
             description: {
                 type: DataTypes.TEXT,
-                allowNull: false
+                allowNull: true
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
             updatedAt: { type: DataTypes.DATE, allowNull: false },
@@ -557,7 +557,7 @@ export async function up({ context: queryInterface }) {
                 allowNull: true,
                 references: { model: 'HSNs', key: 'hsn_code' },
                 onDelete: 'CASCADE',
-                onUpdate: 'CASCADE',
+                onUpdate: 'SET NULL',
             },
             sku: {
                 type: DataTypes.STRING,
@@ -569,7 +569,7 @@ export async function up({ context: queryInterface }) {
                 allowNull: true,
                 references: { model: 'Brands', key: 'id' },
                 onDelete: 'CASCADE',
-                onUpdate: 'CASCADE',
+                onUpdate: 'SET NULL',
             },
             barcode: {
                 type: DataTypes.STRING,
@@ -586,7 +586,7 @@ export async function up({ context: queryInterface }) {
                 allowNull: true,
                 references: { model: 'PackageTypes', key: 'name' },
                 onDelete: 'CASCADE',
-                onUpdate: 'CASCADE',
+                onUpdate: 'SET NULL',
             },
             measure: {
                 type: DataTypes.STRING,
@@ -597,7 +597,7 @@ export async function up({ context: queryInterface }) {
                 allowNull: true,
                 references: { model: 'UnitTypes', key: 'name' },
                 onDelete: 'CASCADE',
-                onUpdate: 'CASCADE',
+                onUpdate: 'SET NULL',
             },
             description: {
                 type: DataTypes.STRING,

@@ -37,7 +37,8 @@ app.set("views", path.join(__dirname, "views/pages"));
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
-    credentials: false
+    credentials: false,
+    exposedHeaders: ["Content-Disposition"],
 }));
 
 

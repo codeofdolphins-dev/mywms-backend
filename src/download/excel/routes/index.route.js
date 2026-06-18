@@ -4,7 +4,7 @@ import { sampleProductUpload } from "../controller/sampleProduct.upload.controll
 
 const router = Router();
 
-router.route("/inventory/sample-opening-stock").post(sampleOpeningStock);
-router.route("/product/sample-upload").post(sampleProductUpload);
+router.route("/inventory-opening-sample").post(sampleOpeningStock);
+router.route("/product-upload-sample").post(sampleProductUpload);
 
 export default router;
