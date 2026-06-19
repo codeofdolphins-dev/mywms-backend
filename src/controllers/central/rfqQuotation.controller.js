@@ -333,13 +333,19 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
             }, { transaction: rootTransaction });
         };
 
-        await rootTransaction.commit();
         await buyerTransaction.commit();
+        await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Record created successfully" });
 
     } catch (error) {
         await rootTransaction.rollback();
-        if (buyerTransaction) await buyerTransaction.rollback();
+        if (buyerTransaction) {
+            try {
+                await buyerTransaction.rollback();
+            } catch (rollbackError) {
+                console.log("buyerTransaction rollback failed:", rollbackError.message);
+            }
+        }
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

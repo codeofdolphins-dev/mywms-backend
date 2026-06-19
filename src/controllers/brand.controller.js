@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
+import { makeSlug } from "../helper/helper.js";
 
 const allBrand = asyncHandler(async (req, res) => {
     const { Brand } = req.dbModels;
@@ -26,6 +27,9 @@ const allBrand = asyncHandler(async (req, res) => {
                         : [])
                 ]
             } : undefined,
+            attributes: {
+                exclude: ["vendor_id", "website", "origin_country"]
+            },
             ...(noLimt ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
@@ -127,7 +131,7 @@ const updateBrand = asyncHandler(async (req, res) => {
         if (website) brand.website = website;
         if (origin_country) brand.origin_country = origin_country;
         if (status) brand.status = status;
-        
+
         const isUpdate = await brand.save({ transaction });
         if (!isUpdate) throw new Error("Updation failed!!!");
 
@@ -170,11 +174,3 @@ const deleteBrand = asyncHandler(async (req, res) => {
 });
 
 export { allBrand, createBrand, updateBrand, deleteBrand };
-
-// helper method
-function makeSlug(str) {
-    return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')   // replace spaces/special chars with -
-        .replace(/(^-|-$)/g, '');      // remove leading/trailing hyphens
-}

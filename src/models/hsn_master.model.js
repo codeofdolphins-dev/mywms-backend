@@ -35,7 +35,7 @@ function HSN(sequelize) {
         },
         description: {
             type: DataTypes.TEXT,
-            allowNull: false
+            allowNull: true
         },
     });
 

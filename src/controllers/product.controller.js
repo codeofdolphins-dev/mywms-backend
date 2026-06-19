@@ -2,6 +2,8 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteImage } from "../utils/handelImage.js";
 import { getUserContext } from "../utils/getUserContext.js"
+import ExcelJS from "exceljs";
+import { insertBulkBrand, insertBulkHsn, insertBulkPackType, insertBulkUnitType } from "../services/product.service.js";
 
 
 // GET
@@ -232,6 +234,86 @@ export const createProduct = asyncHandler(async (req, res) => {
     } catch (error) {
         await transaction.rollback();
         if (photo) await deleteImage(photo, dbName);
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const bulkProductCreation = asyncHandler(async (req, res) => {
+    // console.log(req.body); return    
+
+    const { Product, Brand } = req.dbModels;
+    const transaction = await req.dbObject.transaction();
+
+    try {
+        const workBook = new ExcelJS.Workbook();
+        await workBook.xlsx.load(req.file.buffer);
+
+        const sheet = workBook.worksheets[0];
+        const validateEntries = [];
+
+        const firstRow = sheet.getRow(1);
+        const type = firstRow.getCell(1).value?.split(":")?.[1]?.trim();
+
+        /** extract all data from sheet */
+        sheet.eachRow((row, idx) => {
+            if (idx === 1 || idx === 2) return;
+
+            validateEntries.push({
+                productName: row.getCell(1).value,
+                barcode: row.getCell(2).value,
+                sku: row.getCell(3).value,
+                measure: row.getCell(4).value,
+                unitType: row.getCell(5).value,
+                packType: row.getCell(6).value,
+                brand: row.getCell(7).value,
+                hsn: row.getCell(8).value,
+                rate: row.getCell(9).value,
+                ...(type == "finished" && { mrp: row.getCell(10).value }),
+                expDays: row.getCell(11).value,
+                minQty: row.getCell(12).value
+            })
+        });
+
+        await insertBulkUnitType(req.dbModels, validateEntries, transaction);   // unitType
+        await insertBulkPackType(req.dbModels, validateEntries, transaction);   // packageType
+        await insertBulkBrand(req.dbModels, validateEntries, transaction);      // brand
+        await insertBulkHsn(req.dbModels, validateEntries, transaction);        // hsn
+
+        for (const product of validateEntries) {
+            const { productName, barcode, sku, measure, unitType, packType, brand, hsn, expDays, minQty, mrp } = product;
+
+            const hasExpiry = expDays !== null ? true : false;
+            const brandName = await Brand.findOne({
+                where: {
+                    name: { [Op.iLike]: brand }
+                },
+                transaction
+            });
+
+            await Product.create({
+                name: productName.trim(),
+                ...(hsn && { hsn_code: hsn }),
+                sku,
+                barcode,
+                ...(brand && { brand_id: brandName?.id || null }),
+                has_expiry: hasExpiry,
+                ...(hasExpiry && { shelf_life: Number(expDays) }),
+                package_type: packType,
+                measure,
+                unit_type: unitType,
+                reorder_level: Number(minQty),
+                ...(mrp ? { mrp: Number(mrp) } : null),
+                product_type: type
+            }, { transaction });
+        }
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Finished Product added successfully.", data: { validateEntries } });
+
+    } catch (error) {
+        await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

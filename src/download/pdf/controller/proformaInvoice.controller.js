@@ -118,8 +118,8 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         await updateSOStatus(indent, "approved", updateStatus);
 
 
-        const pdfBuffer = Buffer.from(pdf);
-
+        // generatePDF already returns a Buffer — do NOT re-wrap with Buffer.from()
+        // as that reinterprets binary bytes as UTF-8 and corrupts the PDF.
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
@@ -130,7 +130,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
             "Content-Disposition"
         );
 
-        res.end(pdfBuffer);
+        res.end(pdf);
 
     } catch (err) {
         console.error(err);

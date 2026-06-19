@@ -1,8 +1,10 @@
 import { Router } from "express";
-import inventoryApi from "./inventory.route.js";
+import { sampleOpeningStock } from "../controller/sampleInventory.controller.js";
+import { sampleProductUpload } from "../controller/sampleProduct.upload.controller.js";
 
 const router = Router();
 
-router.use("/inventory", inventoryApi);
+router.route("/inventory-opening-sample").post(sampleOpeningStock);
+router.route("/product-upload-sample").post(sampleProductUpload);
 
 export default router;

@@ -30,7 +30,7 @@ function Outward(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
-        // this will may target both node or vendor
+        // this will may target any node(internal) or vendor(external)
         buyer_business_node_id: {
             type: DataTypes.INTEGER,
             allowNull: false
@@ -60,6 +60,10 @@ function Outward(sequelize) {
         },
         dispatch_date: {
             type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        invoice_no: {
+            type: DataTypes.STRING,
             allowNull: true
         },
         meta: {

@@ -17,7 +17,6 @@ import QuotationItem from "./quotationItem.model.js";
 import PurchasOrder from "./purchasOrder.model.js";
 import PurchaseOrderItem from "./purchaseOrderItem.model.js";
 import Invoice from "./invoice.model.js";
-import InvoiceItems from "./invoiceItems.model.js";
 import Brand from "./brand.model.js";
 import UnitType from "./unitType.model.js";
 import CategoryProducts from "./categoryProduct.joinModel.js";
@@ -68,6 +67,7 @@ import DirectTransferAllocation from "./directTransferAllocation.model.js";
 import CostCategory from "./costCategory.model.js";
 import CostCenter from "./costCenter.model.js";
 import Store from "./store.model.js";
+import InvoiceItem from "./invoiceItem.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -111,7 +111,7 @@ const defineTenantModels = (sequelize) => {
     PurchasOrder(sequelize);
     PurchaseOrderItem(sequelize);
     Invoice(sequelize);
-    InvoiceItems(sequelize);
+    InvoiceItem(sequelize);
     BOM(sequelize);
     BOMItem(sequelize);
     Brand(sequelize);

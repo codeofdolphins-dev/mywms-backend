@@ -308,7 +308,7 @@ const defineRootAssociations = (models) => {
     });
 
 
-    /** ******************* BpoIndentItem ************************ */
+    /** ******************* bpoIndentItem ************************ */
     // bpoIndent ↔ bpoIndentItem
     BpoIndent.hasMany(BpoIndentItem, {
         foreignKey: "indent_id",
@@ -434,7 +434,9 @@ const defineTenantAssociations = (models) => {
         DirectTransferAllocation,
         CostCategory,
         CostCenter,
-        Store
+        Store,
+        Invoice,
+        InvoiceItem,
 
 
     } = models;
@@ -561,13 +563,13 @@ const defineTenantAssociations = (models) => {
     Product.belongsTo(Brand, {
         foreignKey: "brand_id",
         as: "brand",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Brand.hasMany(Product, {
         foreignKey: "brand_id",
         as: "products",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 
@@ -591,14 +593,14 @@ const defineTenantAssociations = (models) => {
         targetKey: "hsn_code",
         as: "hsn",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
     HSN.hasMany(Product, {
         foreignKey: "hsn_code",
         sourceKey: "hsn_code",
         as: "products",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
 
     /************* requisition (PR) ********************/
@@ -1330,6 +1332,80 @@ const defineTenantAssociations = (models) => {
     });
 
 
+
+    /************* invoice ********************/
+    // invoice <-> businessNode
+    Invoice.belongsTo(BusinessNode, {
+        foreignKey: "seller_businessNode_id",
+        as: "seller",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(Invoice, {
+        foreignKey: "seller_businessNode_id",
+        as: "invoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    
+    // invoice <-> manufacturingUnit
+    Invoice.belongsTo(ManufacturingUnit, {
+        foreignKey: "seller_store_id",
+        as: "dispatchStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(Invoice, {
+        foreignKey: "seller_store_id",
+        as: "muInvoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // invoice <-> outward
+    Invoice.belongsTo(Outward, {
+        foreignKey: "outward_id",
+        as: "invoiceOutward",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Outward.hasMany(Invoice, {
+        foreignKey: "outward_id",
+        as: "outwardInvoices",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    /************* invoiceItem ********************/
+    // invoice <-> invoiceItem
+    InvoiceItem.belongsTo(Invoice, {
+        foreignKey: "invoice_id",
+        as: "invoice",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Invoice.hasMany(InvoiceItem, {
+        foreignKey: "invoice_id",
+        as: "invoiceItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // Product <-> invoiceItem
+    InvoiceItem.belongsTo(Product, {
+        foreignKey: "seller_product_id",
+        as: "sellerProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(InvoiceItem, {
+        foreignKey: "seller_product_id",
+        as: "sellerInvoiceItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
     // ********************************************Many-To-One*********************************
 
     // user <-> requisition
@@ -1348,14 +1424,14 @@ const defineTenantAssociations = (models) => {
         as: "unitProducts",
         sourceKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
     Product.belongsTo(UnitType, {
         foreignKey: "unit_type",
         as: "unitRef",
         targetKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onUpdate: "SET NULL",
     });
 
     // PackageType <-> product
@@ -1363,14 +1439,14 @@ const defineTenantAssociations = (models) => {
         foreignKey: "package_type",
         as: "productPackage",
         sourceKey: "name",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Product.belongsTo(PackageType, {
         foreignKey: "package_type",
         as: "packageType",
         targetKey: "name",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 
@@ -1870,7 +1946,7 @@ const defineTenantAssociations = (models) => {
         as: "productCategories",
         foreignKey: "product_id",
         otherKey: "category_id",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
     Category.belongsToMany(Product, {
@@ -1881,7 +1957,7 @@ const defineTenantAssociations = (models) => {
         as: "categoryProducts",
         foreignKey: "category_id",
         otherKey: "product_id",
-        onDelete: "CASCADE",
+        onDelete: "SET NULL",
         onUpdate: "CASCADE",
     });
 
