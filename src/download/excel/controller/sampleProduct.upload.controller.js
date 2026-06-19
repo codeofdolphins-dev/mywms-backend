@@ -1,7 +1,6 @@
 import ExcelJS from "exceljs";
 
 export const sampleProductUpload = async (req, res) => {
-
     try {
         const { type } = req.body;
 
@@ -10,9 +9,9 @@ export const sampleProductUpload = async (req, res) => {
 
         // Build columns based on type — remove MRP for raw products
         const columns = [
-            { header: "Product Name*", key: "name", width: 20 },
-            { header: "Barcode*", key: "barcode", width: 20 },
-            { header: "SKU*", key: "sku", width: 20 },
+            { header: "Product Name*", key: "name", width: 15 },
+            { header: "Barcode*", key: "barcode", width: 15 },
+            { header: "SKU*", key: "sku", width: 15 },
             { header: "Measure*", key: "measure", width: 15 },
             { header: "Unit Type*", key: "unit_type", width: 15 },
             { header: "Package Type*", key: "package_type", width: 15 },
@@ -31,23 +30,29 @@ export const sampleProductUpload = async (req, res) => {
 
         // Insert a blank row at position 1 to push the header row down to row 2
         sheet.spliceRows(1, 0, []);
+        const midCol = Math.floor(totalCols / 2);
+
+        // Merge first half for label, and second half for warning note
+        /**  sheet.mergeCells(startRow, startCol, endRow, endCol); */
+        sheet.mergeCells(1, 1, 1, midCol);
+        sheet.mergeCells(1, midCol + 1, 1, totalCols);
 
         // --- Row 1: Info / warning row ---
         const infoRow = sheet.getRow(1);
 
-        // Cell A1 — "Sample product upload: <type>"
+        // First merged cell (A1) — "Sample product upload: <type>"
         const labelCell = infoRow.getCell(1);
-        labelCell.value = `Sample product upload: ${type}`;
+        labelCell.value = `Sample product upload: ${type.toUpperCase()}`;
         labelCell.font = { bold: true, size: 12, color: { argb: "FF1F4E78" } };
         labelCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD6E4F0" } };
-        labelCell.alignment = { vertical: "middle", horizontal: "left" };
+        labelCell.alignment = { vertical: "middle", horizontal: "center" };
 
-        // Cell B1 — warning note
-        const noteCell = infoRow.getCell(2);
-        noteCell.value = "⚠️ Do not change any headers";
+        // Second merged cell (starting at midCol + 1) — warning note
+        const noteCell = infoRow.getCell(midCol + 1);
+        noteCell.value = "⚠️ Do not change any headers ⚠️";
         noteCell.font = { italic: true, color: { argb: "FF9C0006" }, size: 11 };
         noteCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFC7CE" } };
-        noteCell.alignment = { vertical: "middle", horizontal: "left" };
+        noteCell.alignment = { vertical: "middle", horizontal: "center" };
 
         infoRow.height = 24;
         infoRow.commit();

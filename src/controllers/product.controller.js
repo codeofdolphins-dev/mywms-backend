@@ -254,7 +254,7 @@ export const bulkProductCreation = asyncHandler(async (req, res) => {
         const validateEntries = [];
 
         const firstRow = sheet.getRow(1);
-        const type = firstRow.getCell(1).value?.split(":")?.[1]?.trim();
+        const type = firstRow.getCell(1).value?.split(":")?.[1]?.trim().toLowerCase();
 
         /** extract all data from sheet */
         sheet.eachRow((row, idx) => {
