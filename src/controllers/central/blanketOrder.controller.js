@@ -182,6 +182,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         const revision = await RfqQuotationRevision.findByPk(Number(rfq_quotation_revision_id));
         if (!revision) {
             await rootTransaction.rollback();
+            await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         };
 
@@ -189,6 +190,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         const quotation = await RfqQuotation.findByPk(revision.quotation_id);
         if (!quotation) {
             await rootTransaction.rollback();
+            await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Quotation record not found!!!" });
         }
         quotation.status = "accept";
@@ -220,6 +222,7 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
             const productMapping = await ProductMapping.findByPk(Number(product_map_id));
             if (!productMapping) {
                 await rootTransaction.rollback();
+                await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Product Mapping record not found!!!" });
             }
 

@@ -469,6 +469,7 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
             const product = await Product.findByPk(Number(id));
             if (!product) {
                 await transaction.rollback();
+                await rootTransaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: `Product with barcode: ${item.barcode} not found` });
             }
 

@@ -252,6 +252,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         });
         if (isExists) {
             await rootTransaction.rollback();
+            if (buyerTransaction) await buyerTransaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: "Record already created!!!" });
         }
 
@@ -338,6 +339,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await rootTransaction.rollback();
+        if (buyerTransaction) await buyerTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
