@@ -3,184 +3,373 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Requisition <%= data.requisition_no %>
-    </title>
+    <title>Requisition <%= data.requisition_no %></title>
 
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 13px;
-            color: #222;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-        .container {
-            width: 100%;
-            padding: 20px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
-        h2 {
-            margin: 0;
-            font-size: 20px;
+        body {
+            font-family: 'Inter', Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #1a1f2e;
+            background: #ffffff;
+            line-height: 1.5;
         }
 
-        .muted {
-            color: #666;
-            margin-top: 5px;
-            font-weight: 600;
+        .page {
+            width: 100%;
+            padding: 32px 36px;
         }
 
+        /* ── TOP ACCENT BAR ── */
+        .accent-bar {
+            height: 5px;
+            background: linear-gradient(90deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            border-radius: 3px;
+            margin-bottom: 28px;
+        }
+
+        /* ── HEADER ── */
         .header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            margin-bottom: 24px;
         }
 
-        .box {
-            border: 1px solid #ddd;
-            padding: 12px;
-            border-radius: 6px;
+        .header-left .doc-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.5px;
         }
 
-        .box-title {
-            font-weight: bold;
-            margin-bottom: 6px;
+        .header-left .doc-number {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 3px;
+            font-weight: 500;
         }
 
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
         }
 
-        .info-table td {
-            padding: 6px 8px;
-            vertical-align: top;
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
         }
 
-        .info-table td.label {
-            width: 140px;
-            color: #555;
-            font-weight: bold;
+        .status-pending   { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+        .status-approved  { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+        .status-rejected  { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+        .status-default   { background: #e0f2fe; color: #0c4a6e; border: 1px solid #7dd3fc; }
+
+        /* ── PRIORITY TAG ── */
+        .priority-tag {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
         }
 
-        /* Items table */
+        .priority-tag span {
+            font-weight: 700;
+            color: #334155;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 20px 0;
+        }
+
+        /* ── INFO GRID ── */
+        .info-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 24px;
+        }
+
+        .info-item {}
+
+        .info-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .info-value .sub {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* ── ITEMS TABLE ── */
+        .table-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        .items-table th,
-        .items-table td {
-            border-bottom: 1px solid #e5e5e5;
-            padding: 10px;
+        .items-table thead tr {
+            background: #1e40af;
+        }
+
+        .items-table thead th {
+            padding: 11px 12px;
             text-align: left;
-            font-size: 12px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
-        .items-table th {
-            background: #f9fafb;
-            font-weight: bold;
-            /* color: #444; */
-        }
-
-        .right {
+        .items-table thead th.right {
             text-align: right;
         }
 
-        .footer {
-            margin-top: 30px;
-            display: flex;
-            justify-content: space-between;
+        .items-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
         }
 
-        .signature {
-            margin-top: 40px;
-            width: 200px;
-            border-top: 1px solid #999;
-            text-align: center;
-            padding-top: 5px;
+        .items-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .items-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .items-table tbody td {
+            padding: 10px 12px;
+            font-size: 11.5px;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        .items-table tbody td.right {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .items-table tbody td.barcode {
+            font-family: 'Courier New', monospace;
             font-size: 12px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .badge-category {
+            display: inline-block;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+
+        /* ── ROW NUMBER ── */
+        .row-num {
+            color: #cbd5e1;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* ── FOOTER SIGNATURES ── */
+        .footer {
+            margin-top: 40px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 60px;
+        }
+
+        .signature-block {
+            width: 180px;
+        }
+
+        .signature-line {
+            border-top: 2px solid #cbd5e1;
+            margin-bottom: 6px;
+        }
+
+        .signature-label {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .signature-name {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* ── BOTTOM NOTE ── */
+        .bottom-note {
+            margin-top: 30px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bottom-note .doc-id {
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .bottom-note .generated {
+            font-size: 10px;
+            color: #cbd5e1;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="page">
+
+        <!-- Accent Bar -->
+        <div class="accent-bar"></div>
 
         <!-- Header -->
         <div class="header">
-            <div>
-                <h2>Requisition</h2>
-                <div class="muted">
-                    #<%= data.requisition_no %>
-                </div>
+            <div class="header-left">
+                <div class="doc-title">Purchase Requisition</div>
+                <div class="doc-number"># <%= data.requisition_no %></div>
             </div>
 
-            <div class="box">
-                <div class="box-title">Status</div>
-                <div>
+            <div class="header-right">
+                <%
+                    const status = (data.status || '').toLowerCase();
+                    let statusClass = 'status-default';
+                    if (status === 'pending')  statusClass = 'status-pending';
+                    else if (status === 'approved') statusClass = 'status-approved';
+                    else if (status === 'rejected') statusClass = 'status-rejected';
+                %>
+                <span class="status-badge <%= statusClass %>">
                     <%= data.status?.toUpperCase() %>
-                </div>
-                <div class="muted">Priority: <%= data.priority %>
-                </div>
+                </span>
+                <div class="priority-tag">Priority: <span><%= data.priority %></span></div>
             </div>
         </div>
 
-        <!-- Buyer + Meta -->
-        <div class="box">
-            <table class="info-table">
-                <tr>
-                    <td class="label">Business Location:</td>
-                    <td>
-                        <%= data?.buyer?.name %>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="label">Buyer:</td>
-                    <td>
-                        <%= data?.buyer?.nodeDetails?.name %> -
-                            <span style="color: #666;">
-                                <%= data?.buyer?.nodeDetails?.location %>
-                            </span>
-                    </td>
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-section-title">Requisition Details</div>
+            <div class="info-grid">
 
-                    <td class="label">Required By:</td>
-                    <td>
-                        <%= new Date(data.required_by_date).toDateString() %>
-                    </td>
-                </tr>
+                <div class="info-item">
+                    <div class="info-label">Business Location</div>
+                    <div class="info-value"><%= data?.buyer?.name || '—' %></div>
+                </div>
 
-                <tr>
-                    <td class="label">Created By:</td>
-                    <td>
-                        <%= data?.createdBy?.name?.full_name %>
-                    </td>
+                <div class="info-item">
+                    <div class="info-label">Required By</div>
+                    <div class="info-value"><%= new Date(data.required_by_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %></div>
+                </div>
 
-                    <td class="label">Created On:</td>
-                    <td>
-                        <%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric" , month: "long" ,
-                            day: "numeric" }) %>
-                    </td>
+                <div class="info-item">
+                    <div class="info-label">Buyer</div>
+                    <div class="info-value">
+                        <%= data?.buyer?.nodeDetails?.name || '—' %>
+                        <span class="sub"> &mdash; <%= data?.buyer?.nodeDetails?.location || '' %></span>
+                    </div>
+                </div>
 
-                </tr>
+                <div class="info-item">
+                    <div class="info-label">Created On</div>
+                    <div class="info-value"><%= new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) %></div>
+                </div>
 
-                <tr>
-                    <td class="label">Notes:</td>
-                    <td colspan="3">
-                        <%= data?.notes || '-' %>
-                    </td>
-                </tr>
-            </table>
+                <div class="info-item">
+                    <div class="info-label">Created By</div>
+                    <div class="info-value"><%= data?.createdBy?.name?.full_name || '—' %></div>
+                </div>
+
+                <div class="info-item full-width">
+                    <div class="info-label">Notes</div>
+                    <div class="info-value"><%= data?.notes || '—' %></div>
+                </div>
+
+            </div>
         </div>
 
-        <!-- Items -->
+        <!-- Items Table -->
+        <div class="table-section-title">Line Items &mdash; <%= data.items?.length || 0 %> item(s)</div>
+
         <table class="items-table">
             <thead>
                 <tr>
+                    <th style="width:28px;">#</th>
                     <th>Barcode</th>
-                    <th>Name</th>
+                    <th>Product Name</th>
                     <th>Brand</th>
                     <th>Category</th>
                     <th>Sub Category</th>
@@ -191,43 +380,48 @@
             </thead>
 
             <tbody>
-                <% data.items?.forEach(item=> { %>
+                <% data.items?.forEach((item, index) => { %>
                     <tr>
+                        <td><span class="row-num"><%= index + 1 %></span></td>
+                        <td class="barcode"><%= item.product?.barcode || '—' %></td>
+                        <td><strong><%= item.product?.name || '—' %></strong></td>
+                        <td><%= item.brand || '—' %></td>
                         <td>
-                            <%= item.product?.barcode || '-' %>
+                            <% if (item.category) { %>
+                                <span class="badge-category"><%= item.category %></span>
+                            <% } else { %>
+                                —
+                            <% } %>
                         </td>
-                        <td>
-                            <%= item.product?.name || '-' %>
-                        </td>
-                        <td>
-                            <%= item.brand %>
-                        </td>
-                        <td>
-                            <%= item.category %>
-                        </td>
-                        <td>
-                            <%= item.sub_category %>
-                        </td>
-                        <td>
-                            <%= item.product?.measure %>
-                                <%= item.product?.unit_type %>
-                                    <%= item.product?.package_type %>
-                        </td>
-                        <td class="right">
-                            <%= item.qty %>
-                        </td>
-                        <td class="right">
-                            <%= Number(item.priceLimit).toFixed(2) %>
-                        </td>
+                        <td><%= item.sub_category || '—' %></td>
+                        <td><%= item.product?.measure %> <%= item.product?.unit_type %> <%= item.product?.package_type %></td>
+                        <td class="right"><%= item.qty %></td>
+                        <td class="right"><%= Number(item.price_limit).toFixed(2) %></td>
                     </tr>
-                    <% }) %>
+                <% }) %>
             </tbody>
         </table>
 
-        <!-- Footer -->
-        <div class="footer">
-            <div class="signature">Requested By</div>
-            <div class="signature">Approved By</div>
+        <!-- Signatures -->
+        <!-- <div class="footer">
+            <div class="signature-block">
+                <div style="height: 36px;"></div>
+                <div class="signature-line"></div>
+                <div class="signature-label">Requested By</div>
+                <div class="signature-name"><%= data?.createdBy?.name?.full_name || '' %></div>
+            </div>
+            <div class="signature-block">
+                <div style="height: 36px;"></div>
+                <div class="signature-line"></div>
+                <div class="signature-label">Approved By</div>
+                <div class="signature-name">&nbsp;</div>
+            </div>
+        </div> -->
+
+        <!-- Bottom note -->
+        <div class="bottom-note">
+            <div class="doc-id">REQ &bull; <%= data.requisition_no %> &bull; Warehouse Management System</div>
+            <div class="generated">Generated: <%= new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %></div>
         </div>
 
     </div>

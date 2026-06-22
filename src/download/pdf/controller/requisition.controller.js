@@ -78,11 +78,9 @@ export const generateRequisitionPDF = asyncHandler(async (req, res) => {
             "Content-Disposition"
         );
 
-        res.end(pdfBuffer);
-
-        // res.send(pdf);
+        return res.status(200).end(pdfBuffer);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, code: 500, message: "Failed to generate PDF" });
+        return res.status(500).json({ success: false, code: 500, message: "Failed to generate PDF" });
     }
 });
