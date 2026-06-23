@@ -12,7 +12,10 @@ export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
         })).map(r => r.node_type_code);
 
         const nodes = await BusinessNodeType.findAll({
-            where: { code: { [Op.in]: codes } }
+            where: {
+                code: { [Op.in]: codes },
+                // category: { [Op.ne]: "partner" }
+            }
         });
 
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: nodes });
