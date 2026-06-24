@@ -37,8 +37,7 @@ export async function up({ context: queryInterface }) {
         },
         connection_type: {
             type: DataTypes.ENUM("CFA / C&F Agent", "3PL Warehouse", "Super Stockist", "Dealer", "Distributor", "Sub-Distributor", "Retail Warehouse / Backroom Storage"),
-            allowNull: false,
-            defaultValue: ""
+            allowNull: false
         },
 
         createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
