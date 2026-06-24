@@ -105,7 +105,7 @@ export const inventory_full = asyncHandler(async (req, res) => {
                     ]
                 }
             ],
-            order: [["id", "ASC"]]
+            order: [["id", "DESC"]]
         });
 
         // 2. Fetch all GRN items to find last inward dates

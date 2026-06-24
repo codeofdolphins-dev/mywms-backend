@@ -291,8 +291,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             }
         }
 
-
-        /** check user */
+        /** check user exist */
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
             if (profile_image) await deleteImage(profile_image, dbName);
@@ -301,6 +300,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             return res.status(409).json({ success: false, code: 409, message: `User with email: ${email} already exists!!!` });
         }
 
+        /** check user email exist in tenant or not */
         const isTenantUserExist = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
         if (isTenantUserExist) {
             if (profile_image) await deleteImage(profile_image, dbName);
@@ -311,6 +311,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
 
         const encryptPassword = await hashPassword(password);
 
+        /** creating user */
         const user = await User.create({
             email: email.toLowerCase().trim(),
             password: encryptPassword,
@@ -324,7 +325,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
             company_name: loginUser.company_name,
         }, { transaction });
 
-
+        /** creating user in tenant */
         const tenantsName = await TenantsName.findOne({ where: { tenant: dbName } });
         await Tenant.create({
             tenant_id: tenantsName.id,

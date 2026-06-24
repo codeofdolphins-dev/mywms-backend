@@ -365,6 +365,9 @@ export async function up({ context: queryInterface }) {
             node_type_code: {
                 type: DataTypes.STRING,
                 allowNull: true,
+                references: { model: "BusinessNodeTypes", key: "code" },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE',
             },
             tenant_business_flow_id: {
                 type: DataTypes.INTEGER,
@@ -517,11 +520,17 @@ export async function up({ context: queryInterface }) {
             id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
             user_id: {
                 type: DataTypes.INTEGER,
-                allowNull: false
+                allowNull: false,
+                references: { model: 'Users', key: 'id' },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE',
             },
             node_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
+                references: { model: 'BusinessNodes', key: 'id' },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE',
             },
             store_id: {
                 type: DataTypes.INTEGER,

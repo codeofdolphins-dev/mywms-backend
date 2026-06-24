@@ -65,7 +65,7 @@ export const allProductList = asyncHandler(async (req, res) => {
                 },
             ],
             ...(!noLimit && { limit, offset }),
-            order: [["createdAt", "ASC"]],
+            order: [["createdAt", "DESC"]],
         });
 
         await addCategory(req.dbModels, product);

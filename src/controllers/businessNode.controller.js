@@ -14,7 +14,7 @@ export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
         const nodes = await BusinessNodeType.findAll({
             where: {
                 code: { [Op.in]: codes },
-                // category: { [Op.ne]: "partner" }
+                category: { [Op.ne]: "partner" }
             }
         });
 
