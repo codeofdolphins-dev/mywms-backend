@@ -38,6 +38,7 @@ import inventoryApi from "./inventory.route.js";
 import directTransferApi from "./directTransfer.route.js";
 import costHeadApi from "./costCategory.route.js";
 import costCenterApi from "./costCenter.route.js";
+import connectionApi from "./connection.route.js";
 
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
@@ -85,6 +86,8 @@ router.use("/inventory", inventoryApi);
 router.use("/direct-transfer", directTransferApi);
 router.use("/cost-head", costHeadApi);
 router.use("/cost-center", costCenterApi);
+
+router.use("/connection", connectionApi);
 
 
 

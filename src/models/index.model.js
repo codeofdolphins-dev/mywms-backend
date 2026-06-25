@@ -68,6 +68,7 @@ import CostCategory from "./costCategory.model.js";
 import CostCenter from "./costCenter.model.js";
 import Store from "./store.model.js";
 import InvoiceItem from "./invoiceItem.model.js";
+import Connection from "./main/connection.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -91,6 +92,7 @@ const defineRootModels = (rootSequelize) => {
     BpoIndent(rootSequelize);
     BpoIndentItem(rootSequelize);
     ProductMapping(rootSequelize);
+    Connection(rootSequelize);
 
     return rootSequelize.models;
 }

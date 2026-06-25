@@ -6,7 +6,7 @@ import { rootDB } from "../../db/tenantMenager.service.js"
 // GET
 export const allRfqList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { RFQ, RFQItem, ProductMapping } = models;
+    const { RFQ, RFQItem, ProductMapping, Connection } = models;
 
     const vendor_tenant = req.headers["x-tenant-id"];
     // console.log(dbName)
@@ -42,28 +42,40 @@ export const allRfqList = asyncHandler(async (req, res) => {
         /** attaching vendor product id */
         const formattedRows = await Promise.all(rfq.rows.map(async (item) => {
             const formatJSON = item.toJSON();
+            // console.log(formatJSON)
 
             const buyer_tenant = formatJSON.buyer_tenant;
-
-            for (const product of formatJSON.items) {
-                if (vendor_tenant) {
-                    const productMapping = await ProductMapping.findOne({
-                        where: {
-                            buyer_node: buyer_tenant,
-                            vendor_node: vendor_tenant,
-                            buyer_product_id: product.product_id,
-                        },
-                    });
-                    if (req?.dbModels) {
-                        const { Product } = req.dbModels;
-                        product.vendor_product = await Product.findOne({
-                            where: {
-                                id: Number(productMapping?.vendor_product_id || 0),
-                            },
-                        });
+            let connection = null;
+            if (vendor_tenant) {
+                connection = await Connection.findOne({
+                    where: {
+                        buyer_tenant,
+                        vendor_tenant,
+                        connection_type: "supplier",
                     }
-                }
+                });
             }
+            formatJSON.connection = connection;
+
+            // for (const product of formatJSON.items) {
+            //     if (vendor_tenant) {
+            //         const productMapping = await ProductMapping.findOne({
+            //             where: {
+            //                 buyer_node: buyer_tenant,
+            //                 vendor_node: vendor_tenant,
+            //                 buyer_product_id: product.product_id,
+            //             },
+            //         });
+            //         if (req?.dbModels) {
+            //             const { Product } = req.dbModels;
+            //             product.vendor_product = await Product.findOne({
+            //                 where: {
+            //                     id: Number(productMapping?.vendor_product_id || 0),
+            //                 },
+            //             });
+            //         }
+            //     }
+            // }
 
             return formatJSON;
         }));

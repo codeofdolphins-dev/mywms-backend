@@ -17,7 +17,8 @@ const defineRootAssociations = (models) => {
         BlanketOrderItem,
         BpoIndent,
         BpoIndentItem,
-        ProductMapping
+        ProductMapping,
+        Connection
 
     } = models;
 
@@ -319,6 +320,22 @@ const defineRootAssociations = (models) => {
     BpoIndentItem.belongsTo(BpoIndent, {
         foreignKey: "indent_id",
         as: "indentParent",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE"
+    });
+
+
+    /** ******************* productMapping ************************ */
+    // connection ↔ productMapping
+    Connection.hasMany(ProductMapping, {
+        foreignKey: "connection_id",
+        as: "productMapping",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ProductMapping.belongsTo(Connection, {
+        foreignKey: "connection_id",
+        as: "mappingsConnection",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });
@@ -1347,7 +1364,7 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
-    
+
     // invoice <-> manufacturingUnit
     Invoice.belongsTo(ManufacturingUnit, {
         foreignKey: "seller_store_id",

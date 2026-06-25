@@ -3,53 +3,62 @@ import { DataTypes } from 'sequelize';
 /** Migration: connection_model */
 
 export async function up({ context: queryInterface }) {
-    // Write your migration here
-    // Example: Add a column
-    // await queryInterface.addColumn('Products', 'shelf_life', {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: true,
-    //     defaultValue: 0,
-    // });
+    const transaction = await queryInterface.sequelize.transaction();
 
-    // Example: create new table
-    await queryInterface.createTable('Connections', {
-        id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    try {
+        // Create Connections table (IF NOT EXISTS — safe to re-run)
+        await queryInterface.createTable('Connections', {
+            id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 
-        buyer_node: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        vendor_node: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        buyer_tenant: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        vendor_tenant: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        connection_status: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
-        },
-        connection_type: {
-            type: DataTypes.ENUM("CFA / C&F Agent", "3PL Warehouse", "Super Stockist", "Dealer", "Distributor", "Sub-Distributor", "Retail Warehouse / Backroom Storage"),
-            allowNull: false
-        },
+            buyer_tenant: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            vendor_tenant: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            connection_status: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: true
+            },
+            connection_type: {
+                type: DataTypes.ENUM("cfa / c&f agent", "3pl warehouse", "super stockist", "dealer", "distributor", "sub-distributor", "retail warehouse / backroom storage", "supplier"),
+                allowNull: false
+            },
 
-        createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
-        updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
-    });
+            createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+            updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, },
+        }, { transaction });
+
+
+        // Add connection_id FK
+        await queryInterface.addColumn("ProductMappings", "connection_id", {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: { model: "Connections", key: "id" },
+            onDelete: "CASCADE",
+            onUpdate: "CASCADE",
+        }, { transaction });
+
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
 }
 
 export async function down({ context: queryInterface }) {
-    // Write the reverse of up() here
-    // Example: Remove the column
-    // await queryInterface.removeColumn('Products', 'shelf_life');
+    const transaction = await queryInterface.sequelize.transaction();
 
-    // Example: remove new table
-    // await queryInterface.dropTable('tableName');
+    // Drop the Connections table last (no more FK references pointing to it)
+    try {
+        await queryInterface.dropTable('Connections', { transaction });
+        await queryInterface.removeColumn('ProductMappings', 'connection_id', { transaction });
+
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
 }

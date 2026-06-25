@@ -580,14 +580,6 @@ export async function up({ context: queryInterface }) {
 
         await queryInterface.createTable('ProductMappings', {
             id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-            buyer_node: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            vendor_node: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
             buyer_product_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false
