@@ -411,7 +411,7 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
 
     /****************** central db models ******************/
     const { models } = await rootDB();
-    const { BpoIndent, BpoIndentItem, BlanketOrderItem, ProductMapping } = models;
+    const { BpoIndent, BpoIndentItem, BlanketOrderItem, ProductMapping, Connection } = models;
 
 
     try {
@@ -479,10 +479,18 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
         // Fallback to ProductMapping just in case
         const vendorProductIds = outward ? outward.outwardItemList.map(item => item.vendor_product_id) : [];
         if (vendorProductIds.length > 0) {
+            const connection = await Connection.findOne({
+                where: {
+                    buyer_tenant: bpoIndent.buyer_tenant,
+                    vendor_tenant: bpoIndent.vendor_tenant,
+                    connection_status: true,
+                }
+            });
+
             const mappings = await ProductMapping.findAll({
                 where: {
+                    connection_id: connection?.id,
                     vendor_product_id: vendorProductIds,
-                    buyer_node: bpoIndent.buyer_tenant,
                     vendor_node: bpoIndent.vendor_tenant
                 }
             });

@@ -51,11 +51,12 @@ export const allRfqList = asyncHandler(async (req, res) => {
                     where: {
                         buyer_tenant,
                         vendor_tenant,
-                        connection_type: "supplier",
+                        // connection_type: "supplier",
                     }
                 });
             }
-            formatJSON.connection = connection;
+            formatJSON.isConnected = (connection !== null && connection.connection_type !== "pending") ? true : false;
+            formatJSON.connection_status = connection.connection_type;
 
             // for (const product of formatJSON.items) {
             //     if (vendor_tenant) {

@@ -23,7 +23,7 @@ export async function up({ context: queryInterface }) {
                 defaultValue: true
             },
             connection_type: {
-                type: DataTypes.ENUM("cfa / c&f agent", "3pl warehouse", "super stockist", "dealer", "distributor", "sub-distributor", "retail warehouse / backroom storage", "supplier"),
+                type: DataTypes.ENUM("cfa / c&f agent", "3pl warehouse", "super stockist", "dealer", "distributor", "sub-distributor", "retail warehouse / backroom storage", "supplier", "pending"),
                 allowNull: false
             },
 

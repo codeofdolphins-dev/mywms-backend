@@ -340,6 +340,39 @@ const defineRootAssociations = (models) => {
         onUpdate: "CASCADE"
     });
 
+    /** ******************* connection ↔ tenantsName ************************ */
+    // connection ↔ tenantsName (buyer side)
+    TenantsName.hasMany(Connection, {
+        foreignKey: "buyer_tenant",
+        sourceKey: "tenant",
+        as: "buyerConnections",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Connection.belongsTo(TenantsName, {
+        foreignKey: "buyer_tenant",
+        targetKey: "tenant",
+        as: "buyer",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // connection ↔ tenantsName (vendor side)
+    TenantsName.hasMany(Connection, {
+        foreignKey: "vendor_tenant",
+        sourceKey: "tenant",
+        as: "vendorConnections",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    Connection.belongsTo(TenantsName, {
+        foreignKey: "vendor_tenant",
+        targetKey: "tenant",
+        as: "vendor",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
 
 
 

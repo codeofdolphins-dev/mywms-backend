@@ -217,7 +217,7 @@ export const appliedRfqList = asyncHandler(async (req, res) => {
 export const createRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping, Connection } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const dbName = req.headers["x-tenant-id"];
@@ -234,13 +234,22 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         if (!rfq) throw new Error("RFQ record not found!!!");
 
 
+        /** check buyer and vendor is connected or not */
+        const connection = await Connection.findOne({
+            where: {
+                buyer_tenant: rfq.buyer_tenant,
+                vendor_tenant: dbName,
+                connection_status: true,
+            }
+        });
+        if (!connection) throw new Error("You are not connected to the buyer!!!");
+
 
         // console.log(rfq.toJSON())
         // console.log("dbName", dbName);
         // throw new Error("testing purpose");
 
         buyerTransaction = await updateRequisitionStatus(rfq);
-
 
 
         //  check record already exists or not
@@ -287,8 +296,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
             /** check existing product maping records for safety */
             const existingMappings = await ProductMapping.findAll({
                 where: {
-                    buyer_node: rfq.buyer_tenant,
-                    vendor_node: dbName,
+                    connection_id: connection.id,
                     [Op.or]: [
                         { buyer_product_id: rfqItem.product_id },
                         { vendor_product_id: Number(supplier_product_id) }
@@ -316,8 +324,7 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
             /** create product maping record if not exists */
             if (!productMapping) {
                 productMapping = await ProductMapping.create({
-                    buyer_node: rfq.buyer_tenant,
-                    vendor_node: dbName,
+                    connection_id: connection.id,
                     buyer_product_id: rfqItem.product_id,
                     vendor_product_id: Number(supplier_product_id),
                 }, { transaction: rootTransaction });
@@ -383,7 +390,7 @@ export const deleteRfqQuotation = asyncHandler(async (req, res) => {
 export const updateRfqQuotation = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
 
-    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping } = models;
+    const { RFQ, RFQItem, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping, Connection } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     try {
@@ -431,6 +438,14 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
             revision_no: current_revision_no + 1,
         }, { transaction: rootTransaction });
 
+        const connection = await Connection.findOne({
+            where: {
+                buyer_tenant: rfq.buyer_tenant,
+                vendor_tenant: quotation.vendor_tenant,
+                connection_status: true,
+            }
+        });
+
 
         for (const item of items) {
             const { rfq_item_id = "", offer_price = "", qty = "" } = item;
@@ -442,8 +457,7 @@ export const updateRfqQuotation = asyncHandler(async (req, res) => {
             /** fetch product maping records */
             const productMapping = await ProductMapping.findOne({
                 where: {
-                    buyer_node: rfq.buyer_tenant,
-                    vendor_node: quotation.vendor_tenant,
+                    connection_id: connection.id,
                     buyer_product_id: rfqItem.product_id,
                 }
             });

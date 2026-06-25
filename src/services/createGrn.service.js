@@ -2,7 +2,7 @@ import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 
 export async function createGrn_items_external(salesOrder, allocatedItems = [], outward_no = "") {
     const { models } = await rootDB();
-    const { BpoIndent, ProductMapping } = models;
+    const { BpoIndent, ProductMapping, Connection } = models;
 
     let transaction = null;
 
@@ -59,11 +59,19 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
         if (allocatedItems && allocatedItems.length > 0) {
             // Attempt to iterate over the extracted allocated batches passed from outward allocation
             for (const item of allocatedItems) {
+
+                const connection = await Connection.findOne({
+                    where: {
+                        buyer_tenant: indent.buyer_tenant,
+                        vendor_tenant: indent.vendor_tenant,
+                        connection_status: true,
+                    }
+                });
+
                 // Fetch Product mapping to match vendor tenant product id with buyer tenant product id
                 const productMap = await ProductMapping.findOne({
                     where: {
-                        buyer_node: indent.buyer_tenant,
-                        vendor_node: indent.vendor_tenant,
+                        connection_id: connection?.id,
                         vendor_product_id: item.vendor_product_id
                     }
                 });
