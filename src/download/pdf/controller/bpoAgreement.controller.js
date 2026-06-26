@@ -1,6 +1,8 @@
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import { rootDB, getTenantConnection } from "../../../db/tenantMenager.service.js";
-import { generatePDF } from "../../../utils/pdf.service.js"
+import { generatePDF } from "../../../utils/pdf.service.js";
+import fs from "fs";
+import path from "path";
 
 
 export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
@@ -24,6 +26,13 @@ export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
         if (!bpo) throw new Error("BPO record not found!!!");
 
         let formatData = bpo.toJSON();
+
+        const logoPath = path.join(process.cwd(), "public", "logo192.png");
+        let watermarkLogo = "";
+        if (fs.existsSync(logoPath)) {
+            watermarkLogo = `data:image/png;base64,${fs.readFileSync(logoPath).toString("base64")}`;
+        }
+        formatData.watermarkLogo = watermarkLogo;
 
         const { models: buyerModel } = await getTenantConnection(formatData.buyer_tenant);
         const { models: vendorModel } = await getTenantConnection(formatData.vendor_tenant);
@@ -88,6 +97,8 @@ export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
                 vendorDetails: vendorDetailsPlain,
             }
         }));
+
+        // return res.json({ formatData });
 
         const pdf = await generatePDF("bpo-agreement", formatData);
 

@@ -335,7 +335,7 @@ const defineRootAssociations = (models) => {
     });
     ProductMapping.belongsTo(Connection, {
         foreignKey: "connection_id",
-        as: "mappingsConnection",
+        as: "conn",
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });

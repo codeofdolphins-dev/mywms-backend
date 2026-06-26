@@ -32,17 +32,17 @@
             margin-bottom: 20px;
         }
 
-        .doc-header .logo-placeholder {
-            display: inline-block;
-            width: 70px;
-            height: 70px;
-            background: #eef2f9;
-            border: 1px dashed #aab8d4;
-            border-radius: 6px;
-            line-height: 70px;
-            font-size: 10px;
-            color: #7a90b8;
-            margin-bottom: 10px;
+        /* ── Watermark ── */
+        .watermark {
+            position: fixed;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            height: 380px;
+            opacity: 0.175;
+            z-index: -1000;
+            pointer-events: none;
         }
 
         .doc-header h1 {
@@ -161,7 +161,7 @@
             border: 1px solid #dde5f5;
             border-radius: 4px;
             padding: 12px 14px;
-            background: #fafbff;
+            /* background: #fafbff; */
         }
 
         /* ── Items Table ── */
@@ -383,11 +383,14 @@
         });
     %>
 
+    <% if (data.watermarkLogo) { %>
+        <img class="watermark" src="<%= data.watermarkLogo %>" alt="" />
+    <% } %>
+
     <div class="container">
 
         <!-- ══ HEADER ══ -->
         <div class="doc-header">
-            <div class="logo-placeholder">LOGO</div>
             <h1>Blanket Purchase Order (BPO) Agreement</h1>
 
             <div class="meta-bar">
@@ -432,8 +435,18 @@
             <!-- BUYER -->
             <div class="party-box">
                 <div class="party-box-title">Buyer</div>
-                <div class="party-name">
-                    <%= buyer ? buyer.company_name : (data.buyer_tenant || '-') %>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+                    <% const buyerImg = buyer?.profile_image || buyerNode?.image; %>
+                    <% if (buyerImg) { %>
+                        <img src="<%= buyerImg %>" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #c8d4e8; background: #fff;" alt="" />
+                    <% } else { %>
+                        <div style="width: 50px; height: 50px; border-radius: 4px; background: #eef2f9; color: #1a3c6e; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #c8d4e8; font-size: 20px;">B</div>
+                    <% } %>
+                    <div style="flex: 1;">
+                        <div class="party-name">
+                            <%= buyer ? buyer.company_name : (data.buyer_tenant || '-') %>
+                        </div>
+                    </div>
                 </div>
                 <% if (buyerNode) { %>
                     <div class="party-meta">
@@ -462,8 +475,18 @@
             <!-- VENDOR -->
             <div class="party-box">
                 <div class="party-box-title">Vendor / Supplier</div>
-                <div class="party-name">
-                    <%= vendor ? vendor.company_name : (data.vendor_tenant || '-') %>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+                    <% const vendorImg = vendor?.profile_image || vendorNode?.image; %>
+                    <% if (vendorImg) { %>
+                        <img src="<%= vendorImg %>" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; border: 1px solid #c8d4e8; background: #fff;" alt="" />
+                    <% } else { %>
+                        <div style="width: 50px; height: 50px; border-radius: 4px; background: #eef2f9; color: #1a3c6e; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #c8d4e8; font-size: 20px;">V</div>
+                    <% } %>
+                    <div style="flex: 1;">
+                        <div class="party-name">
+                            <%= vendor ? vendor.company_name : (data.vendor_tenant || '-') %>
+                        </div>
+                    </div>
                 </div>
                 <% if (vendorNode) { %>
                     <div class="party-meta">
