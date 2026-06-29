@@ -1,5 +1,5 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteImage } from "../utils/handelImage.js";
+import { deleteFile } from "../utils/handelImage.js";
 
 
 // Upsert (update or create) NodeDetails for a user's BusinessNode
@@ -47,7 +47,7 @@ export const upsertCompanyDetails = asyncHandler(async (req, res) => {
             if (desc) nodeDetails.desc = desc;
             if (profile_image) {
                 if (nodeDetails.image) {
-                    await deleteImage(nodeDetails.image);
+                    await deleteFile(nodeDetails.image);
                 }
                 nodeDetails.image = `${dbName}/${profile_image}`;
             }
@@ -94,7 +94,7 @@ export const upsertCompanyDetails = asyncHandler(async (req, res) => {
         console.log(error);
         if (transaction) await transaction.rollback();
         if (profile_image) {
-            await deleteImage(profile_image, dbName);
+            await deleteFile(profile_image, dbName);
         }
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -111,7 +111,7 @@ export const registerBusinessNode = asyncHandler(async (req, res) => {
         let { full_name = "", location = "", address = "", state = "", district = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
 
         if ([full_name, location, address, state, district, pincode, node].some(item => item === "")) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
         }
@@ -149,7 +149,7 @@ export const registerBusinessNode = asyncHandler(async (req, res) => {
             desc
         }, { transaction });
         if (!nodeDetails) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
         }
@@ -175,7 +175,7 @@ export const updateBusinessNode = asyncHandler(async (req, res) => {
         let { full_name = "", location = "", address = "", state = "", district = "", pincode = "", node = "", gst_no = "", license_no = "", lat = "", long = "", desc = "" } = req.body;
 
         if ([full_name, location, address, state, district, pincode, node].some(item => item === "")) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields missing!!!" });
         }
@@ -186,7 +186,7 @@ export const updateBusinessNode = asyncHandler(async (req, res) => {
         // Find existing NodeDetails
         const nodeDetails = await NodeDetails.findByPk(Number(id), { transaction });
         if (!nodeDetails) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Node details not found!!!" });
         }
@@ -194,7 +194,7 @@ export const updateBusinessNode = asyncHandler(async (req, res) => {
         // Find corresponding BusinessNode
         const businessNode = await BusinessNode.findByPk(nodeDetails.business_node_id, { transaction });
         if (!businessNode) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Business node not found!!!" });
         }
@@ -226,7 +226,7 @@ export const updateBusinessNode = asyncHandler(async (req, res) => {
 
         if (profile_image) {
             if (nodeDetails.image) {
-                await deleteImage(nodeDetails.image, dbName);
+                await deleteFile(nodeDetails.image, dbName);
             }
             nodeDetails.image = `${dbName}/${profile_image}`;
         }
@@ -237,7 +237,7 @@ export const updateBusinessNode = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        if (profile_image) await deleteImage(profile_image, dbName);
+        if (profile_image) await deleteFile(profile_image, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }

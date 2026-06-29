@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteImage } from "../utils/handelImage.js";
+import { deleteFile } from "../utils/handelImage.js";
 import { getUserContext } from "../utils/getUserContext.js"
 import ExcelJS from "exceljs";
 import { insertBulkBrand, insertBulkHsn, insertBulkPackType, insertBulkUnitType } from "../services/product.service.js";
@@ -118,7 +118,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         } = req.body;
 
         if ([name, barcode, package_type_id, unit_type_id, sku].some(item => item === "")) {
-            await deleteImage(photo, dbName);
+            await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
@@ -129,7 +129,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         /** check product is exists */
         const isExists = await Product.findOne({ where: { barcode } })
         if (isExists) {
-            await deleteImage(photo, dbName);
+            await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `Product with barcode: ${barcode} already exists!!!` });
         }
@@ -137,7 +137,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         /** check sku is exists */
         const isSKUExists = await Product.findOne({ where: { sku } })
         if (isSKUExists) {
-            await deleteImage(photo, dbName);
+            await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `Product with sku: ${sku} already exists!!!` });
         }
@@ -147,7 +147,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         if (hsn_id !== "") {
             hsn = await HSN.findByPk(Number(hsn_id));
             if (!hsn) {
-                await deleteImage(photo, dbName);
+                await deleteFile(photo, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
             }
@@ -157,7 +157,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         if (brand_id !== "") {
             const existingBrand = await Brand.findOne({ where: { id: Number(brand_id) } });
             if (!existingBrand) {
-                await deleteImage(photo, dbName);
+                await deleteFile(photo, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
             }
@@ -174,7 +174,7 @@ export const createProduct = asyncHandler(async (req, res) => {
                 }
             });
             if (existingCategories.length !== categories.length) {
-                await deleteImage(photo, dbName);
+                await deleteFile(photo, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Some Categorys were not found!!!" });
             }
@@ -182,14 +182,14 @@ export const createProduct = asyncHandler(async (req, res) => {
 
         const packageType = await PackageType.findByPk(Number(package_type_id));
         if (!packageType) {
-            await deleteImage(photo, dbName);
+            await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Package Type not found!!!" });
         }
 
         const unitType = await UnitType.findByPk(Number(unit_type_id));
         if (!unitType) {
-            await deleteImage(photo, dbName);
+            await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         }
@@ -197,7 +197,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         const hasExpiryBool = has_expiry === "true" || has_expiry === true;
 
         if (hasExpiryBool && !shelf_life) {
-            if (photo) await deleteImage(photo, dbName);
+            if (photo) await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
         }
@@ -233,7 +233,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        if (photo) await deleteImage(photo, dbName);
+        if (photo) await deleteFile(photo, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -334,14 +334,14 @@ export const createRawProduct = asyncHandler(async (req, res) => {
         let { name = "", unit_type_id = "", description = "", reorder_level = "", barcode = "", sku = "", has_expiry = false, shelf_life = "" } = req.body;
 
         if ([name, unit_type_id].some(item => item === "")) {
-            if (photo) await deleteImage(photo, dbName);
+            if (photo) await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         };
 
         const unitType = await UnitType.findByPk(Number(unit_type_id));
         if (!unitType) {
-            if (photo) await deleteImage(photo, dbName);
+            if (photo) await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Unit Type not found!!!" });
         };
@@ -355,7 +355,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
             }
         })
         if (isExists) {
-            if (photo) await deleteImage(photo, dbName);
+            if (photo) await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `Product already exists!!!` });
         };
@@ -363,7 +363,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
         const hasExpiryBool = has_expiry === "true" || has_expiry === true;
 
         if (hasExpiryBool && !shelf_life) {
-            if (photo) await deleteImage(photo, dbName);
+            if (photo) await deleteFile(photo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
         }
@@ -390,7 +390,7 @@ export const createRawProduct = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        if (photo) await deleteImage(photo, dbName);
+        if (photo) await deleteFile(photo, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -406,7 +406,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
         const product = await Product.findByPk(parseInt(id, 10));
         if (!product) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
         if (product.photo) {
-            await deleteImage(product.photo);
+            await deleteFile(product.photo);
         }
 
         const isDeleted = await Product.destroy({ where: { id } });
@@ -438,7 +438,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         } = req.body;
 
         if (!(id || barcode)) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "id or barcode required!!!" });
         }
@@ -452,7 +452,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
             } : undefined,
         });
         if (!product) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Product not found!!!" });
         }
@@ -469,7 +469,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
                 }
             })
             if (!category) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Some categories were not found!!!" });
             };
@@ -480,7 +480,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
                 where: { id: Number(brand_id) }
             })
             if (!brand) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Some brands were not found!!!" });
             };
@@ -489,7 +489,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         if (hsn_id) {
             const hsn = await HSN.findByPk(Number(hsn_id));
             if (!hsn) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "HSN code not found!!!" });
             };
@@ -499,7 +499,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         if (package_type_id) {
             const packageType = await PackageType.findByPk(Number(package_type_id));
             if (!packageType) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "PackageType not found!!!" });
             };
@@ -508,7 +508,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         if (unit_type_id) {
             const unitType = await UnitType.findByPk(Number(unit_type_id));
             if (!unitType) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "UnitType not found!!!" });
             };
@@ -520,13 +520,13 @@ export const updateProduct = asyncHandler(async (req, res) => {
         if (is_active) product.is_active = is_active;
         if (profile_image) {
             if (product.photo) {
-                await deleteImage(product.photo);
+                await deleteFile(product.photo);
             }
             product.photo = `${dbName}/${profile_image}`;
         }
         if (has_expiry !== "") {
             if (has_expiry === "true" && !shelf_life) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 return res.status(400).json({ success: false, code: 400, message: "Shelf life is required!!!" });
             }

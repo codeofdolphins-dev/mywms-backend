@@ -37,13 +37,13 @@ async function saveBase64Image(base64String, folderName) {
 * @param {string} filename - image file name
 * @param {string} folderName - folder name
 */
-async function deleteImage(filename, folderName = null) {
-    if(filename === null) return;
+async function deleteFile(filename, folderName = null) {
+    if (filename === null) return;
 
     let imgPath = null;
 
-    if(folderName) imgPath = path.join(process.cwd(), "public", "user", folderName, filename); 
-    else imgPath = path.join(process.cwd(), "public", "user", filename); 
+    if (folderName) imgPath = path.join(process.cwd(), "public", "user", folderName, filename);
+    else imgPath = path.join(process.cwd(), "public", "user", filename);
 
     if (fs.existsSync(imgPath)) {
         fs.unlinkSync(imgPath);
@@ -65,16 +65,16 @@ async function moveFile(fileName, folderName) {
         const sourceLocation = path.join(process.cwd(), "public", "user", fileName);
         const destinationLocation = path.join(process.cwd(), "public", "user", folderName);
 
-        if(fs.existsSync(sourceLocation)){
-            console.log("file not exists");            
+        if (fs.existsSync(sourceLocation)) {
+            console.log("file not exists");
             return false;
         }
-        
+
         pfs.mkdir(destinationLocation, { recursive: true });
         pfs.rename(sourceLocation, `${destinationLocation}/${fileName}`, (err) => {
-            if(err){
+            if (err) {
                 console.log("error Moving file: ", err);
-                return false;            
+                return false;
             }
         });
         console.log("File moved.");
@@ -84,4 +84,4 @@ async function moveFile(fileName, folderName) {
     }
 }
 
-export { saveBase64Image, deleteImage, moveFile };
+export { saveBase64Image, deleteFile, moveFile };

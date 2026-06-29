@@ -1318,7 +1318,21 @@ const defineTenantAssociations = (models) => {
     });
     BusinessNode.hasMany(CostCenter, {
         foreignKey: "location_id",
-        as: "costCenters",
+        as: "CostCenters",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // costCenter <-> manufacturingUnit
+    CostCenter.belongsTo(ManufacturingUnit, {
+        foreignKey: "store_id",
+        as: "costCenterStore",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    ManufacturingUnit.hasMany(CostCenter, {
+        foreignKey: "store_id",
+        as: "storeCostCenters",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });

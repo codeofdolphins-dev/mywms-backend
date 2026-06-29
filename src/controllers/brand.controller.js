@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteImage } from "../utils/handelImage.js";
+import { deleteFile } from "../utils/handelImage.js";
 import { makeSlug } from "../helper/helper.js";
 
 const allBrand = asyncHandler(async (req, res) => {
@@ -69,7 +69,7 @@ const createBrand = asyncHandler(async (req, res) => {
     try {
         let { name = "", description = "", website = "", origin_country = "", status = "" } = req.body;
         if (!name) {
-            await deleteImage(logo, dbName);
+            await deleteFile(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Name is required!!!" });
         }
@@ -92,7 +92,7 @@ const createBrand = asyncHandler(async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        await deleteImage(logo, dbName);
+        await deleteFile(logo, dbName);
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -107,20 +107,20 @@ const updateBrand = asyncHandler(async (req, res) => {
     try {
         let { id = "", name = "", description = "", website = "", origin_country = "", status = "" } = req.body;
         if (!id) {
-            if (logo) await deleteImage(logo, dbName);
+            if (logo) await deleteFile(logo, dbName);
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Id required!!!" });
         }
 
         const brand = await Brand.findOne({ where: { id: parseInt(id, 10) } });
         if (!brand) {
-            if (logo) await deleteImage(logo, dbName);
+            if (logo) await deleteFile(logo, dbName);
             await transaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: "Brand not found!!!" });
         }
 
         if (brand.logo && logo) {
-            const isDeleted = await deleteImage(brand.logo);
+            const isDeleted = await deleteFile(brand.logo);
             if (isDeleted) brand.logo = `${dbName}/${logo}`;
         }
         if (name) {
@@ -139,7 +139,7 @@ const updateBrand = asyncHandler(async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: "Record Updated Successfully" });
 
     } catch (error) {
-        if (logo) await deleteImage(logo, dbName);
+        if (logo) await deleteFile(logo, dbName);
         await transaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -162,7 +162,7 @@ const deleteBrand = asyncHandler(async (req, res) => {
         const isDeleted = await Brand.destroy({ where: { id } }, { transaction });
         if (!isDeleted) throw new Error("Deletion failed!!!");
 
-        if (brand.logo) await deleteImage(brand.logo);
+        if (brand.logo) await deleteFile(brand.logo);
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Deleted Successfully." });
 

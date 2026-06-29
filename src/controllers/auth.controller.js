@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import bcrypt from "bcrypt"
 import { deleteTenantDatabase, rootDB } from "../db/tenantMenager.service.js";
-import { deleteImage, moveFile } from "../utils/handelImage.js";
+import { deleteFile, moveFile } from "../utils/handelImage.js";
 import { hashPassword, removeFirstWord } from "../helper/helper.js";
 import { Op } from "sequelize";
 
@@ -236,7 +236,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (
             [email, full_name, phone_no, password].some(item => item === "")
         ) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "All fields are required!!!" });
@@ -266,7 +266,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         if (store_id) {
             const store = await ManufacturingUnit.findByPk(store_id);
             if (!store) {
-                if (profile_image) await deleteImage(profile_image, dbName);
+                if (profile_image) await deleteFile(profile_image, dbName);
                 await transaction.rollback();
                 await rootTransaction.rollback();
                 return res.status(400).json({ success: false, code: 400, message: "Store not found!!!" });
@@ -294,7 +294,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         /** check user exist */
         const isRegister = await User.findOne({ where: { email } });
         if (isRegister) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `User with email: ${email} already exists!!!` });
@@ -303,7 +303,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         /** check user email exist in tenant or not */
         const isTenantUserExist = await Tenant.findOne({ where: { email }, transaction: rootTransaction });
         if (isTenantUserExist) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `User with email: ${email} already exists!!!` });
@@ -376,7 +376,7 @@ export const registeredUserWithNodes = asyncHandler(async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
 
     } catch (error) {
-        if (profile_image) await deleteImage(profile_image, dbName);
+        if (profile_image) await deleteFile(profile_image, dbName);
         await transaction.rollback();
         await rootTransaction.rollback();
         console.log(error);
@@ -406,7 +406,7 @@ export const updateUser = asyncHandler(async (req, res) => {
         let { id, email = "", password = "", full_name = "", phone_no = "" } = req.body;
 
         if (!id || !email) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Id & email both must required!!!" });
@@ -414,7 +414,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 
         const user = await User.findByPk(Number(id));
         if (!user) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(409).json({ success: false, code: 409, message: `User with id not found!!!` });
@@ -429,7 +429,7 @@ export const updateUser = asyncHandler(async (req, res) => {
         }
         if (phone_no) user.phone_no = phone_no;
         if (profile_image) {
-            await deleteImage(user.profile_image, dbName);
+            await deleteFile(user.profile_image, dbName);
             user.profile_image = `${dbName}/${profile_image}`;
         }
         if (password) user.password = await hashPassword(password);
@@ -437,7 +437,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 
         const tenant = await Tenant.findOne({ where: { email: user.email } });
         if (!tenant) {
-            if (profile_image) await deleteImage(profile_image, dbName);
+            if (profile_image) await deleteFile(profile_image, dbName);
             await transaction.rollback();
             await rootTransaction.rollback();
             return res.status(404).json({ success: false, code: 404, message: `Tenant record not found for email: ${user.email}` });
@@ -455,7 +455,7 @@ export const updateUser = asyncHandler(async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: "Register Successfully." });
 
     } catch (error) {
-        if (profile_image) await deleteImage(profile_image, dbName);
+        if (profile_image) await deleteFile(profile_image, dbName);
         await transaction.rollback();
         await rootTransaction.rollback();
         console.log(error);

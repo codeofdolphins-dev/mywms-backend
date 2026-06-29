@@ -55,6 +55,7 @@ router.use("/admin", adminApi);
 router.use("/business", businessApi);
 router.use("/vendor", vendorApi);
 router.use("/rfq", rfqApi);
+router.use("/cost-center", costCenterApi);
 
 router.use(defineUserScope, defineDbObject);
 router.use("/download", downloadApi);
@@ -85,7 +86,6 @@ router.use("/production-receipt", productionReceiptApi);
 router.use("/inventory", inventoryApi);
 router.use("/direct-transfer", directTransferApi);
 router.use("/cost-head", costHeadApi);
-router.use("/cost-center", costCenterApi);
 
 router.use("/connection", connectionApi);
 

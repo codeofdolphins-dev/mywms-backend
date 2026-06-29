@@ -9,6 +9,14 @@ function CostCenter(sequelize) {
         },
         location_id: {
             type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        store_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        doc_url: {
+            type: DataTypes.STRING,
             allowNull: true
         },
         costHead_id: {

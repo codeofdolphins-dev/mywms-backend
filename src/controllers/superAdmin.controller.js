@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
-import { deleteImage } from "../utils/handelImage.js";
+import { deleteFile } from "../utils/handelImage.js";
 
 
 // GET

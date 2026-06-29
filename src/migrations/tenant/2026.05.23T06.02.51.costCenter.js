@@ -41,10 +41,21 @@ export async function up({ context: queryInterface }) {
             id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
             location_id: {
                 type: DataTypes.INTEGER,
-                allowNull: true,
+                allowNull: false,
                 references: { model: "BusinessNodes", key: "id", },
                 onDelete: "CASCADE",
                 onUpdate: "CASCADE",
+            },
+            store_id: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                references: { model: "ManufacturingUnits", key: "id", },
+                onDelete: "CASCADE",
+                onUpdate: "CASCADE",
+            },
+            doc_url: {
+                type: DataTypes.STRING,
+                allowNull: true
             },
             costHead_id: {
                 type: DataTypes.INTEGER,
