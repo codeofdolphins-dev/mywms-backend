@@ -19,8 +19,8 @@ export const getConnectionList = asyncHandler(async (req, res) => {
 
         const where = {
             [Op.or]: [
-                { buyer_tenant: tenant },
-                { vendor_tenant: tenant }
+                { parent_tenant: tenant },
+                { child_tenant: tenant }
             ],
             ...(connection_type !== "all" && { connection_type: connection_type.trim().toLowerCase() })
         };
@@ -31,7 +31,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
             include: [
                 {
                     model: TenantsName,
-                    as: "buyer",
+                    as: "parent",
                     include: [{
                         model: Tenant,
                         as: "tenantDetails",
@@ -41,7 +41,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
                 },
                 {
                     model: TenantsName,
-                    as: "vendor",
+                    as: "child",
                     include: [{
                         model: Tenant,
                         as: "tenantDetails",
@@ -97,8 +97,8 @@ export const updateConnectionType = asyncHandler(async (req, res) => {
             where: {
                 id: parseInt(id),
                 [Op.or]: [
-                    { buyer_tenant: tenant },
-                    { vendor_tenant: tenant }
+                    { parent_tenant: tenant },
+                    { child_tenant: tenant }
                 ]
             }
         });
@@ -127,12 +127,12 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
 
-    const vendor_tenant = req?.headers["x-tenant-id"];
+    const child_tenant = req?.headers["x-tenant-id"];
 
     // console.log(req.body); return
     try {
-        const { buyer_tenant, connection_type } = req.body;
-        if (!buyer_tenant || !connection_type) {
+        const { parent_tenant, connection_type } = req.body;
+        if (!parent_tenant || !connection_type) {
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         }
 
@@ -140,16 +140,16 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
 
         const exist = await Connection.findOne({
             where: {
-                buyer_tenant,
-                vendor_tenant,
+                parent_tenant,
+                child_tenant,
                 connection_type,
             }
         });
         if (exist) throw new Error("Record already exist!!!");
 
         const connection = await Connection.create({
-            buyer_tenant,
-            vendor_tenant,
+            parent_tenant,
+            child_tenant,
             connection_type
         }, { transaction: rootTransaction });
 
@@ -168,12 +168,12 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
 
-    const vendor_tenant = req?.headers["x-tenant-id"];
+    const child_tenant = req?.headers["x-tenant-id"];
 
     // console.log(req.body); return
     try {
-        const { buyer_tenant, connection_type } = req.body;
-        if (!buyer_tenant || !connection_type) {
+        const { parent_tenant, connection_type } = req.body;
+        if (!parent_tenant || !connection_type) {
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         }
 
@@ -182,8 +182,8 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
          *  --------------------------------------------------- */
         const exist = await Connection.findOne({
             where: {
-                buyer_tenant,
-                vendor_tenant,
+                parent_tenant,
+                child_tenant,
                 connection_type: "pending"
             }
         });
@@ -200,8 +200,8 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
          *  --------------------------------------------------- */
         const isExist = await Connection.findOne({
             where: {
-                buyer_tenant,
-                vendor_tenant
+                parent_tenant,
+                child_tenant
             }
         });
         if (isExist) throw new Error("Record already exist!!!")
@@ -210,8 +210,8 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
          *  Create new connection request
          *  --------------------------------------------------- */
         const connection = await Connection.create({
-            buyer_tenant,
-            vendor_tenant,
+            parent_tenant,
+            child_tenant,
             connection_status: false,
             connection_type: "pending"
         }, { transaction: rootTransaction });

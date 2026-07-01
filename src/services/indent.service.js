@@ -38,8 +38,8 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
         const formatedDetails = vendorDetails?.toJSON();
         const node = formatedDetails.userBusinessNode[0];
 
-        console.log("formatedDetails", formatedDetails)
-        console.log("node", node)
+        // console.log("formatedDetails", formatedDetails)
+        // console.log("node", node)
 
         const [vendor, created] = await Vendor.findOrCreate({
             where: {
@@ -61,13 +61,9 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
             },
             transaction: buyerTransaction
         });
-
-        if (!created) {
-            console.log("❌ Skip creation!!! Vendor record already exists!!!");
-        }
+        if (!created) console.log("❌ Skip creation!!! Vendor record already exists!!!");
 
         return vendor;
-
     } catch (error) {
         throw error;
     }
@@ -75,7 +71,6 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
 
 
 /**
- * 
  * @param {object} models buyer model
  * @param {object} buyerTransaction buyer model transaction
  * @param {object} reqBody reques body
@@ -135,7 +130,6 @@ export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendo
 
 
 /**
- * 
  * @param {object} VendorModels vendor/supplier models
  * @param {object} VendorTransaction vendor/supplier transaction
  * @param {object} BuyerModels buyer models

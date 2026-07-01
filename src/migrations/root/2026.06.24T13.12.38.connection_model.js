@@ -10,11 +10,11 @@ export async function up({ context: queryInterface }) {
         await queryInterface.createTable('Connections', {
             id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 
-            buyer_tenant: {
+            parent_tenant: {
                 type: DataTypes.STRING,
                 allowNull: false
             },
-            vendor_tenant: {
+            child_tenant: {
                 type: DataTypes.STRING,
                 allowNull: false
             },

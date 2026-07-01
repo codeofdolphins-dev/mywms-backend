@@ -4,6 +4,7 @@ import { deleteFile } from "../utils/handelImage.js";
 import { getUserContext } from "../utils/getUserContext.js"
 import ExcelJS from "exceljs";
 import { insertBulkBrand, insertBulkHsn, insertBulkPackType, insertBulkUnitType } from "../services/product.service.js";
+import { getTenantConnection } from "../db/tenantMenager.service.js";
 
 
 // GET
@@ -21,21 +22,9 @@ export const allProductList = asyncHandler(async (req, res) => {
                 ...(barcode && { barcode: barcode }),
                 ...(text && {
                     [Op.or]: [
-                        {
-                            name: {
-                                [Op.iLike]: `${text}%`
-                            }
-                        },
-                        {
-                            barcode: {
-                                [Op.like]: `${text}%`
-                            }
-                        },
-                        {
-                            sku: {
-                                [Op.iLike]: `${text}%`
-                            }
-                        },
+                        { name: { [Op.iLike]: `${text}%` } },
+                        { barcode: { [Op.like]: `${text}%` } },
+                        { sku: { [Op.iLike]: `${text}%` } },
                     ]
                 }),
                 ...(type && { product_type: type }),
@@ -68,7 +57,7 @@ export const allProductList = asyncHandler(async (req, res) => {
             order: [["createdAt", "DESC"]],
         });
 
-        await addCategory(req.dbModels, product);
+        await getCategory(req.dbModels, product);
         await addTotalStock(req, product);
         // if (type !== "raw") {
         // };
@@ -91,6 +80,44 @@ export const allProductList = asyncHandler(async (req, res) => {
                     limit
                 }
             })
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+export const finishedProductListOverTenant = asyncHandler(async (req, res) => {
+    try {
+        const { models } = await getTenantConnection(req.query.tenant);
+        const { Product, HSN, Brand } = models;
+
+        const product = await Product.findAndCountAll({
+            where: {
+                product_type: "finished"
+            },
+            include: [
+                {
+                    model: HSN,
+                    as: "hsn"
+                },
+                {
+                    model: Brand,
+                    as: "brand",
+                }
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+        if (!product) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        await getCategory(models, product);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched Successfully.",
+            data: product.rows
         });
 
     } catch (error) {
@@ -240,7 +267,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 });
 
 
-export const bulkProductCreation = asyncHandler(async (req, res) => {
+export const bulkProductCreationFromFile = asyncHandler(async (req, res) => {
     // console.log(req.body); return    
 
     const { Product, Brand } = req.dbModels;
@@ -312,6 +339,57 @@ export const bulkProductCreation = asyncHandler(async (req, res) => {
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Finished Product added successfully.", data: { validateEntries } });
 
+    } catch (error) {
+        await transaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const importProducts = asyncHandler(async (req, res) => {
+    const transaction = await req.dbObject.transaction();
+    const { Product } = req.dbModels;
+
+    // console.log(req.body); return
+
+    try {
+        const products = req.body;
+
+        for (const product of products) {
+            /** check if product already exists */
+            const existingProduct = await Product.findOne({
+                where: {
+                    name: { [Op.iLike]: product.name },
+                    barcode: product.barcode,
+                    sku: product.sku,
+                }
+            });
+            if (existingProduct) continue;
+
+            const categoryIds = await addCategory(req.dbModels, transaction, product);
+            const brand = await addBrand(req.dbModels, transaction, product?.brand);
+            const hsn = await addHsn(req.dbModels, transaction, product?.hsn);
+            const packType = await addPackageType(req.dbModels, transaction, product.package_type);
+            const unitType = await addUnitType(req.dbModels, transaction, product.unit_type);
+
+            const newProduct = await Product.create({
+                ...product,
+                ...(brand && { brand_id: brand.id }),
+                ...(hsn && { hsn_id: hsn.id }),
+                ...(packType && { package_type: packType.name }),
+                ...(unitType && { unit_type: unitType.name }),
+                has_expiry: product?.has_expiry,
+                ...(product?.has_expiry && { shelf_life: Number(product?.shelf_life) })
+            }, { transaction });
+
+            if (categoryIds && categoryIds.length > 0) {
+                await newProduct.addProductCategories(categoryIds, { transaction });
+            }
+        }
+
+        await transaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Products import successfully." });
     } catch (error) {
         await transaction.rollback();
         console.log(error);
@@ -554,8 +632,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     }
 });
 
-// PUT
-export const updateProductBatch = asyncHandler(async (req, res) => {
+// PUT -- not in use -- 
+const updateProductBatch = asyncHandler(async (req, res) => {
     const { Product } = req.dbModels;
     try {
         const { batch_id = "", batch_no = "", barcode = "" } = req.body;
@@ -585,11 +663,10 @@ export const updateProductBatch = asyncHandler(async (req, res) => {
 
 
 /**
- * 
  * @param {Object} models DB model
  * @param {Object} product product fetched data from DB
  */
-async function addCategory(models, product) {
+async function getCategory(models, product) {
     const { CategoryProducts, Category } = models;
 
     if (product.rows && product.rows.length > 0) {
@@ -714,3 +791,142 @@ async function addTotalStock(req, product) {
         throw error;
     }
 }
+
+
+async function addCategory(model, transaction, data) {
+    try {
+        if (!data || !data.productCategories) return;
+        const { Category } = model;
+
+        const categoryIds = [];
+        for (const cat of data.productCategories) {
+            const [category, _] = await Category.findOrCreate({
+                where: {
+                    name: { [Op.iLike]: cat.name }
+                },
+                defaults: {
+                    name: cat.name,
+                    description: cat.description,
+                },
+                transaction
+            });
+
+            if (cat?.subcategories && cat?.subcategories.length > 0) {
+                for (const subCat of cat.subcategories) {
+                    const [subCategory, _] = await Category.findOrCreate({
+                        where: {
+                            name: { [Op.iLike]: subCat.name }
+                        },
+                        defaults: {
+                            name: subCat.name,
+                            description: subCat.description,
+                            parent_id: category.id
+                        },
+                        transaction
+                    });
+                    categoryIds.push(subCategory.id);
+                }
+            };
+            categoryIds.push(category.id);
+        };
+
+        console.log("categoryIds", categoryIds)
+
+        return categoryIds;
+    } catch (error) {
+        throw error
+    }
+};
+async function addHsn(model, transaction, data) {
+    try {
+        if (!data || !data.hsn_code) return;
+
+        const { HSN } = model;
+
+        const [hsn, _] = await HSN.findOrCreate({
+            where: {
+                hsn_code: data.hsn_code
+            },
+            defaults: {
+                hsn_code: data.hsn_code,
+                default_gst_rate: data.default_gst_rate,
+                description: data.description,
+                is_exempt: Boolean(data.is_exempt),
+            },
+            transaction
+        });
+
+        return hsn;
+
+    } catch (error) {
+        throw error
+    }
+};
+async function addBrand(model, transaction, data) {
+    try {
+        if (!data || !data.name) return;
+
+        const { Brand } = model;
+
+        const [brand, _] = await Brand.findOrCreate({
+            where: {
+                slug: data.slug
+            },
+            defaults: {
+                name: data.name,
+                description: data.description,
+                slug: data.slug,
+            },
+            transaction
+        });
+
+        return brand;
+
+    } catch (error) {
+        throw error
+    }
+};
+async function addUnitType(model, transaction, name) {
+    try {
+        if (!name) return;
+
+        const { UnitType } = model;
+
+        const [unitType, _] = await UnitType.findOrCreate({
+            where: {
+                name: { [Op.iLike]: name }
+            },
+            defaults: {
+                name,
+            },
+            transaction
+        });
+
+        return unitType;
+
+    } catch (error) {
+        throw error
+    }
+};
+async function addPackageType(model, transaction, name) {
+    try {
+        if (!name) return;
+
+        const { PackageType } = model;
+
+        const [packageType, _] = await PackageType.findOrCreate({
+            where: {
+                name: { [Op.iLike]: name }
+            },
+            defaults: {
+                name,
+            },
+            transaction
+        });
+
+        return packageType;
+
+    } catch (error) {
+        throw error
+    }
+};
