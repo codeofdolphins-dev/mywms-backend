@@ -1,38 +1,20 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Op, Sequelize } from "sequelize";
 import bcrypt from "bcrypt";
 
 // GET
 export const allVendorList = asyncHandler(async (req, res) => {
-    const { User, VendorCategory } = req.dbModels;
+    const { Vendor } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
+        let { page = 1, limit = 10, id = "", noLimit = true } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const vendor = await User.findAndCountAll({
+        const vendor = await Vendor.findAndCountAll({
             where: {
                 ...(id && { id }),
-                ...(text ? {
-                    [Op.or]: [
-                        { email: { [Op.iLike]: `${text}%` } },
-                        Sequelize.where(
-                            Sequelize.json("name.full_name"),
-                            { [Op.iLike]: `${text}%` }
-                        ),
-                        { phone: { [Op.iLike]: `${text}%` } },
-                    ]
-                } : {}),
-                type: "external"
+                type: "vendor",
             },
-            attributes: ["email", "name", "company_name", "phone_no", "meta", "vendor_category_id", "is_active"],
-            include: [
-                {
-                    model: VendorCategory,
-                    as: "vendorCategory",
-                },
-            ],
             ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
@@ -46,7 +28,7 @@ export const allVendorList = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: id ? vendor.rows[0] : vendor.rows,
-            meta: {
+            pagination: {
                 totalItems,
                 totalPages,
                 currentPage: page,
