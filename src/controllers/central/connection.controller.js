@@ -143,6 +143,7 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
     try {
         const { parent_tenant, connection_type } = req.body;
         if (!parent_tenant || !connection_type) {
+            await rootTransaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         }
 
@@ -160,7 +161,8 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
         const connection = await Connection.create({
             parent_tenant,
             child_tenant,
-            connection_type
+            connection_type,
+            connection_status: true
         }, { transaction: rootTransaction });
 
         await rootTransaction.commit();

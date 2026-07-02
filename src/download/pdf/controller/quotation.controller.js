@@ -36,6 +36,8 @@ export const getQuotation = asyncHandler(async (req, res) => {
     }
 });
 
+
+/** ========================================= Helper methods ========================================== */
 const getExternalQuotationDetails = async (reqNo) => {
     const { rootSequelize, models } = await rootDB()
     const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping, Connection } = models;
@@ -93,8 +95,8 @@ const getExternalQuotationDetails = async (reqNo) => {
                         });
                         if (!productMap) throw new Error("Product map not found!!!");
 
-                        const buyerProduct = await getProductDetails(productMap.conn.buyer_tenant, productMap.buyer_product_id);
-                        const vendorProduct = await getProductDetails(productMap.conn.vendor_tenant, productMap.vendor_product_id);
+                        const buyerProduct = await getProductDetails(productMap.conn.parent_tenant, productMap.buyer_product_id);
+                        const vendorProduct = await getProductDetails(productMap.conn.child_tenant, productMap.vendor_product_id);
 
                         item.buyerProduct = buyerProduct.toJSON();
                         item.vendorProduct = vendorProduct.toJSON();
