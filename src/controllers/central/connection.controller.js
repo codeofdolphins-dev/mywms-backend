@@ -1,7 +1,6 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { getTenantConnection, rootDB } from "../../db/tenantMenager.service.js";
-import { generateNo } from "../../helper/generate.js";
 
 
 // GET - list all connections for the current tenant
@@ -37,6 +36,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
                         as: "tenantDetails",
                         where: { isOwner: true },
                         required: false,
+                        attributes: ["id", "companyName", "email"]
                     }]
                 },
                 {
@@ -47,6 +47,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
                         as: "tenantDetails",
                         where: { isOwner: true },
                         required: false,
+                        attributes: ["id", "companyName", "email"]
                     }]
                 }
             ],
@@ -77,17 +78,20 @@ export const getConnectionList = asyncHandler(async (req, res) => {
 });
 
 
-// PUT - update connection type by id (buyer assigns role to a pending/active connection)
+// PUT - update connection type by id (parent assigns role to a pending/active connection)
 export const updateConnectionType = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
 
+    /** current tenant connection */
+    const transaction = await req.dbObject.transaction();
+
     const tenant = req.headers["x-tenant-id"];
 
     try {
         const { id } = req.params;
-        const { connection_type } = req.body;
+        const { connection_type, child_tenant } = req.body;
 
         if (!id || !connection_type) {
             return res.status(400).json({ success: false, code: 400, message: "id and connection_type are required" });
@@ -104,16 +108,22 @@ export const updateConnectionType = asyncHandler(async (req, res) => {
         });
         if (!conn) return res.status(404).json({ success: false, code: 404, message: "Connection not found" });
 
+        if (!conn.connection_status) {
+            await addVendor(req.dbModels, transaction, child_tenant)
+        }
+
         conn.connection_type = connection_type.trim().toLowerCase();
         // If upgrading from pending → set connection_status to active
         if (connection_type !== "pending") {
             conn.connection_status = true;
         }
         await conn.save({ transaction: rootTransaction });
+        await transaction.commit();
         await rootTransaction.commit();
 
         return res.status(200).json({ success: true, code: 200, message: "Connection type updated", data: conn });
     } catch (error) {
+        await transaction.rollback();
         await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -163,7 +173,7 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
     }
 });
 
-export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
+export const createTraderConnection = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
@@ -187,21 +197,16 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
                 connection_type: "pending"
             }
         });
-        if (exist) {
-            exist.connection_type = connection_type.trim().toLowerCase()
-            await exist.save({ transaction: rootTransaction })
-            await rootTransaction.commit();
-
-            return res.status(200).json({ success: true, code: 200, message: "Connection accepted", data: exist });
-        };
+        if (exist) throw new Error("Record in Pending state!!!")
 
         /** ---------------------------------------------------
-         *  Check if connection request is already exist (in any state)
+         *  Check if connection request is already exist (in any type)
          *  --------------------------------------------------- */
         const isExist = await Connection.findOne({
             where: {
                 parent_tenant,
-                child_tenant
+                child_tenant,
+                connection_status: true
             }
         });
         if (isExist) throw new Error("Record already exist!!!")
@@ -225,3 +230,39 @@ export const createUpdateTraderConnection = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+async function addVendor(model, transaction, tenant) {
+    try {
+        /* connect tenant and get tenant details */
+        const { models: { BusinessNode, NodeDetails, User } } = await getTenantConnection(tenant);
+        const tenantDetails = await BusinessNode.findOne({
+            where: {
+                node_type_code: null,
+                tenant_business_flow_id: null
+            },
+            include: [{ model: NodeDetails, as: "nodeDetails" }]
+        });
+
+        const user = await User.findOne({
+            where: { is_owner: true },
+            attributes: ["id", "phone_no", "email"]
+        });
+
+
+        const vendor = await model.Vendor.create({
+            name: tenantDetails.nodeDetails.name,
+            tenant: tenant,
+            type: "buyer",
+            contact_email: user.email,
+            contact_phone: user.phone_no,
+            address: tenantDetails.nodeDetails.address,
+            gst_no: tenantDetails.nodeDetails.gst_no,
+            license_no: tenantDetails.nodeDetails.license_no,
+        }, { transaction });
+
+        return vendor;
+    } catch (error) {
+        throw error;
+    }
+}

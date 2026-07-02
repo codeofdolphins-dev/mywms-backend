@@ -1890,6 +1890,22 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
+    
+    /************* vendor ********************/
+    // vendor ↔ product
+    Vendor.hasMany(Product, {
+        foreignKey: "linked_vendor",
+        as: "linkedProducts",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    Product.belongsTo(Vendor, {
+        foreignKey: "linked_vendor",
+        as: "linkedVendor",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
 
 
     // brand <-> requisitionItem
@@ -1927,6 +1943,11 @@ const defineTenantAssociations = (models) => {
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
     });*/
+
+
+
+
+
 
     // ********************************************Many-To-Many*********************************
     // user - role

@@ -302,9 +302,9 @@ export async function up({ context: queryInterface }) {
         await queryInterface.createTable('Vendors', {
             id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
             name: {
-                type: DataTypes.JSONB,
+                type: DataTypes.STRING,
                 allowNull: false,
-                defaultValue: {}
+                defaultValue: ""
             },
             tenant: {
                 type: DataTypes.STRING,
@@ -312,7 +312,7 @@ export async function up({ context: queryInterface }) {
             },
             linked_business_node_id: {
                 type: DataTypes.INTEGER,
-                allowNull: false,
+                allowNull: true,
                 comment: "BusinessNode.id from the vendor's own tenant DB — cross-tenant reference, not a local FK"
             },
             type: {

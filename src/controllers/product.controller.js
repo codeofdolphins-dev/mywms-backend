@@ -4,7 +4,7 @@ import { deleteFile } from "../utils/handelImage.js";
 import { getUserContext } from "../utils/getUserContext.js"
 import ExcelJS from "exceljs";
 import { insertBulkBrand, insertBulkHsn, insertBulkPackType, insertBulkUnitType } from "../services/product.service.js";
-import { getTenantConnection } from "../db/tenantMenager.service.js";
+import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 
 
 // GET
@@ -348,14 +348,29 @@ export const bulkProductCreationFromFile = asyncHandler(async (req, res) => {
 
 
 export const importProducts = asyncHandler(async (req, res) => {
-    const transaction = await req.dbObject.transaction();
-    const { Product } = req.dbModels;
+    const { rootSequelize, models: { ProductMapping } } = await rootDB();
+    const rootTransaction = await rootSequelize.transaction()
 
-    // console.log(req.body); return
+    const transaction = await req.dbObject.transaction();
+    const { Product, Vendor } = req.dbModels;
 
     try {
-        const products = req.body;
+        const { connectionId, products, parent } = req.body;
 
+        let vendor = null;
+        /** check if vendor exists */
+        vendor = await Vendor.findOne({
+            where: {
+                tenant: parent.tenant,
+                type: "vendor",
+                contact_email: { [Op.iLike]: parent.tenantDetails.email.trim() }
+            }
+        });
+
+        /** Add Vendor if not exists */
+        if (!vendor) vendor = await addVendor(req.dbModels, transaction, parent);
+
+        /** Add Products */
         for (const product of products) {
             /** check if product already exists */
             const existingProduct = await Product.findOne({
@@ -380,18 +395,27 @@ export const importProducts = asyncHandler(async (req, res) => {
                 ...(packType && { package_type: packType.name }),
                 ...(unitType && { unit_type: unitType.name }),
                 has_expiry: product?.has_expiry,
-                ...(product?.has_expiry && { shelf_life: Number(product?.shelf_life) })
+                ...(product?.has_expiry && { shelf_life: Number(product?.shelf_life) }),
+                linked_vendor: vendor.id
             }, { transaction });
 
             if (categoryIds && categoryIds.length > 0) {
                 await newProduct.addProductCategories(categoryIds, { transaction });
             }
+
+            await ProductMapping.create({
+                buyer_product_id: newProduct.id,
+                vendor_product_id: product.id,
+                connection_id: connectionId
+            }, { transaction: rootTransaction });
         }
 
         await transaction.commit();
+        await rootTransaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Products import successfully." });
     } catch (error) {
         await transaction.rollback();
+        await rootTransaction.rollback();
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
@@ -793,6 +817,41 @@ async function addTotalStock(req, product) {
 }
 
 
+async function addVendor(model, transaction, data) {
+    try {
+        /* connect tenant and get tenant details */
+        const { models: { BusinessNode, NodeDetails, User } } = await getTenantConnection(data.tenant);
+        const tenantDetails = await BusinessNode.findOne({
+            where: {
+                node_type_code: null,
+                tenant_business_flow_id: null
+            },
+            include: [{ model: NodeDetails, as: "nodeDetails" }]
+        });
+
+        const user = await User.findOne({
+            where: { email: { [Op.iLike]: data.tenantDetails.email.trim() } },
+            attributes: ["id", "phone_no"]
+        });
+
+
+        const vendor = await model.Vendor.create({
+            name: data.tenantDetails.companyName,
+            tenant: data.tenant,
+            type: "vendor",
+            contact_email: data.tenantDetails.email,
+            address: tenantDetails.nodeDetails.address,
+            gst_no: tenantDetails.nodeDetails.gst_no,
+            license_no: tenantDetails.nodeDetails.license_no,
+            contact_phone: user.phone_no
+        }, { transaction });
+
+        return vendor;
+    } catch (error) {
+        throw error;
+    }
+}
+
 async function addCategory(model, transaction, data) {
     try {
         if (!data || !data.productCategories) return;
@@ -829,8 +888,6 @@ async function addCategory(model, transaction, data) {
             };
             categoryIds.push(category.id);
         };
-
-        console.log("categoryIds", categoryIds)
 
         return categoryIds;
     } catch (error) {

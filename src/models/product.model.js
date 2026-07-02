@@ -70,6 +70,10 @@ function Product(sequelize) {
             type: DataTypes.STRING,
             allowNull: true,
         },
+        linked_vendor: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
     });
 }
 export default Product;

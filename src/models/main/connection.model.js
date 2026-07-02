@@ -12,7 +12,7 @@ function Connection(sequelize) {
         },
         connection_status: {
             type: DataTypes.BOOLEAN,
-            defaultValue: true
+            defaultValue: false
         },
         connection_type: {
             type: DataTypes.ENUM("cfa / c&f agent", "3pl warehouse", "super stockist", "dealer", "distributor", "sub-distributor", "retail warehouse / backroom storage", "supplier", "pending"),
