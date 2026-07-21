@@ -4,9 +4,9 @@ import bcrypt from "bcrypt";
 
 // GET
 export const allVendorList = asyncHandler(async (req, res) => {
-    const { User, VendorCategory } = req.dbModels;
+    const { User } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", text = "", noLimit = false } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", noLimit = false, type = "vendor" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -24,15 +24,8 @@ export const allVendorList = asyncHandler(async (req, res) => {
                         { phone: { [Op.iLike]: `${text}%` } },
                     ]
                 } : {}),
-                type: "external"
+                type
             },
-            attributes: ["email", "name", "company_name", "phone_no", "meta", "vendor_category_id", "is_active"],
-            include: [
-                {
-                    model: VendorCategory,
-                    as: "vendorCategory",
-                },
-            ],
             ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });

@@ -31,7 +31,8 @@ export const inventory_scope = asyncHandler(async (req, res) => {
         // Step 2: Fetch products with pagination
         const { count, rows: products } = await Product.findAndCountAll({
             where: {
-                id: { [Op.in]: productIds }
+                id: { [Op.in]: productIds },
+                is_active: true
             },
             include: [
                 {
@@ -76,6 +77,7 @@ export const inventory_full = asyncHandler(async (req, res) => {
     try {
         // 1. Fetch all products with their categories, brand, and active batches
         const products = await Product.findAll({
+            where: { is_active: true },
             include: [
                 {
                     model: Category,
@@ -155,7 +157,7 @@ export const inventory_full = asyncHandler(async (req, res) => {
         });
 
         // 4. Fetch GRNs for batch reference lookups
-        const grnIds = products.flatMap(p => 
+        const grnIds = products.flatMap(p =>
             (p.batches || [])
                 .filter(b => b.reference_type === "grn" && b.reference_id)
                 .map(b => b.reference_id)
@@ -169,22 +171,22 @@ export const inventory_full = asyncHandler(async (req, res) => {
         // 5. Format and construct the final inventory response
         const formattedProducts = products.map(product => {
             const batches = product.batches || [];
-            
+
             const totalQty = batches.reduce((sum, b) => sum + parseFloat(b.available_qty || 0) + parseFloat(b.reserved_qty || 0), 0);
             const availableQty = batches.reduce((sum, b) => sum + parseFloat(b.available_qty || 0), 0);
             const reservedQty = batches.reduce((sum, b) => sum + parseFloat(b.reserved_qty || 0), 0);
-            
+
             const locationNames = [...new Set(batches.map(b => b.location_type === "mfg_unit" ? b.batchStore?.name : b.batchLocation?.name).filter(Boolean))];
             const locationStr = locationNames.join(", ") || "N/A";
-            
+
             const categories = product.productCategories || [];
             const parentCat = categories.find(cat => cat.parent_id === null);
             const childCat = categories.find(cat => cat.parent_id !== null);
-            
+
             const categoryName = parentCat?.name || "N/A";
             const subCategoryName = childCat?.name || "N/A";
             const brandName = product.brand?.name || "N/A";
-            
+
             const productLastInward = lastInwardDateMap.get(product.id) || "N/A";
             const productLastOutward = lastOutwardDateMap.get(product.id) || "N/A";
 
@@ -192,7 +194,7 @@ export const inventory_full = asyncHandler(async (req, res) => {
             const prices = batches.map(b => parseFloat(b.unit_price || 0)).filter(p => p > 0);
             const fallbackPrice = prices.length ? Math.max(...prices) : 0;
             const unitPrice = parseFloat(product.mrp || 0) || fallbackPrice;
-            
+
             return {
                 id: product.id,
                 name: product.name,
@@ -214,7 +216,7 @@ export const inventory_full = asyncHandler(async (req, res) => {
                 batches: batches.map(b => {
                     const grnNo = grnMap.get(b.reference_id) || (b.reference_type === "grn" ? `GRN #${b.reference_id}` : "N/A");
                     const storageLocation = b.location_type === "mfg_unit" ? b.batchStore?.name : b.batchLocation?.name;
-                    
+
                     return {
                         batchNo: b.batch_no || "N/A",
                         qty: parseFloat(b.available_qty || 0) + parseFloat(b.reserved_qty || 0),

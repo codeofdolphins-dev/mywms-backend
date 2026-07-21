@@ -7,8 +7,10 @@ const businessNodeSequence = [
     { node_type_code: "L-103", sequence: 3 },
     { node_type_code: "L-104", sequence: 4 },
     { node_type_code: "L-105", sequence: 5 },
-    { node_type_code: "L-110", sequence: 6 },
-    { node_type_code: "L-111", sequence: 7 }
+    { node_type_code: "L-108", sequence: 6 },
+    { node_type_code: "L-110", sequence: 7 },
+    { node_type_code: "L-111", sequence: 8 },
+    { node_type_code: "L-113", sequence: 9 }
 ];
 
 export const registerNewTenant = (async function (req, res, next) {

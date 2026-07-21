@@ -27,6 +27,7 @@ export const allProductList = asyncHandler(async (req, res) => {
                         { sku: { [Op.iLike]: `${text}%` } },
                     ]
                 }),
+                is_active: true,
                 ...(type && { product_type: type }),
             },
             // ...(type === "raw" && {
@@ -95,7 +96,8 @@ export const finishedProductListOverTenant = asyncHandler(async (req, res) => {
 
         const product = await Product.findAndCountAll({
             where: {
-                product_type: "finished"
+                product_type: "finished",
+                is_active: true
             },
             include: [
                 {

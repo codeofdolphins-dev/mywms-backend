@@ -12,6 +12,8 @@ const router = Router();
 // register company - POSTMAN ONLY
 router.route("/register-company").post(upload.none(), defineUserScope, defineDbObject, register_company);
 
+
+
 // register tenant company
 router.route("/register-new-company").post(registerNewTenant, register_company);
 
