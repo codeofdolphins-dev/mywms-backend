@@ -4,14 +4,14 @@ import bcrypt from "bcrypt";
 
 // GET
 export const allVendorList = asyncHandler(async (req, res) => {
-    const { User } = req.dbModels;
+    const { Vendor } = req.dbModels;
     try {
         let { page = 1, limit = 10, id = "", text = "", noLimit = false, type = "vendor" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
-        const vendor = await User.findAndCountAll({
+        const vendor = await Vendor.findAndCountAll({
             where: {
                 ...(id && { id }),
                 ...(text ? {

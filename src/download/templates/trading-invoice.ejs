@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dispatch Invoice - <%= data.requisition.requisition_no %></title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #222;
+            background: #fff;
+        }
+
+        .page {
+            width: 100%;
+            padding: 18px 20px;
+        }
+
+        /* ── TOP HEADER BAR ── */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #999;
+            border-bottom: none;
+            padding: 6px 12px;
+            background: #f9f9f9;
+        }
+
+        .top-header .title {
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-align: center;
+            flex: 1;
+        }
+
+        .top-header .copy-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #444;
+            white-space: nowrap;
+        }
+
+        /* ── SELLER + INVOICE META ROW ── */
+        .info-row {
+            display: flex;
+            border: 1px solid #999;
+            border-bottom: none;
+        }
+
+        .seller-block {
+            flex: 0 0 45%;
+            padding: 10px 12px;
+            border-right: 1px solid #999;
+        }
+
+        .seller-block .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .seller-block .gst-line {
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .seller-block .address-line {
+            font-size: 11px;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        .invoice-meta-block {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-half {
+            flex: 1;
+            display: flex;
+            border-bottom: 1px solid #999;
+        }
+
+        .meta-half:last-child {
+            border-bottom: none;
+        }
+
+        .meta-cell {
+            flex: 1;
+            padding: 7px 10px;
+            border-right: 1px solid #999;
+            font-size: 11px;
+        }
+
+        .meta-cell:last-child {
+            border-right: none;
+        }
+
+        .meta-cell .cell-label {
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .meta-cell .cell-value {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* ── BUYER + SHIPPING ROW ── */
+        .address-row {
+            display: flex;
+            border: 1px solid #999;
+            margin-bottom: 5px;
+        }
+
+        .buyer-block {
+            flex: 0 0 45%;
+            padding: 10px 12px;
+            border-right: 1px solid #999;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .buyer-block .block-label {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .buyer-block .buyer-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .shipping-block {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .shipping-block .block-label {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        /* ── ITEMS TABLE ── */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #999;
+            margin-bottom: 5px;
+        }
+
+        .items-table th,
+        .items-table td {
+            border: 1px solid #bbb;
+            padding: 6px 7px;
+            font-size: 11px;
+            vertical-align: top;
+        }
+
+        .items-table thead tr {
+            background: #f0f0f0;
+        }
+
+        .items-table th {
+            font-weight: bold;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .items-table td.center {
+            text-align: center;
+        }
+
+        .items-table .product-name {
+            font-weight: bold;
+        }
+
+        .items-table .product-sub {
+            font-size: 10px;
+            color: #555;
+        }
+
+        /* ── TOTALS FOOTER ── */
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #999;
+            border-bottom: none;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        .totals-row .total-qty {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* ── FOOTER SECTION (Signature) ── */
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border: 1px solid #999;
+            border-bottom: none;
+            padding: 14px 16px;
+            min-height: 90px;
+        }
+
+        .sign-block {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 11px;
+            min-width: 180px;
+        }
+
+        .sign-block .sign-for {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 36px;
+        }
+
+        .sign-box {
+            width: 160px;
+            border-top: 1px solid #666;
+            padding-top: 5px;
+            font-size: 10px;
+            color: #555;
+            text-align: center;
+        }
+
+        /* ── NOTES + TERMS ── */
+        .notes-terms-row {
+            display: flex;
+            border: 1px solid #999;
+            border-bottom: none;
+        }
+
+        .notes-block {
+            flex: 0 0 38%;
+            padding: 10px 12px;
+            border-right: 1px solid #999;
+            font-size: 11px;
+        }
+
+        .notes-block .block-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .terms-block {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 11px;
+        }
+
+        .terms-block .block-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .terms-block ol {
+            padding-left: 15px;
+            line-height: 1.7;
+        }
+
+        /* ── PAGE FOOTER ── */
+        .page-footer {
+            border: 1px solid #999;
+            padding: 6px 12px;
+            font-size: 10px;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+    <%
+        /* ── Destructure from the `data` wrapper passed by pdf.service.js ── */
+        const requisition     = data.requisition;
+        const outward         = data.outward;
+        const items           = data.items;
+        const sellerDetails   = data.sellerDetails;
+        const customerDetails = data.customerDetails;
+
+        /* ── Helpers ── */
+        function fmtDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        function fmtNum(n) {
+            return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        /* Resolve state name safely */
+        function addrState(addr) {
+            if (!addr) return '';
+            if (addr.state && addr.state.name) return addr.state.name;
+            return '';
+        }
+
+        /* Total qty */
+        const totalQty = items.reduce((s, i) => s + Number(i.qty), 0);
+    %>
+
+    <div class="page">
+
+        <!-- ── TOP HEADER BAR ── -->
+        <div class="top-header">
+            <span class="title">Dispatch &nbsp; Invoice</span>
+            <span class="copy-label">ORIGINAL FOR RECIPIENT</span>
+        </div>
+
+        <!-- ── SELLER + INVOICE META ── -->
+        <div class="info-row">
+            <div class="seller-block">
+                <div class="company-name"><%= sellerDetails.name %></div>
+                <div class="gst-line">GSTIN <%= sellerDetails.gst_no || 'N/A' %></div>
+                <div class="address-line">
+                    <% if (sellerDetails.address) { %>
+                        <%= sellerDetails.address.address || '' %><% if (sellerDetails.address.district && sellerDetails.address.district.name) { %>, <%= sellerDetails.address.district.name %><% } %><br/>
+                        <%= addrState(sellerDetails.address) %><br/>
+                        <% if (sellerDetails.license_no) { %>Lic. No: <%= sellerDetails.license_no %><br/><% } %>
+                    <% } %>
+                    Location: <%= sellerDetails.location || '' %>
+                </div>
+            </div>
+
+            <div class="invoice-meta-block">
+                <div class="meta-half">
+                    <div class="meta-cell">
+                        <div class="cell-label">Requisition #:</div>
+                        <div class="cell-value"><%= requisition.requisition_no %></div>
+                    </div>
+                    <div class="meta-cell">
+                        <div class="cell-label">Dispatch Date:</div>
+                        <div class="cell-value"><%= fmtDate(outward.dispatch_date) %></div>
+                    </div>
+                </div>
+                <div class="meta-half">
+                    <div class="meta-cell">
+                        <div class="cell-label">Outward #:</div>
+                        <div class="cell-value"><%= outward.outward_no %></div>
+                    </div>
+                    <div class="meta-cell">
+                        <div class="cell-label">Priority:</div>
+                        <div class="cell-value"><%= (requisition.priority || '-').toUpperCase() %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── BUYER + SHIPPING ADDRESS ── -->
+        <div class="address-row">
+            <div class="buyer-block">
+                <div class="block-label">Customer Details:</div>
+                <div class="buyer-name"><%= customerDetails.name %></div>
+                <div><strong>Billing address:</strong></div>
+                <% if (customerDetails.address) { %>
+                    <%= customerDetails.address.address || '' %><br/>
+                    <% if (customerDetails.address.district && customerDetails.address.district.name) { %><%= customerDetails.address.district.name %><br/><% } %>
+                    <%= addrState(customerDetails.address) %><br/>
+                <% } %>
+                GSTIN: <%= customerDetails.gst_no || 'N/A' %><br/>
+                Lic. No: <%= customerDetails.license_no || 'N/A' %>
+            </div>
+
+            <div class="shipping-block">
+                <div class="block-label">Shipping address:</div>
+                <% if (customerDetails.address) { %>
+                    <%= customerDetails.address.address || '' %><br/>
+                    <% if (customerDetails.address.district && customerDetails.address.district.name) { %><%= customerDetails.address.district.name %><br/><% } %>
+                    <%= addrState(customerDetails.address) %>
+                    <% if (customerDetails.location) { %>, <%= customerDetails.location %><% } %>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- ── LINE ITEMS TABLE ── -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width:5%">#</th>
+                    <th style="width:35%">Item</th>
+                    <th style="width:12%">HSN/SAC</th>
+                    <th style="width:14%">Batch No.</th>
+                    <th style="width:12%">Mfg Date</th>
+                    <th style="width:12%">Exp Date</th>
+                    <th style="width:10%">Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% items.forEach(function(item, idx) { %>
+                <tr>
+                    <td class="center"><%= idx + 1 %></td>
+                    <td>
+                        <div class="product-name"><%= item.product_name %></div>
+                        <div class="product-sub">SKU: <%= item.sku || '-' %></div>
+                    </td>
+                    <td class="center"><%= item.hsn_code || '-' %></td>
+                    <td class="center"><%= item.batch_no || '-' %></td>
+                    <td class="center"><%= fmtDate(item.mfg_date) %></td>
+                    <td class="center"><%= fmtDate(item.expiry_date) %></td>
+                    <td class="center"><%= fmtNum(item.qty) %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <!-- ── TOTALS ROW ── -->
+        <div class="totals-row">
+            <span>Total Items / Qty</span>
+            <span class="total-qty"><%= items.length %> / <%= fmtNum(totalQty) %></span>
+        </div>
+
+        <!-- ── FOOTER: SIGNATURE ── -->
+        <div class="footer-row">
+            <!-- Spacer so signature stays right-aligned -->
+            <div></div>
+
+            <div class="sign-block">
+                <div class="sign-for">For <%= sellerDetails.name %></div>
+                <div class="sign-box">Authorized Signatory</div>
+            </div>
+        </div>
+
+        <!-- ── NOTES + TERMS ── -->
+        <div class="notes-terms-row">
+            <div class="notes-block">
+                <div class="block-title">Notes:</div>
+                <%= requisition.notes || 'Thank you for the Business' %>
+            </div>
+            <div class="terms-block">
+                <div class="block-title">Terms and Conditions:</div>
+                <ol>
+                    <li>Goods once sold cannot be taken back or exchanged.</li>
+                    <li>Please verify quantities and batches at the time of receipt.</li>
+                    <li>Subject to local Jurisdiction.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ── PAGE FOOTER ── -->
+        <div class="page-footer">
+            <span>Page 1 / 1</span>
+            <span>This is a digitally signed document.</span>
+        </div>
+
+    </div>
+</body>
+
+</html>

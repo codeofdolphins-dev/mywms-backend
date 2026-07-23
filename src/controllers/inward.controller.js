@@ -827,6 +827,20 @@ export const createInward = asyncHandler(async (req, res) => {
             }
         }
 
+        /** Close the trading requisition once its dispatched items are inwarded (cross-tenant, root DB) */
+        if (grn.reference && grn.reference.trading && grn.reference.requisition_no) {
+            try {
+                const { models: rootModels } = await rootDB();
+                await rootModels.IntercompanyRequisition.update(
+                    { status: "closed" },
+                    { where: { requisition_no: grn.reference.requisition_no } }
+                );
+            } catch (err) {
+                console.error("Failed to close trading requisition:", err);
+                // Non-blocking: buyer inward is already committed
+            }
+        }
+
         return res.status(200).json({ success: true, code: 200, message: "Record Created Successfully" });
 
     } catch (error) {

@@ -321,6 +321,10 @@ export async function up({ context: queryInterface }) {
                 defaultValue: "vendor",
                 comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer"
             },
+            connection_id: {
+                type: DataTypes.INTEGER,
+                allowNull: false
+            },
             contact_phone: {
                 type: DataTypes.STRING,
                 allowNull: true
@@ -1456,8 +1460,8 @@ export async function up({ context: queryInterface }) {
                 allowNull: true
             },
             priority: {
-                type: DataTypes.ENUM("low", "medium", "high", "urgent"),
-                defaultValue: "medium"
+                type: DataTypes.ENUM("low", "normal", "high", "urgent"),
+                defaultValue: "normal"
             },
             status: {
                 type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched"),

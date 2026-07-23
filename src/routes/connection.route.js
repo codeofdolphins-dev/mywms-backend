@@ -7,7 +7,7 @@ const router = Router();
 router.use(verifyJWT);
 
 router.route("/list").get(getConnectionList);
-router.route("/supplier").post(createSupplierConnection);
+router.route("/supplier").put(createSupplierConnection);
 router.route("/trader").put(createTraderConnection);
 router.route("/:id/type").put(updateConnectionType);
 

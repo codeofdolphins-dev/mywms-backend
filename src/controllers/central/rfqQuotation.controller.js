@@ -237,8 +237,8 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         /** check buyer and vendor is connected or not */
         const connection = await Connection.findOne({
             where: {
-                parent_tenant: rfq.buyer_tenant,
-                child_tenant: dbName,
+                buyer_tenant: rfq.buyer_tenant,
+                vendor_tenant: dbName,
                 connection_status: true,
             }
         });

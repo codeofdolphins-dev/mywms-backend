@@ -2,11 +2,11 @@ import { DataTypes } from "sequelize";
 
 function Connection(sequelize) {
     return sequelize.define("Connection", {
-        parent_tenant: {        // buyer (Depriciate name)
+        buyer_tenant: {        // buyer (Depriciate name)
             type: DataTypes.STRING,
             allowNull: false
         },
-        child_tenant: {         // vendor (Depriciate name)
+        vendor_tenant: {         // vendor (Depriciate name)
             type: DataTypes.STRING,
             allowNull: false
         },

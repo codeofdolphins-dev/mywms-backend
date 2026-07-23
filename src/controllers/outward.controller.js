@@ -1,9 +1,10 @@
 import { Op } from "sequelize";
 import { generateNo } from "../helper/generate.js";
-import { createGrn_items_external, createGrn_items_internal } from "../services/createGrn.service.js";
+import { createGrn_items_external, createGrn_items_internal, createGrn_items_trading } from "../services/createGrn.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getUserContext } from "../utils/getUserContext.js";
 import { createInvoice } from "../services/createInvoice.service.js";
+import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 
 
 // GET
@@ -93,7 +94,49 @@ export const outwardItem = asyncHandler(async (req, res) => {
         const jsonOutward = outward.toJSON();
 
         /** buyer details */
-        if (jsonOutward.type === "internal") {
+        if (jsonOutward.meta?.trading && jsonOutward.meta?.buyer_tenant) {
+            /** trading outward — buyer is another tenant, resolve its root node company details */
+            try {
+                const { models: buyerModels } = await getTenantConnection(jsonOutward.meta.buyer_tenant);
+
+                const rootNode = await buyerModels.BusinessNode.findOne({
+                    where: {
+                        node_type_code: null,
+                        tenant_business_flow_id: null
+                    },
+                    include: [
+                        {
+                            model: buyerModels.NodeDetails,
+                            as: "nodeDetails"
+                        },
+                        {
+                            model: buyerModels.User,
+                            as: "businessNodeUser",
+                            through: {
+                                where: {
+                                    isNodeAdmin: true
+                                },
+                                attributes: []
+                            },
+                            attributes: ["email", "phone_no"]
+                        }
+                    ]
+                });
+
+                const userData = rootNode?.toJSON();
+                if (userData) {
+                    const [nodeAdmin = {}] = userData.businessNodeUser || [];
+                    userData.email = nodeAdmin?.email || null;
+                    userData.phone_no = nodeAdmin?.phone_no || null;
+                    delete userData.businessNodeUser;
+                }
+                jsonOutward.buyer = userData || null;
+            } catch (error) {
+                console.log(`Failed to load buyer details for tenant: ${jsonOutward.meta.buyer_tenant}`, error.message);
+                jsonOutward.buyer = null;
+            }
+
+        } else if (jsonOutward.type === "internal") {
             const user = await BusinessNode.findOne({
                 where: { id: jsonOutward.buyer_business_node_id },
                 include: [
@@ -419,7 +462,16 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
         };
 
 
-        if (outward.type === "external") {
+        if (outward.meta?.trading) {
+            /** trading outward — create GRN on buyer tenant & mark central requisition dispatched */
+            await createGrn_items_trading(req, outward, allocatedItems, outward_no);
+
+            const { models: rootModels } = await rootDB();
+            const tradingRequisition = await rootModels.IntercompanyRequisition.findByPk(Number(outward.meta.inter_comp_req_id));
+            if (!tradingRequisition) throw new Error("Trading requisition not found!!!");
+
+            await tradingRequisition.update({ status: "dispatched" });
+        } else if (outward.type === "external") {
             const salesOrder = await SalesOrder.findOne({ where: { id: outward.sales_order_id } });
 
             const invNo = await createInvoice(req, outward, salesOrder, allocatedItems, transaction);

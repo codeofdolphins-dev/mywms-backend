@@ -18,7 +18,9 @@ const defineRootAssociations = (models) => {
         BpoIndent,
         BpoIndentItem,
         ProductMapping,
-        Connection
+        Connection,
+        IntercompanyRequisition,
+        IntercompanyRequisitionItems
 
     } = models;
 
@@ -343,37 +345,80 @@ const defineRootAssociations = (models) => {
     /** ******************* connection ↔ tenantsName ************************ */
     // connection ↔ tenantsName (buyer side)
     TenantsName.hasMany(Connection, {
-        foreignKey: "parent_tenant",
+        foreignKey: "buyer_tenant",
         sourceKey: "tenant",
         as: "parentConnections",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Connection.belongsTo(TenantsName, {
-        foreignKey: "parent_tenant",
+        foreignKey: "buyer_tenant",
         targetKey: "tenant",
-        as: "parent",
+        as: "buyer",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
     // connection ↔ tenantsName (vendor side)
     TenantsName.hasMany(Connection, {
-        foreignKey: "child_tenant",
+        foreignKey: "vendor_tenant",
         sourceKey: "tenant",
         as: "childConnections",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
     Connection.belongsTo(TenantsName, {
-        foreignKey: "child_tenant",
+        foreignKey: "vendor_tenant",
         targetKey: "tenant",
-        as: "child",
+        as: "vendor",
         onDelete: "CASCADE",
         onUpdate: "CASCADE",
     });
 
+    /** ******************* intercompanyRequisition ************************ */
+    // intercompanyRequisition ↔ connection
+    Connection.hasMany(IntercompanyRequisition, {
+        foreignKey: "connection_id",
+        as: "icRequisitions",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    IntercompanyRequisition.belongsTo(Connection, {
+        foreignKey: "connection_id",
+        as: "icReqConnection",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
+    /** ******************* intercompanyRequisitionItems ************************ */
+
+    // intercompanyRequisition ↔ intercompanyRequisitionItems
+    IntercompanyRequisition.hasMany(IntercompanyRequisitionItems, {
+        foreignKey: "inter_comp_req_id",
+        as: "intercompanyItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    IntercompanyRequisitionItems.belongsTo(IntercompanyRequisition, {
+        foreignKey: "inter_comp_req_id",
+        as: "icRequisition",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // intercompanyRequisition ↔ intercompanyRequisitionItems
+    ProductMapping.hasMany(IntercompanyRequisitionItems, {
+        foreignKey: "product_mapping_id",
+        as: "interRequisitionProductItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    IntercompanyRequisitionItems.belongsTo(ProductMapping, {
+        foreignKey: "product_mapping_id",
+        as: "mappedProduct",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
 
 
 
@@ -1890,7 +1935,7 @@ const defineTenantAssociations = (models) => {
         onUpdate: "CASCADE",
     });
 
-    
+
     /************* vendor ********************/
     // vendor ↔ product
     Vendor.hasMany(Product, {

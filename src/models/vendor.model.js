@@ -22,6 +22,10 @@ function Vendor(sequelize) {
             defaultValue: "vendor",
             comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer"
         },
+        connection_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
         contact_phone: {
             type: DataTypes.STRING,
             allowNull: true

@@ -315,17 +315,17 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", type = "internal", items = [], } = req.body;
+        const { title = "", vendor_id = [], required_by_date = "", priority = "", notes = "", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
-        if (!title || items?.length < 1 || supplier_node?.length < 1) throw new Error("Required fields are missing!!!");
+        if (!title || items?.length < 1 || vendor_id?.length < 1) throw new Error("Required fields are missing!!!");
 
         // fetch all supplier nodes
-        const supplierNode = await BusinessNode.findAll({
-            where: { id: { [Op.in]: supplier_node } }
+        const vendorNode = await BusinessNode.findAll({
+            where: { id: { [Op.in]: vendor_id } }
         });
-        if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
+        if (vendorNode.length != vendor_id.length) throw new Error("Some supplier records not found");
 
         // for (const i of supplierNode) {
         //     console.log(i.toJSON());
@@ -335,7 +335,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
 
         // check if at least one supplier node is allowed
-        const isAllowed = supplierNode.some(supplier =>
+        const isAllowed = vendorNode.some(supplier =>
             allowNodes.some(allowed => allowed.id === supplier.id)
         );
         if (!isAllowed) {
@@ -348,7 +348,6 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             title,
             notes,
-            type,
             type: "internal",
             ...(priority && { priority: priority.toLowerCase() }),
             created_by: parseInt(userDetails.id, 10),
@@ -362,7 +361,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         /** push all supplier id into join table (requisitionSupplier) */
         await requisition.addSupplierBusinessNode(
-            supplierNode.map(node => node.node_type_code === "L-101" ? 1 : node.id),
+            vendorNode.map(node => node.node_type_code === "L-101" ? 1 : node.id),
             {
                 through: {
                     status: "sent",
@@ -407,7 +406,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 });
 
 
-export const createExternalRequisition = asyncHandler(async (req, res) => {
+export const createOpenForumRequisition = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     const { RFQ, RFQItem } = models;
     const rootTransaction = await rootSequelize.transaction();
@@ -507,6 +506,105 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+export const createTradingRequisition = asyncHandler(async (req, res) => {
+    const { rootSequelize, models } = await rootDB();
+    const { IntercompanyRequisition, IntercompanyRequisitionItems, Connection, ProductMapping } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const { Vendor } = req.dbModels;
+    const dbName = req.headers["x-tenant-id"];
+
+    try {
+        const { title = "", vendor_id = "", buyer_node = "", required_by_date = "", priority = "", notes = "", items = [] } = req.body;
+        const userDetails = req.user;
+        const current_node = Number(buyer_node) || req.activeNode;
+
+        if (!title?.trim() || !vendor_id || items?.length < 1) throw new Error("Required fields are missing!!!");
+
+        /** fetch vendor (tenant level) to resolve its root connection */
+        const vendor = await Vendor.findByPk(Number(vendor_id));
+        if (!vendor) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Vendor not found!!!" });
+        }
+
+        /** validate connection (root level) */
+        const connection = await Connection.findByPk(Number(vendor.connection_id));
+        if (!connection) {
+            await rootTransaction.rollback();
+            return res.status(404).json({ success: false, code: 404, message: "Connection with vendor not found!!!" });
+        }
+        if (connection.connection_type === "pending" || ![connection.buyer_tenant, connection.vendor_tenant].includes(dbName)) {
+            await rootTransaction.rollback();
+            return res.status(403).json({ success: false, code: 403, message: "Connection with vendor is not active!!!" });
+        }
+
+        /** resolve product mappings before creating anything */
+        const mappedItems = [];
+        for (const item of items) {
+            const { productId = "", reqQty = "" } = item;
+            if (!productId || !reqQty || Number(reqQty) <= 0) throw new Error("productId and valid reqQty are required for every item!!!");
+
+            const productMapping = await ProductMapping.findOne({
+                where: {
+                    connection_id: connection.id,
+                    buyer_product_id: Number(productId),
+                }
+            });
+            if (!productMapping) {
+                await rootTransaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: `Product: ${item.productName || productId} is not mapped with this vendor!!!` });
+            }
+
+            mappedItems.push({ item, product_mapping_id: productMapping.id });
+        }
+
+        /** create intercompany requisition */
+        const requisition = await IntercompanyRequisition.create({
+            connection_id: connection.id,
+            buyer_node: current_node,
+            title: title?.trim(),
+            notes: notes?.trim(),
+            ...(required_by_date && { required_by_date }),
+            ...(priority && { priority: priority.toLowerCase() }),
+            created_by: parseInt(userDetails.id, 10),
+        }, { transaction: rootTransaction });
+
+        // update requisition no field
+        const requisition_no = generateNo("TR-REQ", requisition.id);
+        await requisition.update({ requisition_no }, { transaction: rootTransaction });
+
+        /** create requisition items */
+        for (const { item, product_mapping_id } of mappedItems) {
+            await IntercompanyRequisitionItems.create({
+                inter_comp_req_id: requisition.id,
+                product_mapping_id,
+                qty: item.reqQty,
+                ...(item.brand && { brand: item.brand }),
+                ...(item.category && { category: item.category }),
+                ...(item.subCategory && { sub_category: item.subCategory }),
+            }, { transaction: rootTransaction });
+        }
+
+        await rootTransaction.commit();
+        return res.status(200).json({ success: true, code: 200, message: "Trading Requisition Created.", data: { id: requisition.id, requisition_no } });
+
+    } catch (error) {
+        await rootTransaction.rollback();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+
+
+
+
+
+
 
 
 // DELETE

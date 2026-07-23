@@ -18,8 +18,8 @@ export const getConnectionList = asyncHandler(async (req, res) => {
 
         const where = {
             [Op.or]: [
-                { parent_tenant: tenant },
-                { child_tenant: tenant }
+                { buyer_tenant: tenant },
+                { vendor_tenant: tenant }
             ],
             ...(connection_type !== "all" && { connection_type: connection_type.trim().toLowerCase() })
         };
@@ -30,7 +30,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
             include: [
                 {
                     model: TenantsName,
-                    as: "parent",
+                    as: "buyer",
                     include: [{
                         model: Tenant,
                         as: "tenantDetails",
@@ -41,7 +41,7 @@ export const getConnectionList = asyncHandler(async (req, res) => {
                 },
                 {
                     model: TenantsName,
-                    as: "child",
+                    as: "vendor",
                     include: [{
                         model: Tenant,
                         as: "tenantDetails",
@@ -87,29 +87,19 @@ export const updateConnectionType = asyncHandler(async (req, res) => {
     /** current tenant connection */
     const transaction = await req.dbObject.transaction();
 
-    const tenant = req.headers["x-tenant-id"];
-
     try {
         const { id } = req.params;
-        const { connection_type, child_tenant } = req.body;
+        const { connection_type, buyer_tenant } = req.body;
 
         if (!id || !connection_type) {
             return res.status(400).json({ success: false, code: 400, message: "id and connection_type are required" });
         }
 
-        const conn = await Connection.findOne({
-            where: {
-                id: parseInt(id),
-                [Op.or]: [
-                    { parent_tenant: tenant },
-                    { child_tenant: tenant }
-                ]
-            }
-        });
+        const conn = await Connection.findByPk(Number(id));
         if (!conn) return res.status(404).json({ success: false, code: 404, message: "Connection not found" });
 
         if (!conn.connection_status) {
-            await addVendor(req.dbModels, transaction, child_tenant)
+            await addVendor(req.dbModels, transaction, buyer_tenant, conn);
         }
 
         conn.connection_type = connection_type.trim().toLowerCase();
@@ -137,7 +127,7 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
 
-    const child_tenant = req?.headers["x-tenant-id"];
+    const tenant = req?.headers["x-tenant-id"];
 
     // console.log(req.body); return
     try {
@@ -151,16 +141,16 @@ export const createSupplierConnection = asyncHandler(async (req, res) => {
 
         const exist = await Connection.findOne({
             where: {
-                parent_tenant,
-                child_tenant,
+                buyer_tenant: parent_tenant,
+                vendor_tenant: tenant,
                 connection_type,
             }
         });
         if (exist) throw new Error("Record already exist!!!");
 
         const connection = await Connection.create({
-            parent_tenant,
-            child_tenant,
+            buyer_tenant: parent_tenant,
+            vendor_tenant: tenant,
             connection_type,
             connection_status: true
         }, { transaction: rootTransaction });
@@ -180,12 +170,12 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
     const rootTransaction = await rootSequelize.transaction();
     const { Connection } = models;
 
-    const child_tenant = req?.headers["x-tenant-id"];
+    const tenant = req?.headers["x-tenant-id"];
 
     // console.log(req.body); return
     try {
-        const { parent_tenant, connection_type } = req.body;
-        if (!parent_tenant || !connection_type) {
+        const { vendor_tenant, connection_type } = req.body;
+        if (!vendor_tenant || !connection_type) {
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         }
 
@@ -194,8 +184,8 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
          *  --------------------------------------------------- */
         const exist = await Connection.findOne({
             where: {
-                parent_tenant,
-                child_tenant,
+                buyer_tenant: tenant,
+                vendor_tenant,
                 connection_type: "pending"
             }
         });
@@ -206,8 +196,8 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
          *  --------------------------------------------------- */
         const isExist = await Connection.findOne({
             where: {
-                parent_tenant,
-                child_tenant,
+                buyer_tenant: tenant,
+                vendor_tenant,
                 connection_status: true
             }
         });
@@ -217,8 +207,8 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
          *  Create new connection request
          *  --------------------------------------------------- */
         const connection = await Connection.create({
-            parent_tenant,
-            child_tenant,
+            buyer_tenant: tenant,
+            vendor_tenant,
             connection_status: false,
             connection_type: "pending"
         }, { transaction: rootTransaction });
@@ -234,7 +224,7 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
 });
 
 
-async function addVendor(model, transaction, tenant) {
+async function addVendor(model, transaction, tenant, conn) {
     try {
         /* connect tenant and get tenant details */
         const { models: { BusinessNode, NodeDetails, User } } = await getTenantConnection(tenant);
@@ -256,6 +246,7 @@ async function addVendor(model, transaction, tenant) {
             name: tenantDetails.nodeDetails.name,
             tenant: tenant,
             type: "buyer",
+            connection_id: conn.id,
             contact_email: user.email,
             contact_phone: user.phone_no,
             address: tenantDetails.nodeDetails.address,

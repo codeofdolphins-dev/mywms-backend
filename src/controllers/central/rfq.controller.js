@@ -8,7 +8,7 @@ export const allRfqList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { RFQ, RFQItem, ProductMapping, Connection } = models;
 
-    const vendor_tenant = req.headers["x-tenant-id"];
+    const tenant = req.headers["x-tenant-id"];
     // console.log(dbName)
 
     try {
@@ -46,17 +46,26 @@ export const allRfqList = asyncHandler(async (req, res) => {
 
             const buyer_tenant = formatJSON.buyer_tenant;
             let connection = null;
-            if (vendor_tenant) {
-                connection = await Connection.findOne({
-                    where: {
-                        parent_tenant: buyer_tenant,
-                        child_tenant: vendor_tenant,
-                        // connection_type: "supplier",
-                    }
-                });
+            // Only look up a connection when both tenants exist and are different
+            if (tenant && buyer_tenant && String(buyer_tenant) !== String(tenant)) {
+                try {
+                    connection = await Connection.findOne({
+                        where: {
+                            // match the pair {buyer_tenant, tenant} in either direction
+                            [Op.or]: [
+                                { buyer_tenant, vendor_tenant: tenant },
+                                { buyer_tenant: tenant, vendor_tenant: buyer_tenant },
+                            ],
+                            // connection_type: "supplier",
+                        }
+                    });
+                } catch (err) {
+                    console.log("Connection lookup failed:", err?.message);
+                    connection = null;
+                }
             }
-            formatJSON.isConnected = (connection !== null && connection.connection_type !== "pending") ? true : false;
-            formatJSON.connection_status = connection?.connection_type;
+            formatJSON.isConnected = Boolean(connection) && connection.connection_type !== "pending";
+            formatJSON.connection_status = connection?.connection_type ?? null;
 
             // for (const product of formatJSON.items) {
             //     if (vendor_tenant) {

@@ -11,7 +11,7 @@ import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js";
 export const allProductList = asyncHandler(async (req, res) => {
     const { Product, HSN, Brand, PackageType, UnitType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "", noLimit = false } = req.query;
+        let { page = 1, limit = 10, barcode = "", id = "", text = "", type = "", noLimit = false, vendorId = "" } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -28,11 +28,9 @@ export const allProductList = asyncHandler(async (req, res) => {
                     ]
                 }),
                 is_active: true,
+                ...(vendorId && { linked_vendor: Number(vendorId) }),
                 ...(type && { product_type: type }),
             },
-            // ...(type === "raw" && {
-            //     attributes: ["id", "name", "barcode", "product_type", "unit_type", "description", "reorder_level", "is_active", "photo", "sku", "createdAt", "updatedAt"]
-            // }),
             include: [
                 {
                     model: HSN,
@@ -370,7 +368,7 @@ export const importProducts = asyncHandler(async (req, res) => {
         });
 
         /** Add Vendor if not exists */
-        if (!vendor) vendor = await addVendor(req.dbModels, transaction, parent);
+        if (!vendor) vendor = await addVendor(req.dbModels, transaction, parent, connectionId);
 
         /** Add Products */
         for (const product of products) {
@@ -819,7 +817,7 @@ async function addTotalStock(req, product) {
 }
 
 
-async function addVendor(model, transaction, data) {
+async function addVendor(model, transaction, data, connectionId) {
     try {
         /* connect tenant and get tenant details */
         const { models: { BusinessNode, NodeDetails, User } } = await getTenantConnection(data.tenant);
@@ -841,6 +839,7 @@ async function addVendor(model, transaction, data) {
             name: data.tenantDetails.companyName,
             tenant: data.tenant,
             type: "vendor",
+            connection_id: connectionId,
             contact_email: data.tenantDetails.email,
             address: tenantDetails.nodeDetails.address,
             gst_no: tenantDetails.nodeDetails.gst_no,
