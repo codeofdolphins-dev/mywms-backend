@@ -224,6 +224,109 @@ export const createTraderConnection = asyncHandler(async (req, res) => {
 });
 
 
+// GET - browse all companies for connection
+export const browseCompanies = asyncHandler(async (req, res) => {
+    const { models } = await rootDB();
+    const { TenantsName, Tenant, Connection } = models;
+
+    const tenant = req.headers["x-tenant-id"];
+
+    try {
+        let { page = 1, limit = 20, search = "" } = req.query;
+        page = parseInt(page);
+        limit = parseInt(limit);
+        const offset = (page - 1) * limit;
+
+        // Build where clause: exclude own tenant, apply search
+        const where = {
+            tenant: {
+                [Op.and]: [
+                    { [Op.ne]: tenant },
+                    { [Op.ne]: "mywms" },
+                ]
+            }
+        };
+
+        const includeWhere = { isOwner: true };
+        if (search && search.trim()) {
+            includeWhere[Op.or] = [
+                { companyName: { [Op.iLike]: `%${search.trim()}%` } },
+                { email: { [Op.iLike]: `%${search.trim()}%` } },
+            ];
+        }
+
+        const { rows, count } = await TenantsName.findAndCountAll({
+            distinct: true,
+            where,
+            include: [{
+                model: Tenant,
+                as: "tenantDetails",
+                where: includeWhere,
+                required: true,
+                attributes: ["id", "companyName", "email"],
+            }],
+            limit,
+            offset,
+            order: [["createdAt", "DESC"]],
+        });
+
+        // For each company, check connection status with current tenant
+        const tenantIds = rows.map(r => r.tenant);
+        const connections = await Connection.findAll({
+            where: {
+                [Op.or]: tenantIds.flatMap(t => [
+                    { buyer_tenant: tenant, vendor_tenant: t },
+                    { buyer_tenant: t, vendor_tenant: tenant },
+                ]),
+            },
+        });
+
+        // Map connections by the other tenant
+        const connectionMap = {};
+        for (const conn of connections) {
+            const otherTenant = conn.buyer_tenant === tenant ? conn.vendor_tenant : conn.buyer_tenant;
+            // If multiple connections exist, prefer active over pending
+            if (!connectionMap[otherTenant] || conn.connection_status) {
+                connectionMap[otherTenant] = {
+                    id: conn.id,
+                    connection_type: conn.connection_type,
+                    connection_status: conn.connection_status,
+                    buyer_tenant: conn.buyer_tenant,
+                    vendor_tenant: conn.vendor_tenant,
+                };
+            }
+        }
+
+        const data = rows.map(r => ({
+            id: r.id,
+            tenant: r.tenant,
+            companyName: r.tenantDetails?.companyName ?? "Unknown",
+            email: r.tenantDetails?.email ?? "",
+            connection: connectionMap[r.tenant] ?? null,
+        }));
+
+        const totalItems = count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Fetched successfully.",
+            data,
+            pagination: {
+                totalItems,
+                totalPages,
+                currentPage: page,
+                limit,
+            },
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
 async function addVendor(model, transaction, tenant, conn) {
     try {
         /* connect tenant and get tenant details */

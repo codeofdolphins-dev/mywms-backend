@@ -1,5 +1,6 @@
 import { rootDB } from "../db/tenantMenager.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Op } from "sequelize";
 
 export const defineUserScope = asyncHandler( async (req, res, next) => {    
     try {
@@ -21,7 +22,7 @@ export const defineUserScope = asyncHandler( async (req, res, next) => {
         const { models } = await rootDB();
         
         const tenant = await models.Tenant.findOne({ 
-            where: { email }, 
+            where: { email: { [Op.iLike]: email.trim() } }, 
             attributes: [],
             include: [
                 {
