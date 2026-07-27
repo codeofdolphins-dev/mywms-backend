@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { allReceiveRequisitionList, allRequisitionList, createInternalRequisition, createOpenForumRequisition, createTradingRequisition, deleteRequisition, getCreateRequisitionContext, updateRequisition, updateRequisitionItems } from "../controllers/requisition.controller.js";
-import { assignTradingRequisitionFgStore, deleteTradingRequisition, getTradingRequisitionDetails, receiveTradingRequisitionList, sentTradingRequisitionList, updateTradingRequisition, updateTradingRequisitionStatus } from "../controllers/central/interCompReq.controller.js";
+
+import { assignTradingRequisitionLocation, deleteTradingRequisition, getTradingRequisitionDetails, receiveTradingRequisitionList, sentTradingRequisitionList, updateTradingRequisition, updateTradingRequisitionStatus } from "../controllers/central/interCompReq.controller.js";
 import { verifyPermission } from "../middlewares/permission.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -23,7 +24,7 @@ router.route("/create/trading").post(verifyPermission("requisition-trading:creat
 /** trading (intercompany) requisition */
 router.route("/trading/list").get(verifyPermission("requisition-trading:read"), sentTradingRequisitionList);
 router.route("/trading/receive-list").get(verifyPermission("requisition-trading:read"), receiveTradingRequisitionList);
-router.route("/trading/assign-fg").post(verifyPermission("requisition-trading:update"), assignTradingRequisitionFgStore);
+router.route("/trading/assign-location").post(verifyPermission("requisition-trading:update"), assignTradingRequisitionLocation);
 router.route("/trading/update").put(verifyPermission("requisition-trading:update"), updateTradingRequisition);
 router.route("/trading/update-status").put(verifyPermission("requisition-trading:update"), updateTradingRequisitionStatus);
 router.route("/trading/delete/:id").delete(verifyPermission("requisition-trading:delete"), deleteTradingRequisition);

@@ -376,7 +376,7 @@
                     } else if (status==='pending' ) { statusClass='status-pending' ; } else if (status==='reject' ||
                     status==='rejected' || status==='declined' ) { statusClass='status-reject' ; } %>
                     <span class="status-badge <%= statusClass %>">
-                        <%= data.status?.toUpperCase() %>
+                        <%= data.status?.toUpperCase() || "pending" %>
                     </span>
             </div>
         </div>

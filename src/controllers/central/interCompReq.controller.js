@@ -4,10 +4,10 @@ import { getTenantConnection, rootDB } from "../../db/tenantMenager.service.js"
 import { generateNo } from "../../helper/generate.js";
 
 
-/** allowed status transitions — assign_fg is only reachable via FG store assignment */
+/** allowed status transitions — assign is only reachable via FG store assignment */
 const STATUS_FLOW = {
     pending: ["dispatched", "cancelled"],
-    assign_fg: ["dispatched", "cancelled"],
+    assign: ["dispatched", "cancelled"],
     dispatched: ["closed"],
     cancelled: [],
     closed: [],
@@ -89,6 +89,81 @@ async function attachTenantNodeDetails(rows) {
         row.vendorDetails = nodeByTenant[row.icReqConnection.vendor_tenant] || null;
     }
     return rows;
+}
+
+
+/**
+ * Attach the requester's own acting business node on the requisition:
+ * buyer side → buyerNode (the node that raised it),
+ * vendor side → vendorNode (the node assigned to fulfil it, with its store when
+ * one was selected — absent while pending, the outward only exists after assignment).
+ * Each party only sees its own internal node — never the other side's.
+ */
+async function attachActingNodes(row, side) {
+    const connection = row?.icReqConnection;
+    if (!connection) return row;
+
+    row.buyerNode = null;
+    row.vendorNode = null;
+
+    /** buyer node — who actually raised (bought) this requisition */
+    if (side === "buyer" && row.buyer_node && connection.buyer_tenant) {
+        try {
+            const { models: { BusinessNode, NodeDetails } } = await getTenantConnection(connection.buyer_tenant);
+            const node = await BusinessNode.findByPk(Number(row.buyer_node), {
+                include: [
+                    {
+                        model: NodeDetails,
+                        as: "nodeDetails",
+                        attributes: {
+                            exclude: ["business_node_id", "createdAt", "updatedAt"]
+                        }
+                    }
+                ]
+            });
+            row.buyerNode = node ? node.toJSON() : null;
+        } catch (error) {
+            console.log(`Failed to load buyer node for tenant: ${connection.buyer_tenant}`, error.message);
+        }
+    }
+
+    /** vendor node — resolved from the outward created at assignment */
+    if (side === "vendor" && row.status !== "pending" && connection.vendor_tenant) {
+        try {
+            const { models: { Outward, BusinessNode, NodeDetails, ManufacturingUnit } } = await getTenantConnection(connection.vendor_tenant);
+            const outward = await Outward.findOne({
+                where: { pr_no: row.requisition_no },
+                include: [
+                    {
+                        model: BusinessNode,
+                        as: "sellerOutwardNode",
+                        include: [
+                            {
+                                model: NodeDetails,
+                                as: "nodeDetails",
+                                attributes: {
+                                    exclude: ["business_node_id", "createdAt", "updatedAt"]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        model: ManufacturingUnit,
+                        as: "outwardStore",
+                        attributes: ["id", "name", "store_type", "location"]
+                    },
+                ],
+            });
+            if (outward?.sellerOutwardNode) {
+                row.vendorNode = outward.sellerOutwardNode.toJSON();
+                row.vendorNode.store = outward.outwardStore ? outward.outwardStore.toJSON() : null;
+            }
+        } catch (error) {
+            console.log(`Failed to load vendor node for tenant: ${connection.vendor_tenant}`, error.message);
+        }
+    }
+
+    return row;
 }
 
 
@@ -242,7 +317,7 @@ export const receiveTradingRequisitionList = asyncHandler(async (req, res) => {
 /** single trading requisition with items + connection */
 export const getTradingRequisitionDetails = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { IntercompanyRequisition, IntercompanyRequisitionItems, ProductMapping, Connection, TenantsName } = models;
+    const { IntercompanyRequisition, IntercompanyRequisitionItems, ProductMapping, Connection, TenantsName, Tenant } = models;
 
     const tenant = req.headers["x-tenant-id"];
 
@@ -255,8 +330,28 @@ export const getTradingRequisitionDetails = asyncHandler(async (req, res) => {
                     model: Connection,
                     as: "icReqConnection",
                     include: [
-                        { model: TenantsName, as: "buyer" },
-                        { model: TenantsName, as: "vendor" },
+                        {
+                            model: TenantsName,
+                            as: "buyer",
+                            include: [{
+                                model: Tenant,
+                                as: "tenantDetails",
+                                where: { isOwner: true },
+                                required: false,
+                                attributes: ["id", "companyName", "email"]
+                            }]
+                        },
+                        {
+                            model: TenantsName,
+                            as: "vendor",
+                            include: [{
+                                model: Tenant,
+                                as: "tenantDetails",
+                                where: { isOwner: true },
+                                required: false,
+                                attributes: ["id", "companyName", "email"]
+                            }]
+                        },
                     ]
                 },
                 {
@@ -283,6 +378,7 @@ export const getTradingRequisitionDetails = asyncHandler(async (req, res) => {
         const [formatJSON] = [requisition.toJSON()];
         await attachLocalProducts([formatJSON], req.dbModels, side);
         await attachTenantNodeDetails([formatJSON]);
+        await attachActingNodes(formatJSON, side);
         formatJSON.side = side;
 
         return res.status(200).json({ success: true, code: 200, message: "Fetched Successfully.", data: formatJSON });
@@ -294,19 +390,19 @@ export const getTradingRequisitionDetails = asyncHandler(async (req, res) => {
 
 
 // POST
-/** vendor side — assign requisition to a FG store & create a pending outward on vendor tenant */
-export const assignTradingRequisitionFgStore = asyncHandler(async (req, res) => {
+/** vendor side — assign requisition to a location (with optional store) & create a pending outward on vendor tenant */
+export const assignTradingRequisitionLocation = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
     const { IntercompanyRequisition, IntercompanyRequisitionItems, ProductMapping, Connection } = models;
-    const { Outward, OutwardItem, Product, ManufacturingUnit } = req.dbModels;
+    const { Outward, OutwardItem, Product, ManufacturingUnit, BusinessNode } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     const tenant = req.headers["x-tenant-id"];
 
     try {
-        const { id = "", store_id = "" } = req.body;
+        const { id = "", store_id = "", location_id = "" } = req.body;
 
-        if (!id || !store_id) {
+        if (!id || (!store_id && !location_id)) {
             await transaction.rollback();
             return res.status(400).json({ success: false, code: 400, message: "Required fields are missing!!!" });
         }
@@ -343,22 +439,32 @@ export const assignTradingRequisitionFgStore = asyncHandler(async (req, res) => 
             return res.status(422).json({ success: false, code: 422, message: "Assignment not possible!!!" });
         }
 
-        /** check FG store exists on vendor tenant */
-        const store = await ManufacturingUnit.findOne({
-            where: {
-                id: Number(store_id),
-                store_type: "fg_store"
+        let sellerNodeId;
+        let outwardStoreId = null;
+
+        if (store_id) {
+            /** store selected — resolve the store and use its business_node_id */
+            const store = await ManufacturingUnit.findByPk(Number(store_id));
+            if (!store) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Store not found!!!" });
             }
-        });
-        if (!store) {
-            await transaction.rollback();
-            return res.status(404).json({ success: false, code: 404, message: "FG Store not found!!!" });
+            sellerNodeId = store.business_node_id;
+            outwardStoreId = store.id;
+        } else {
+            /** no store — location selected directly */
+            const node = await BusinessNode.findByPk(Number(location_id));
+            if (!node) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, code: 404, message: "Location not found!!!" });
+            }
+            sellerNodeId = node.id;
         }
 
         /** Step 1: create outward header in pending state */
         const outward = await Outward.create({
-            seller_business_node_id: store.business_node_id,
-            store_id: store.id,
+            seller_business_node_id: sellerNodeId,
+            store_id: outwardStoreId,
             buyer_business_node_id: requisition.buyer_node,
             type: "internal",
             priority: requisition.priority,
@@ -394,7 +500,7 @@ export const assignTradingRequisitionFgStore = asyncHandler(async (req, res) => 
         }
 
         /** mark requisition as assigned (central DB — outside tenant transaction) */
-        await requisition.update({ status: "assign_fg" });
+        await requisition.update({ status: "assign" });
 
         await transaction.commit();
         return res.status(200).json({ success: true, code: 200, message: "Assigned Successfully." });

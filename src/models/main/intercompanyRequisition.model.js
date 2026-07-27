@@ -31,7 +31,7 @@ function IntercompanyRequisition(sequelize) {
             allowNull: false
         },
         status: {
-            type: DataTypes.ENUM("pending", "assign_fg", "dispatched", "cancelled", "closed"),
+            type: DataTypes.ENUM("pending", "assign", "dispatched", "cancelled", "closed"),
             defaultValue: "pending"
         },
         priority: {

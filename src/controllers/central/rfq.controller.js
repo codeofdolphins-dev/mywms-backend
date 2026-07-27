@@ -1,6 +1,58 @@
 import { Op } from "sequelize";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { rootDB } from "../../db/tenantMenager.service.js"
+import { getTenantConnection, rootDB } from "../../db/tenantMenager.service.js"
+
+
+/**
+ * Attach the supplier's own product on every RFQ item, resolved through the product
+ * mapping saved when they first quoted this buyer (see createRfqQuotation).
+ *
+ * From the second transaction onward the supplier no longer re-picks the same
+ * products — the UI pre-selects and locks the mapped one. Items with no mapping
+ * yet keep vendor_product = null so they stay free to choose.
+ */
+async function attachMappedVendorProducts(row, connection, ProductMapping, dbModels) {
+    const items = row?.items ?? [];
+    if (!items.length) return row;
+
+    /** default — an unmapped item must stay selectable */
+    for (const item of items) item.vendor_product = null;
+
+    if (!connection || !dbModels?.Product) return row;
+
+    try {
+        const buyerProductIds = [...new Set(items.map(i => i.product_id).filter(Boolean))];
+        if (!buyerProductIds.length) return row;
+
+        const mappings = await ProductMapping.findAll({
+            where: {
+                connection_id: connection.id,
+                buyer_product_id: { [Op.in]: buyerProductIds },
+            }
+        });
+        if (!mappings.length) return row;
+
+        const vendorProductIdByBuyerProduct = Object.fromEntries(
+            mappings.map(m => [m.buyer_product_id, m.vendor_product_id])
+        );
+
+        /** the mapped products live in the supplier's own tenant db */
+        const { Product } = dbModels;
+        const products = await Product.findAll({
+            where: { id: { [Op.in]: [...new Set(Object.values(vendorProductIdByBuyerProduct))] } }
+        });
+        const productById = Object.fromEntries(products.map(p => [p.id, p.toJSON()]));
+
+        for (const item of items) {
+            const vendorProductId = vendorProductIdByBuyerProduct[item.product_id];
+            item.vendor_product = vendorProductId ? productById[vendorProductId] ?? null : null;
+        }
+    } catch (error) {
+        /** never fail the listing over a mapping lookup — items simply stay unmapped */
+        console.log("Product mapping lookup failed:", error?.message);
+    }
+    return row;
+}
 
 
 // GET
@@ -45,47 +97,67 @@ export const allRfqList = asyncHandler(async (req, res) => {
             // console.log(formatJSON)
 
             const buyer_tenant = formatJSON.buyer_tenant;
-            let connection = null;
+            let connections = [];
             // Only look up a connection when both tenants exist and are different
             if (tenant && buyer_tenant && String(buyer_tenant) !== String(tenant)) {
                 try {
-                    connection = await Connection.findOne({
+                    connections = await Connection.findAll({
                         where: {
                             // match the pair {buyer_tenant, tenant} in either direction
                             [Op.or]: [
                                 { buyer_tenant, vendor_tenant: tenant },
                                 { buyer_tenant: tenant, vendor_tenant: buyer_tenant },
                             ],
-                            // connection_type: "supplier",
                         }
                     });
                 } catch (err) {
                     console.log("Connection lookup failed:", err?.message);
-                    connection = null;
+                    connections = [];
                 }
             }
-            formatJSON.isConnected = Boolean(connection) && connection.connection_type !== "pending";
-            formatJSON.connection_status = connection?.connection_type ?? null;
 
-            // for (const product of formatJSON.items) {
-            //     if (vendor_tenant) {
-            //         const productMapping = await ProductMapping.findOne({
-            //             where: {
-            //                 buyer_node: buyer_tenant,
-            //                 vendor_node: vendor_tenant,
-            //                 buyer_product_id: product.product_id,
-            //             },
-            //         });
-            //         if (req?.dbModels) {
-            //             const { Product } = req.dbModels;
-            //             product.vendor_product = await Product.findOne({
-            //                 where: {
-            //                     id: Number(productMapping?.vendor_product_id || 0),
-            //                 },
-            //             });
-            //         }
-            //     }
-            // }
+            /** attach product details */
+            const { models } = await getTenantConnection(buyer_tenant)
+
+            for (const item of formatJSON.items) {
+                item.details = await models.Product.findByPk(
+                    Number(item?.product_id),
+                    { attributes: ["package_type", "measure", "sku", "unit_type"] }
+                );
+            }
+
+
+            /**
+             * Only a supplier connection qualifies on the open forum — the current tenant
+             * must be the vendor (supplier) of the RFQ owner. Any other type (trader,
+             * distributor, …) means the pair is connected, but not in a direction that
+             * allows quoting this RFQ.
+             */
+            const supplierConnection = connections.find(c =>
+                c.connection_type === "supplier"
+                && c.connection_status
+                && String(c.buyer_tenant) === String(buyer_tenant)
+                && String(c.vendor_tenant) === String(tenant)
+            );
+            const activeConnection = connections.find(c => c.connection_status && c.connection_type !== "pending");
+            const pendingConnection = connections.find(c => c.connection_type === "pending");
+
+            /**
+             * The connection product mappings are saved against — must mirror the lookup in
+             * createRfqQuotation ({ buyer_tenant: rfq owner, vendor_tenant: me, active }),
+             * otherwise mappings written on the first quotation would never be found here.
+             */
+            const quotingConnection = connections.find(c =>
+                c.connection_status
+                && String(c.buyer_tenant) === String(buyer_tenant)
+                && String(c.vendor_tenant) === String(tenant)
+            );
+
+            formatJSON.isConnected = Boolean(supplierConnection);
+            /** connection_status carries the connection type — null when no connection exists at all */
+            formatJSON.connection_status = (supplierConnection ?? activeConnection ?? pendingConnection)?.connection_type ?? null;
+
+            await attachMappedVendorProducts(formatJSON, quotingConnection, ProductMapping, req?.dbModels);
 
             return formatJSON;
         }));

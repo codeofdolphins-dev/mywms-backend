@@ -62,7 +62,7 @@ export const bulkOpeningStockInsertion = asyncHandler(async (req, res) => {
             const batch = await Batch.create({
                 product_id: product.id,
                 location_id: locationId,
-                store_id: StoreId,
+                ...(StoreId && { store_id: StoreId }),
                 location_type: "mfg_unit",
                 available_qty: item.qty,
                 reference_id: ledger.id,

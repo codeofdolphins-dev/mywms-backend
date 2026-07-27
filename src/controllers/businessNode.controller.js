@@ -25,59 +25,6 @@ export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
     }
 });
 
-// export const allRegisteredNodes = asyncHandler(async (req, res) => {
-//     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
-//     try {
-//         let { page = 1, limit = 10, noLimit = false, search = "" } = req.query;
-
-//         page = Number(page);
-//         limit = Number(limit);
-//         const offset = (page - 1) * limit;
-
-//         const businessNode = await BusinessNode.findAndCountAll({
-//             // where: {
-//             //     node_type_code: { [Op.ne]: null },
-//             //     tenant_business_flow_id: { [Op.ne]: null },
-//             // },
-//             include: [
-//                 {
-//                     model: BusinessNodeType,
-//                     as: "type"
-//                 },
-//                 {
-//                     model: NodeDetails,
-//                     as: "nodeDetails"
-//                 },
-//             ],
-//             ...(noLimit ? {} : { limit, offset }),
-//             order: [["createdAt", "ASC"]]
-//         });
-//         if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
-
-//         const totalItems = businessNode.count;
-//         const totalPages = Math.ceil(totalItems / limit);
-
-//         return res.status(200).json({
-//             success: true,
-//             code: 200,
-//             message: "Fetched Successfully.",
-//             data: businessNode.rows,
-//             ...(noLimit ? {} : {
-//                 meta: {
-//                     totalItems,
-//                     totalPages,
-//                     currentPage: page,
-//                     limit
-//                 }
-//             })
-//         });
-
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json({ success: false, code: 500, message: error.message });
-//     }
-// });
-
 
 /** for store */
 export const allMfgNodes = asyncHandler(async (req, res) => {

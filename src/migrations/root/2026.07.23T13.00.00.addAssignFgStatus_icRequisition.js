@@ -1,4 +1,4 @@
-/** Migration: addAssignFgStatus_icRequisition */
+/** Migration: addAssignStatus_icRequisition */
 
 /** enum type name differs per environment (sync vs migration created) — resolve it from the column itself */
 async function getStatusEnumName(queryInterface) {
@@ -15,7 +15,7 @@ export async function up({ context: queryInterface }) {
 
     // enum ADD VALUE can not run inside a transaction block
     await queryInterface.sequelize.query(
-        `ALTER TYPE "${enumName}" ADD VALUE IF NOT EXISTS 'assign_fg';`
+        `ALTER TYPE "${enumName}" ADD VALUE IF NOT EXISTS 'assign';`
     );
 }
 
@@ -26,7 +26,7 @@ export async function down({ context: queryInterface }) {
     // Postgres can not drop a single enum value — move rows off the value and rebuild the type
     try {
         await queryInterface.sequelize.query(
-            `UPDATE "IntercompanyRequisitions" SET "status" = 'pending' WHERE "status" = 'assign_fg';`,
+            `UPDATE "IntercompanyRequisitions" SET "status" = 'pending' WHERE "status" = 'assign';`,
             { transaction }
         );
         await queryInterface.sequelize.query(
