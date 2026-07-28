@@ -200,35 +200,20 @@ const defineRootAssociations = (models) => {
 
 
     /** ******************* blanketOrder ************************ */
-    // tenantsName ↔ blanketOrder(Buyer)
-    TenantsName.hasMany(BlanketOrder, {
-        foreignKey: "buyer_tenant",
-        sourceKey: "tenant",
-        as: "buyerBlanketOrders",
-        onDelete: "CASCADE",
+    // connection ↔ blanketOrder
+    // both parties come from the connection — reach them as
+    // blanketOrder.connection.buyer / .vendor
+    // RESTRICT so removing a connection can never cascade away contract history
+    Connection.hasMany(BlanketOrder, {
+        foreignKey: "connection_id",
+        as: "blanketOrders",
+        onDelete: "RESTRICT",
         onUpdate: "CASCADE",
     });
-    BlanketOrder.belongsTo(TenantsName, {
-        foreignKey: "buyer_tenant",
-        targetKey: "tenant",
-        as: "buyer",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-
-    // tenantsName ↔ blanketOrder(vendor/supplier)
-    TenantsName.hasMany(BlanketOrder, {
-        foreignKey: "vendor_tenant",
-        sourceKey: "tenant",
-        as: "vendorBlanketOrders",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
-    });
-    BlanketOrder.belongsTo(TenantsName, {
-        foreignKey: "vendor_tenant",
-        targetKey: "tenant",
-        as: "vendor",
-        onDelete: "CASCADE",
+    BlanketOrder.belongsTo(Connection, {
+        foreignKey: "connection_id",
+        as: "connection",
+        onDelete: "RESTRICT",
         onUpdate: "CASCADE",
     });
 
@@ -244,6 +229,21 @@ const defineRootAssociations = (models) => {
         foreignKey: "bpo_id",
         as: "blanketOrder",
         onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // productMapping ↔ blanketOrderItem
+    // replaces the buyer_product_id/vendor_product_id pair
+    ProductMapping.hasMany(BlanketOrderItem, {
+        foreignKey: "product_mapping_id",
+        as: "blanketOrderItems",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+    BlanketOrderItem.belongsTo(ProductMapping, {
+        foreignKey: "product_mapping_id",
+        as: "productMapping",
+        onDelete: "RESTRICT",
         onUpdate: "CASCADE",
     });
 
@@ -278,36 +278,20 @@ const defineRootAssociations = (models) => {
     });
 
 
-    // tenantsName ↔ blanketOrder(Buyer)
-    TenantsName.hasMany(BpoIndent, {
-        foreignKey: "buyer_tenant",
-        sourceKey: "tenant",
-        as: "buyerIndents",
-        onDelete: "CASCADE",
+    // connection ↔ bpoIndent
+    // kept on the indent (rather than only reached through bpo_id) so the
+    // status/GRN/invoice services stay one hop away from the tenant names, not two
+    Connection.hasMany(BpoIndent, {
+        foreignKey: "connection_id",
+        as: "bpoIndents",
+        onDelete: "RESTRICT",
         onUpdate: "CASCADE",
     });
-    BpoIndent.belongsTo(TenantsName, {
-        foreignKey: "buyer_tenant",
-        targetKey: "tenant",
-        as: "bpoIndentBuyerTenant",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-
-    // tenantsName ↔ blanketOrder(vendor/supplier)
-    TenantsName.hasMany(BpoIndent, {
-        foreignKey: "vendor_tenant",
-        sourceKey: "tenant",
-        as: "vendorIndents",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
-    });
-    BpoIndent.belongsTo(TenantsName, {
-        foreignKey: "vendor_tenant",
-        targetKey: "tenant",
-        as: "bpoIndentVendorTenant",
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE"
+    BpoIndent.belongsTo(Connection, {
+        foreignKey: "connection_id",
+        as: "connection",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
     });
 
 

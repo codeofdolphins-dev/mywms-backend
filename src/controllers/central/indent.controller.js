@@ -6,142 +6,6 @@ import { createPO_PoItems, createSO_SOItems, createVendor } from "../../services
 import { updatePOStatus, updateSOStatus } from "../../services/updateStatus.service.js";
 
 
-// GET
-const allBlanketOrderList = asyncHandler(async (req, res) => {
-    const { models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
-
-    const dbName = req.headers["x-tenant-id"];
-
-    try {
-        let { page = 1, limit = 10, id = "", bpo_no = "", status = "all", noLimit = false } = req.query;
-        page = parseInt(page);
-        limit = parseInt(limit);
-        const offset = (page - 1) * limit;
-
-        const blanketOrder = await BlanketOrder.findAndCountAll({
-            distinct: true,
-            where: {
-                ...(id && { id: Number(id) }),
-                ...(bpo_no && { bpo_no: bpo_no.trim() }),
-                [Op.or]: [
-                    { buyer_tenant: dbName },
-                    { vendor_tenant: dbName }
-                ],
-                ...(status !== "all" && { status: status.toLowerCase() }),
-            },
-            include: [
-                {
-                    model: BlanketOrderItem,
-                    as: "blanketOrderItems",
-                },
-                {
-                    model: TenantsName,
-                    as: "buyer",
-                    include: [
-                        {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            // attributes: ["companyName"]
-                        }
-                    ]
-                },
-                {
-                    model: TenantsName,
-                    as: "vendor",
-                    include: [
-                        {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            // attributes: ["companyName"]
-                        }
-                    ]
-                },
-            ],
-            limit,
-            offset,
-            ...(!noLimit && { order: [['createdAt', 'DESC']] })
-        });
-        if (!blanketOrder) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
-
-        const totalItems = blanketOrder.count;
-        const totalPages = Math.ceil(totalItems / limit);
-
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Fetched Successfully.",
-            data: (id || bpo_no || noLimit) ? blanketOrder?.rows?.[0] : blanketOrder?.rows,
-            ...(!(id || bpo_no || noLimit) && {
-                meta: {
-                    totalItems,
-                    totalPages,
-                    currentPage: page,
-                    limit,
-                },
-            }),
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-// GET
-const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
-    const { models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem } = models;
-    const { Product } = req.dbModels;
-
-    try {
-        const { bpo_no } = req.params;
-        if (!bpo_no) throw new Error("bpo_no is required");
-
-        const blanketOrders = await BlanketOrder.findOne({
-            where: { bpo_no: bpo_no.trim() },
-            include: [
-                {
-                    model: BlanketOrderItem,
-                    as: "blanketOrderItems",
-                }
-            ],
-        });
-        if (!blanketOrders || blanketOrders.length === 0) return res.status(404).json({ success: false, code: 404, message: "Blanket Order not found" });
-
-        const productIds = blanketOrders?.blanketOrderItems?.flatMap(item => item.buyer_product_id);
-
-        if (productIds.length === 0) {
-            return res.status(200).json({
-                success: true,
-                code: 200,
-                message: "Fetched Successfully.",
-                data: blanketOrders,
-            });
-        }
-
-        const products = await Product.findAll({
-            where: { id: { [Op.in]: [...new Set(productIds)] } },
-            attributes: ["id", "name", "sku", "unit_type", "photo"]
-        });
-
-        const productMap = new Map(products.map(p => [p.id, p.toJSON()]));
-
-        const orderJson = blanketOrders.toJSON();
-        orderJson.blanketOrderItems = orderJson.blanketOrderItems.map(item => ({ ...item, product: productMap.get(item.buyer_product_id) || null }));
-
-        return res.status(200).json({
-            success: true,
-            code: 200,
-            message: "Fetched Successfully.",
-            data: orderJson,
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
-    }
-});
-
-
 // POST
 export const createIndent = asyncHandler(async (req, res) => {
     // console.log(req.body);
@@ -149,7 +13,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
     /** root DB */
     const { rootSequelize, models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem, BpoIndent, BpoIndentItem } = models;
+    const { BlanketOrder, BlanketOrderItem, BpoIndent, BpoIndentItem, ProductMapping, Connection } = models;
     const rootTransaction = await rootSequelize.transaction();
 
 
@@ -167,7 +31,10 @@ export const createIndent = asyncHandler(async (req, res) => {
         const { bpo_no = "", target_store_id = "", grand_total = "", items = "" } = req.body;
         if ([bpo_no, target_store_id, items].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
-        const blanketOrder = await BlanketOrder.findOne({ where: { bpo_no: bpo_no.trim() } });
+        const blanketOrder = await BlanketOrder.findOne({
+            where: { bpo_no: bpo_no.trim() },
+            include: [{ model: Connection, as: "connection" }]
+        });
         if (!blanketOrder) throw new Error("Record not found!!!");
 
         /******************** Verify Store record *********************/
@@ -190,7 +57,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
 
         /******************** Verify Vendor Tenant *********************/
-        const vendorDbName = blanketOrder.vendor_tenant;
+        const vendorDbName = blanketOrder.connection?.vendor_tenant;
         if (!vendorDbName) throw new Error("Vendor tenant not found in blanket order record!!!");
 
         /** get vendor database connection */
@@ -201,8 +68,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 
         const indent = await BpoIndent.create({
             bpo_id: blanketOrder.id,
-            buyer_tenant: blanketOrder.buyer_tenant,
-            vendor_tenant: blanketOrder.vendor_tenant,
+            connection_id: blanketOrder.connection_id,
             created_by: req.user.id,
             grand_total: Number(grand_total),
         }, { transaction: rootTransaction });
@@ -210,13 +76,27 @@ export const createIndent = asyncHandler(async (req, res) => {
         indent.indent_no = generateNo("EX-Indent", indent.id);
         await indent.save({ transaction: rootTransaction });
 
+        /** each side's local product id now lives on the product mapping — resolve it
+         *  here so the PO/SO writers never take it from the request */
+        const resolvedItems = [];
+
         /** create indent items and update blanket order items */
         for (const item of items) {
             const { bpo_item_id = "", release_qty = "", unit_price = "" } = item;
             if (!bpo_item_id) throw new Error("bpo_item_id must required!!!");
 
-            const blanketOrderItem = await BlanketOrderItem.findByPk(Number(bpo_item_id));
+            const blanketOrderItem = await BlanketOrderItem.findByPk(Number(bpo_item_id), {
+                include: [{ model: ProductMapping, as: "productMapping", attributes: ["id", "buyer_product_id", "vendor_product_id"] }]
+            });
             if (!blanketOrderItem) throw new Error("Blanket order item not found!!!");
+            if (!blanketOrderItem.productMapping) throw new Error("Product mapping not found for blanket order item!!!");
+
+            resolvedItems.push({
+                ...item,
+                buyer_product_id: blanketOrderItem.productMapping.buyer_product_id,
+                vendor_product_id: blanketOrderItem.productMapping.vendor_product_id,
+                remaining_qty: blanketOrderItem.remain_contracted_qty,
+            });
 
             /** create indent items */
             await BpoIndentItem.create({
@@ -253,14 +133,14 @@ export const createIndent = asyncHandler(async (req, res) => {
         const vendor = await createVendor(req.dbModels, buyerTransaction, VendorModels, vendorDbName);
 
         /******************** create PO record on buyer side *********************/
-        const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition, indent.id);
+        const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition, indent.id, resolvedItems);
 
 
         /******************** create buyer record on vendor side *********************/
         const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, dbName, "buyer");
 
         /******************** create SO record on vendor/supplier side *********************/
-        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store, indent.id);
+        const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store, indent.id, resolvedItems);
 
         
         await indent.update({
@@ -289,7 +169,7 @@ export const createIndent = asyncHandler(async (req, res) => {
 /** this will update status of PO and SO via indent */
 export const updateStatusViaIndent = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { BpoIndent } = models;
+    const { BpoIndent, Connection } = models;
     try {
         const { bpo_id = "", po_id = "", status = "" } = req.body;
         if (!bpo_id || !po_id || !status) throw new Error("Required fields are missing!!!");
@@ -298,7 +178,8 @@ export const updateStatusViaIndent = asyncHandler(async (req, res) => {
             where: {
                 bpo_id: Number(bpo_id),
                 buyer_po_id: Number(po_id)
-            }
+            },
+            include: [{ model: Connection, as: "connection" }]
         });
         if (!indent) throw new Error("Indent record not found!!!");
 

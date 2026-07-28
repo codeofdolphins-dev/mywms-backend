@@ -8,12 +8,14 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
 
     try {
         const indent = await BpoIndent.findOne({
-            where: { id: salesOrder.central_indent_id }
+            where: { id: salesOrder.central_indent_id },
+            include: [{ model: Connection, as: "connection" }]
         });
         if (!indent) throw new Error("Indent not found!!!");
+        if (!indent.connection) throw new Error("Indent connection not found!!!");
 
 
-        const { models: tenantModels, sequelize } = await getTenantConnection(indent.buyer_tenant);
+        const { models: tenantModels, sequelize } = await getTenantConnection(indent.connection.buyer_tenant);
         const { GRN, Vendor, PurchasOrder, GRNItem, GRNItemBatch, PurchaseOrderItem, ManufacturingUnit } = tenantModels;
         transaction = await sequelize.transaction();
 
@@ -24,7 +26,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
 
         const vendor = await Vendor.findOne({
             where: {
-                tenant: indent.vendor_tenant,
+                tenant: indent.connection.vendor_tenant,
                 linked_business_node_id: salesOrder.seller_business_node_id,
                 type: "vendor"
             }
@@ -43,7 +45,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
             sender_id: vendor.id,
             status: "draft",
             reference: {
-                tenant: indent.buyer_tenant,
+                tenant: indent.connection.buyer_tenant,
                 outward_no: outward_no
             },
             ...(store ?
@@ -60,18 +62,12 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
             // Attempt to iterate over the extracted allocated batches passed from outward allocation
             for (const item of allocatedItems) {
 
-                const connection = await Connection.findOne({
-                    where: {
-                        buyer_tenant: indent.buyer_tenant,
-                        vendor_tenant: indent.vendor_tenant,
-                        connection_status: true,
-                    }
-                });
-
-                // Fetch Product mapping to match vendor tenant product id with buyer tenant product id
+                // Fetch Product mapping to match vendor tenant product id with buyer tenant product id.
+                // The indent carries its connection directly, so no tenant-pair lookup is needed —
+                // that lookup could pick the wrong row when a pair has several connections.
                 const productMap = await ProductMapping.findOne({
                     where: {
-                        connection_id: connection?.id,
+                        connection_id: indent.connection_id,
                         vendor_product_id: item.vendor_product_id
                     }
                 });

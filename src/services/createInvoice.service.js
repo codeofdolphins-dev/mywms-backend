@@ -10,6 +10,7 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
         const indent = await models.BpoIndent.findOne({
             where: { id: salesOrder.central_indent_id },
             include: [
+                { model: models.Connection, as: "connection" },
                 {
                     model: models.BpoIndentItem,
                     as: "bpoIndentItem",
@@ -17,24 +18,32 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
                         {
                             model: models.BlanketOrderItem,
                             as: "parentBlanketOrderItem",
-                            attributes: ["buyer_product_id", "vendor_product_id"]
+                            attributes: ["id"],
+                            include: [
+                                {
+                                    model: models.ProductMapping,
+                                    as: "productMapping",
+                                    attributes: ["id", "buyer_product_id", "vendor_product_id"]
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         });
         if (!indent) throw new Error("Indent not found!!!");
+        if (!indent.connection) throw new Error("Indent connection not found!!!");
 
-        const { models: buyerModels } = await getTenantConnection(indent.buyer_tenant);
+        const { models: buyerModels } = await getTenantConnection(indent.connection.buyer_tenant);
 
         const isIntra = await isIntraState(buyerModels, req.dbModels, indent);
 
         // create invoice header
         const invoice = await Invoice.create({
-            seller_tenant: indent.vendor_tenant,
+            seller_tenant: indent.connection.vendor_tenant,
             seller_businessNode_id: outward.seller_business_node_id,
             seller_store_id: outward.store_id,
-            buyer_tenant: indent.buyer_tenant,
+            buyer_tenant: indent.connection.buyer_tenant,
             buyer_businessNode_id: outward.buyer_business_node_id,
             outward_id: outward.id,
             invoice_date: new Date()
@@ -49,10 +58,10 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
             const { vendor_product_id, requested_qty, allocated_batches } = item;
             const vendorProduct = await getProduct(req.dbModels, vendor_product_id);
 
-            const indentItem = indent.bpoIndentItem.find(i => i.parentBlanketOrderItem.vendor_product_id === vendor_product_id);
+            const indentItem = indent.bpoIndentItem.find(i => i.parentBlanketOrderItem?.productMapping?.vendor_product_id === vendor_product_id);
             if (indentItem == undefined) throw new Error("No Product ID found for vendor_product_id");
 
-            const buyerProduct = await getProduct(buyerModels, indentItem.parentBlanketOrderItem.buyer_product_id);
+            const buyerProduct = await getProduct(buyerModels, indentItem.parentBlanketOrderItem.productMapping.buyer_product_id);
 
             const unitPrice = indentItem.unit_price;
 

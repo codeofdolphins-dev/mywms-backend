@@ -11,12 +11,8 @@ function BpoIndent(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false // Links to BlanketOrders
         },
-        buyer_tenant: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        vendor_tenant: {
-            type: DataTypes.STRING,
+        connection_id: {         // carries both parties — Connection.buyer_tenant / vendor_tenant
+            type: DataTypes.INTEGER,
             allowNull: false
         },
         // --- The Crucial Links ---
