@@ -803,7 +803,7 @@ export async function up({ context: queryInterface }) {
                 onUpdate: 'CASCADE',
             },
             status: {
-                type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg", "dispatched"),
+                type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign", "dispatched"),
                 defaultValue: "pending"
             },
             priority: {
@@ -1220,7 +1220,7 @@ export async function up({ context: queryInterface }) {
                 onUpdate: 'CASCADE',
             },
             status: {
-                type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign_fg", "Waiting_for_dispatch"),
+                type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign", "Waiting_for_dispatch"),
                 defaultValue: "sent",
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },

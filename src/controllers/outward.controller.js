@@ -227,13 +227,13 @@ export const outwardItem = asyncHandler(async (req, res) => {
 
 // POST
 export const createOutward = asyncHandler(async (req, res) => {
-    const { Outward, OutwardItem, Product, SalesOrder, ManufacturingUnit, Requisition, RequisitionSupplier } = req.dbModels;
+    const { Outward, OutwardItem, Product, SalesOrder, ManufacturingUnit, Requisition, RequisitionSupplier, BusinessNode } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     // console.log(req.body); return;
 
     try {
-        const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "", location_type = "", location_id } = req.body;
+        const { sales_order_id = "", location_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "" } = req.body;
 
         // if (!store_id) {
         //     await transaction.rollback()
@@ -271,10 +271,10 @@ export const createOutward = asyncHandler(async (req, res) => {
             const reqSupplier = await RequisitionSupplier.findOne({ where: { requisition_id: Number(requisition.id) } });
             if (!reqSupplier) throw new Error("Requisition Supplier not found!!!");
 
-            reqSupplier.status = "assign_fg";
+            reqSupplier.status = "assign";
             await reqSupplier.save({ transaction });
 
-            requisition.status = "assign_fg";
+            requisition.status = "assign";
             await requisition.save({ transaction });
 
             sellerBusinessNodeId = reqSupplier.supplier_business_node_id;
@@ -282,25 +282,34 @@ export const createOutward = asyncHandler(async (req, res) => {
 
 
         let store = null;
-        if (store_id) {
-            store = await ManufacturingUnit.findOne({
-                where: {
-                    id: Number(store_id),
-                    store_type: "fg_store"
-                }
-            });
-            if (!store) {
+        let location = null;
+        if (location_id) {
+            location = await BusinessNode.findByPk(Number(location_id));
+            if (!location) {
                 await transaction.rollback()
-                return res.status(404).json({ success: false, code: 404, message: "FG Store not found!!!" });
+                return res.status(404).json({ success: false, code: 404, message: "Location not found!!!" });
+            };
+
+            if (store_id) {
+                store = await ManufacturingUnit.findOne({
+                    where: {
+                        id: Number(store_id),
+                        store_type: "fg_store"
+                    }
+                });
+                if (!store) {
+                    await transaction.rollback()
+                    return res.status(404).json({ success: false, code: 404, message: "Store not found!!!" });
+                };
             }
-        }
+        };
 
         // Step 1: Create Outward header
         const outward = await Outward.create({
-            seller_business_node_id: store_id ? store.business_node_id : sellerBusinessNodeId,
+            seller_business_node_id: location ? location.id : sellerBusinessNodeId,
 
             ...(salesOrder && { sales_order_id: salesOrder.id }),
-            ...(store_id && { store_id: store.id }),
+            ...(Boolean(store) && { store_id: store.id }),
             buyer_business_node_id: salesOrder ? salesOrder.buyer_business_node_id : buyer_business_node_id,
             priority,
             type,

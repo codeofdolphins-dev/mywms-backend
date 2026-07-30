@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET
@@ -60,7 +60,7 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
 export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", noLimit = false, search = "", isAllowOwner = "false", isAttachCurrentNode = "true" } = req.query;
+        let { page = 1, limit = 10, id = "", noLimit = false, search = "", category = "", node_type_code = "", isAllowOwner = "false", isAttachCurrentNode = "true" } = req.query;
 
         isAttachCurrentNode = isAttachCurrentNode == "true" ? true : false;
         isAllowOwner = isAllowOwner == "true" ? true : false;
@@ -89,12 +89,14 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
                     as: "businessNode",
                     where: {
                         ...(isAllowOwner ? {} : { node_type_code: { [Op.ne]: null } }),
-                        ...(isAttachCurrentNode ? {} : { id: { [Op.ne]: currentNode } })
+                        ...(isAttachCurrentNode ? {} : { id: { [Op.ne]: currentNode } }),
+                        ...(node_type_code ? { node_type_code } : {})
                     },
                     include: [
                         {
                             model: BusinessNodeType,
-                            as: "type"
+                            as: "type",
+                            ...(category ? { where: { category }, required: true } : {})
                         }
                     ]
                 }
@@ -127,6 +129,40 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+export const registeredNodeCountByType = asyncHandler(async (req, res) => {
+    const { BusinessNode, BusinessNodeType } = req.dbModels;
+    try {
+        const counts = await BusinessNode.findAll({
+            attributes: [
+                "node_type_code",
+                [Sequelize.col("type.category"), "category"],
+                [Sequelize.fn("COUNT", Sequelize.col("BusinessNode.id")), "count"]
+            ],
+            where: { node_type_code: { [Op.ne]: null } },
+            include: [
+                {
+                    model: BusinessNodeType,
+                    as: "type",
+                    attributes: []
+                }
+            ],
+            group: ["node_type_code", "type.category"],
+            raw: true
+        });
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Counts fetched successfully.",
+            data: counts
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
 
 export const deleteNode = asyncHandler(async (req, res) => {
     const { BusinessNode } = req.dbModels;

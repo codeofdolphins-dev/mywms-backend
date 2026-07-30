@@ -34,14 +34,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
                         {
                             model: BlanketOrderItem,
                             as: "parentBlanketOrderItem",
-                            attributes: ["id", "total_contracted_qty", "unit_price"],
-                            include: [
-                                {
-                                    model: ProductMapping,
-                                    as: "productMapping",
-                                    attributes: ["id", "buyer_product_id", "vendor_product_id"]
-                                }
-                            ]
+                            attributes: ["id", "product_mapping_id", "total_contracted_qty", "unit_price"],
                         }
                     ]
                 },
@@ -68,6 +61,26 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         if (!indent.connection) throw new Error("Indent connection not found!!!");
 
         let templateData = indent.toJSON();
+
+        /** Attached separately, NOT as a nested include: the generated column alias
+         *  "bpoIndentItem.parentBlanketOrderItem.productMapping.buyer_product_id" is
+         *  68 chars, past postgres' 63 byte identifier limit — postgres truncates it
+         *  and the values silently come back undefined. */
+        const mappingIds = [...new Set(
+            (templateData.bpoIndentItem || []).map(i => i.parentBlanketOrderItem?.product_mapping_id).filter(Boolean)
+        )];
+        if (mappingIds.length > 0) {
+            const mappings = await ProductMapping.findAll({
+                where: { id: mappingIds },
+                attributes: ["id", "buyer_product_id", "vendor_product_id"]
+            });
+            const mappingById = new Map(mappings.map(pm => [pm.id, pm.toJSON()]));
+            for (const item of templateData.bpoIndentItem || []) {
+                if (item.parentBlanketOrderItem) {
+                    item.parentBlanketOrderItem.productMapping = mappingById.get(item.parentBlanketOrderItem.product_mapping_id) || null;
+                }
+            }
+        }
 
         /** shape the template still expects */
         templateData.buyer_tenant = templateData.connection.buyer_tenant;
