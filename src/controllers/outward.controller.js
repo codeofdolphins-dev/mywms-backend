@@ -233,7 +233,7 @@ export const createOutward = asyncHandler(async (req, res) => {
     // console.log(req.body); return;
 
     try {
-        const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "" } = req.body;
+        const { sales_order_id = "", store_id = "", priority = "", note = "", type = "", buyer_business_node_id = "", required_by_date = "", items = "", req_no = "", location_type = "", location_id } = req.body;
 
         // if (!store_id) {
         //     await transaction.rollback()

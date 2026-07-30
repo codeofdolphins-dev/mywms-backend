@@ -6,10 +6,10 @@ import { generateNo } from "../helper/generate.js";
  * @param {object} buyerTransaction buyer/vendor models transaction
  * @param {object} VendorModels vendor/buyer models
  * @param {string} tenant tenant name
- * @param {string} type when passed "buyer" then create buyer record on vendor side
+ * @param {string} type when passed "buyer" it create buyer record on vendor side
  * @returns buyer side vendor local data record
  */
-export async function createVendor(buyerModels, buyerTransaction, VendorModels, tenant, type = "") {
+export async function createVendor(buyerModels, buyerTransaction, VendorModels, tenant, connection_id, type = "") {
 
     const { User, BusinessNode, NodeDetails } = VendorModels;
     const { Vendor } = buyerModels;
@@ -38,19 +38,18 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
         const formatedDetails = vendorDetails?.toJSON();
         const node = formatedDetails.userBusinessNode[0];
 
-        // console.log("formatedDetails", formatedDetails)
-        // console.log("node", node)
-
         const [vendor, created] = await Vendor.findOrCreate({
             where: {
                 contact_email: formatedDetails.email,
                 linked_business_node_id: node.id,
+                connection_id,
                 tenant: tenant,
                 is_active: true
             },
             defaults: {
                 name: node.name,
                 linked_business_node_id: node.id,
+                connection_id,
                 tenant: tenant,
                 ...(type && { type }),
                 contact_email: formatedDetails.email,

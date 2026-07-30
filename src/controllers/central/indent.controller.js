@@ -28,7 +28,7 @@ export const createIndent = asyncHandler(async (req, res) => {
     let VendorTransaction = null;
 
     try {
-        const { bpo_no = "", target_store_id = "", grand_total = "", items = "" } = req.body;
+        const { bpo_no = "", target_store_id = "", grand_total = "", connection_id = "", items = "" } = req.body;
         if ([bpo_no, target_store_id, items].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
         const blanketOrder = await BlanketOrder.findOne({
@@ -128,16 +128,15 @@ export const createIndent = asyncHandler(async (req, res) => {
         }
 
 
-
         /******************** create vendor record on buyer side *********************/
-        const vendor = await createVendor(req.dbModels, buyerTransaction, VendorModels, vendorDbName);
+        const vendor = await createVendor(req.dbModels, buyerTransaction, VendorModels, vendorDbName, connection_id);
 
         /******************** create PO record on buyer side *********************/
         const purchaseOrder = await createPO_PoItems(req.dbModels, buyerTransaction, req, vendor.id, blanketOrder.id, requisition, indent.id, resolvedItems);
 
 
         /******************** create buyer record on vendor side *********************/
-        const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, dbName, "buyer");
+        const buyer = await createVendor(VendorModels, VendorTransaction, req.dbModels, dbName, connection_id, "buyer");
 
         /******************** create SO record on vendor/supplier side *********************/
         const salesOrder = await createSO_SOItems(VendorModels, VendorTransaction, req.dbModels, req.body, purchaseOrder, vendor, buyer, store, indent.id, resolvedItems);
