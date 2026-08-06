@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MYWMS — Database ERD</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --panel-2: #fbfbfd;
+    --ink: #14161a;
+    --ink-2: #4a5058;
+    --ink-3: #838a94;
+    --line: #e2e5ea;
+    --line-2: #eef0f4;
+    --accent: #3b5bdb;
+    --accent-soft: #e7ecfd;
+    --root: #7048e8;
+    --root-soft: #efe9fd;
+    --tenant: #0c8599;
+    --tenant-soft: #e0f3f6;
+    --pk: #b45309;
+    --pk-soft: #fdf0d9;
+    --fk: #2f6f3e;
+    --fk-soft: #e3f2e6;
+    --uk: #9c2c6b;
+    --uk-soft: #fbe7f1;
+    --sfk: #b03030;
+    --sfk-soft: #fbe6e6;
+    --poly: #5c5f66;
+    --poly-soft: #ecedef;
+    --shadow: 0 1px 2px rgba(16,20,28,.05), 0 4px 14px rgba(16,20,28,.05);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #0f1115;
+    --panel: #171a20;
+    --panel-2: #1c2027;
+    --ink: #e8eaee;
+    --ink-2: #a8b0bb;
+    --ink-3: #6f7783;
+    --line: #282d36;
+    --line-2: #21252c;
+    --accent: #8ba4ff;
+    --accent-soft: #1e2540;
+    --root: #b197fc;
+    --root-soft: #241f3a;
+    --tenant: #4dd4e8;
+    --tenant-soft: #102f36;
+    --pk: #f0b866;
+    --pk-soft: #33280f;
+    --fk: #7cc98d;
+    --fk-soft: #162c1c;
+    --uk: #ef9ac6;
+    --uk-soft: #331b28;
+    --sfk: #f08b8b;
+    --sfk-soft: #331a1a;
+    --poly: #9aa1ab;
+    --poly-soft: #23262c;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.25);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- layout ---------- */
+  .shell { display: flex; align-items: flex-start; }
+  aside {
+    position: sticky; top: 0; height: 100vh; flex: 0 0 272px;
+    border-right: 1px solid var(--line); background: var(--panel);
+    display: flex; flex-direction: column; z-index: 20;
+  }
+  main { flex: 1 1 auto; min-width: 0; padding: 40px 44px 120px; max-width: 1180px; }
+
+  .brand { padding: 20px 20px 14px; border-bottom: 1px solid var(--line-2); }
+  .brand h1 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+  .brand p { margin: 3px 0 0; font-size: 12px; color: var(--ink-3); }
+
+  .searchwrap { padding: 12px 14px; border-bottom: 1px solid var(--line-2); }
+  #search {
+    width: 100%; padding: 8px 10px; font: inherit; font-size: 13px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel-2); color: var(--ink);
+  }
+  #search:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .hint { margin: 7px 2px 0; font-size: 11px; color: var(--ink-3); }
+
+  nav { overflow-y: auto; flex: 1; padding: 12px 8px 28px; }
+  nav .grp { margin: 0 0 4px; padding: 12px 12px 5px; font-size: 10.5px; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+  nav a {
+    display: flex; justify-content: space-between; gap: 8px; align-items: center;
+    padding: 6px 12px; margin: 1px 4px; border-radius: 7px;
+    color: var(--ink-2); text-decoration: none; font-size: 13.5px;
+  }
+  nav a:hover { background: var(--line-2); color: var(--ink); }
+  nav a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  nav a .n { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  nav a.on .n { color: var(--accent); }
+
+  .themebtn {
+    margin: 0; border-top: 1px solid var(--line-2); padding: 11px 14px;
+    background: none; border-left: 0; border-right: 0; border-bottom: 0;
+    font: inherit; font-size: 12.5px; color: var(--ink-2); cursor: pointer; text-align: left;
+  }
+  .themebtn:hover { color: var(--ink); background: var(--line-2); }
+
+  /* ---------- hero ---------- */
+  .hero h2 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.025em; }
+  .hero .sub { margin: 0 0 26px; color: var(--ink-2); max-width: 68ch; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 40px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 24px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--ink-3); }
+
+  /* ---------- sections ---------- */
+  section { margin-bottom: 56px; scroll-margin-top: 20px; }
+  section > h3 {
+    margin: 0 0 4px; font-size: 20px; letter-spacing: -.02em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section > .lede { margin: 0 0 20px; color: var(--ink-2); max-width: 76ch; font-size: 14px; }
+
+  .tier { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+          padding: 3px 8px; border-radius: 999px; }
+  .tier.root   { background: var(--root-soft); color: var(--root); }
+  .tier.tenant { background: var(--tenant-soft); color: var(--tenant); }
+
+  /* ---------- diagrams ---------- */
+  .diagram {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px; margin-bottom: 24px; overflow-x: auto; box-shadow: var(--shadow);
+  }
+  .diagram pre.mermaid {
+    margin: 0; text-align: center; font-family: var(--mono);
+    font-size: 11px; color: var(--ink-3); white-space: pre;
+  }
+  .diagram pre.mermaid[data-processed] { text-align: center; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .dgwarn { margin: 0 0 14px; padding: 9px 12px; border-radius: 8px; font-size: 12.5px;
+            background: var(--pk-soft); color: var(--pk); border: 1px solid var(--line); }
+
+  /* ---------- table cards ---------- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: start; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; box-shadow: var(--shadow); scroll-margin-top: 20px;
+  }
+  .card.hit { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow); }
+  .card > header { padding: 12px 15px; border-bottom: 1px solid var(--line-2); background: var(--panel-2); }
+  .card h4 { margin: 0; font-family: var(--mono); font-size: 14px; letter-spacing: -.01em;
+             display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .card h4 .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .card h4 .nm { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+  .card .note { margin: 5px 0 0; font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+  .card .cnt { font-size: 11px; color: var(--ink-3); font-family: var(--sans); font-weight: 400; flex: 0 0 auto; }
+
+  table.cols { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.cols td { padding: 6px 15px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+  table.cols tr:last-child td { border-bottom: 0; }
+  table.cols .c-name { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+  table.cols .c-type { color: var(--ink-3); font-family: var(--mono); font-size: 11px; white-space: nowrap; width: 1%; }
+  table.cols .c-note { color: var(--ink-2); font-size: 11.5px; line-height: 1.45; }
+  table.cols tr.k-pk  { background: color-mix(in srgb, var(--pk-soft) 45%, transparent); }
+  table.cols tr.k-sfk { background: color-mix(in srgb, var(--sfk-soft) 35%, transparent); }
+
+  .badge { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+           padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+  .b-PK   { background: var(--pk-soft);   color: var(--pk); }
+  .b-FK   { background: var(--fk-soft);   color: var(--fk); }
+  .b-UK   { background: var(--uk-soft);   color: var(--uk); }
+  .b-SFK  { background: var(--sfk-soft);  color: var(--sfk); }
+  .b-POLY { background: var(--poly-soft); color: var(--poly); }
+
+  /* ---------- generic tables ---------- */
+  .wide { overflow-x: auto; background: var(--panel); border: 1px solid var(--line);
+          border-radius: 12px; box-shadow: var(--shadow); }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  table.grid th { text-align: left; padding: 10px 15px; background: var(--panel-2);
+                  border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: .06em;
+                  text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+  table.grid td { padding: 9px 15px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+  table.grid tr:last-child td { border-bottom: 0; }
+  table.grid code { font-family: var(--mono); font-size: 11.5px; background: var(--line-2);
+                    padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 26px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .empty { display: none; padding: 40px; text-align: center; color: var(--ink-3); }
+  body.searching .diagram, body.searching .nodiag { display: none; }
+  body.searching section.hide, body.searching .card.hide { display: none; }
+  body.searching .empty.show { display: block; }
+
+  footer { margin-top: 70px; padding-top: 22px; border-top: 1px solid var(--line);
+           font-size: 12.5px; color: var(--ink-3); }
+  footer code { font-family: var(--mono); font-size: 11.5px; }
+
+  @media (max-width: 900px) {
+    aside { display: none; }
+    main { padding: 26px 18px 80px; }
+    .hero h2 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <h1>MYWMS — Database ERD</h1>
+      <p>Generated from the Sequelize models</p>
+    </div>
+    <div class="searchwrap">
+      <input id="search" type="search" placeholder="Search tables &amp; columns…" autocomplete="off" spellcheck="false">
+      <p class="hint">Try <code>batch_id</code>, <code>Outward</code>, <code>connection</code></p>
+    </div>
+    <nav id="nav"></nav>
+    <button class="themebtn" id="themebtn">◐ Toggle theme</button>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <h2>Database entity–relationship reference</h2>
+      <p class="sub">
+        MYWMS is multi-tenant with <strong>database-per-tenant isolation</strong>. One root database
+        (<code>mywms</code>) holds the tenant registry and every cross-company trade document; each
+        tenant gets its own PostgreSQL database holding all operational data. Any reference that
+        crosses that boundary is a <em>soft</em> foreign key — a plain column with no database
+        constraint.
+      </p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="legend">
+      <span><b class="badge b-PK">PK</b> primary key</span>
+      <span><b class="badge b-FK">FK</b> enforced foreign key</span>
+      <span><b class="badge b-UK">UK</b> unique</span>
+      <span><b class="badge b-SFK">SFK</b> soft FK — crosses a database, not enforced</span>
+      <span><b class="badge b-POLY">POLY</b> polymorphic — paired with a <code>*_type</code> column</span>
+    </div>
+
+    <div id="content"></div>
+    <div class="empty" id="empty">No table or column matches that search.</div>
+
+    <footer>
+      <p><strong>Source of truth:</strong> <code>src/models/*.model.js</code> for columns,
+      <code>src/models/association.js</code> for relationships, <code>src/models/index.model.js</code>
+      for which models are registered against which tier, and <code>src/db/tenantMenager.service.js</code>
+      for the connection/tenant lifecycle. A Markdown twin of this page lives at
+      <code>docs/DATABASE_ERD.md</code>.</p>
+      <p>Every table also carries Sequelize's implicit <code>id</code> primary key and
+      <code>createdAt</code>&nbsp;/&nbsp;<code>updatedAt</code> timestamps, except <code>State</code>
+      and <code>District</code>, which are declared <code>timestamps: false</code>.</p>
+    </footer>
+  </main>
+</div>
+
+<script type="module">
+/* ------------------------------------------------------------------ *
+ *  SCHEMA DATA
+ *  col format: "name|type|flags|note"   flags: PK FK UK SFK POLY (space separated)
+ * ------------------------------------------------------------------ */
+const DOMAINS = [
+  { id:'arch',        tier:null,     name:'Architecture',            lede:'How the two database tiers relate, and what crosses between them.' },
+
+  { id:'r-registry',  tier:'root',   name:'Tenant registry',         lede:'Who the tenants are, which node types exist, and the geography lookup tables.' },
+  { id:'r-access',    tier:'root',   name:'Root identity & access',  lede:'The root database carries its own copy of the User / Role / Permission triad, structurally identical to the tenant one.' },
+  { id:'r-trade',     tier:'root',   name:'Partnership & mapping',   lede:'Connection is the hub of the root database — it pairs two tenants, and every cross-company document hangs off it. ProductMapping translates SKUs between the two sides.' },
+  { id:'r-sourcing',  tier:'root',   name:'RFQ → BPO → Indent',      lede:'The central sourcing pipeline. A buyer broadcasts an RFQ; vendors answer with quotations carrying versioned revisions; an accepted revision becomes a Blanket Purchase Order; releases against that BPO are Indents, which materialise as a PO in the buyer\'s tenant DB and an SO in the vendor\'s.' },
+  { id:'r-inter',     tier:'root',   name:'Inter-company requisitions', lede:'A lighter-weight flow than the BPO chain — one tenant\'s node requisitions stock directly from a partner tenant\'s node over an existing Connection.' },
+
+  { id:'t-access',    tier:'tenant', name:'Identity & access',       lede:'Users, roles, permissions, and the assignment of users to business nodes and stores.' },
+  { id:'t-org',       tier:'tenant', name:'Organisation structure',  lede:'BusinessNode is the tenant-side hub — nearly every transactional table points at one. Note the two parallel "store" concepts: ManufacturingUnit (the operational RM/FG/production store, commented in code as "ManufacturingUnit === Store") and the newer, thinner Store table.' },
+  { id:'t-product',   tier:'tenant', name:'Product master data',     lede:'Products plus their brand, category, tax (HSN), unit and package lookups — and the bill of materials that drives production.' },
+  { id:'t-procure',   tier:'tenant', name:'Procurement',             lede:'Requisition → Quotation → Purchase Order. Requisitions fan out to candidate supplier nodes through the RequisitionSupplier join table.' },
+  { id:'t-sales',     tier:'tenant', name:'Sales, dispatch & invoicing', lede:'Sales Order → Outward (pick and dispatch, allocated batch by batch) → Invoice.' },
+  { id:'t-inventory', tier:'tenant', name:'Inventory',               lede:'Batch is the unit of stock. Every movement either creates a batch, allocates from one, or writes a ledger entry against one.' },
+  { id:'t-production',tier:'tenant', name:'Production',              lede:'A Production Order consumes raw materials at a WIP unit and hands finished goods to an FG store via a Production Receipt.' },
+  { id:'t-costing',   tier:'tenant', name:'Cost centre',             lede:'Two-level cost categories (head / sub-head) with cost entries booked against a node or store.' },
+
+  { id:'crossdb',     tier:null,     name:'Cross-DB soft refs',      lede:'None of these are enforced by a PostgreSQL foreign key — they span database boundaries and must be validated in application code.' },
+  { id:'dormant',     tier:null,     name:'Dormant & quirks',        lede:'Model files that never become tables, plus the naming inconsistencies worth knowing before you write a query.' },
+];
+
+const TABLES = [
+/* ============================ ROOT ============================ */
+{ d:'r-registry', n:'TenantsName', note:'The tenant slug doubles as the PostgreSQL database name.', c:[
+  'id|int|PK', 'tenant|string|UK|Tenant slug — also the per-tenant database name' ]},
+{ d:'r-registry', n:'Tenant', note:'Login/company record for a tenant owner.', c:[
+  'id|int|PK', 'tenant_id|int|FK|→ TenantsName.id (CASCADE)', 'email|string', 'password|string',
+  'companyName|string', 'isOwner|bool||default false', 'status|bool||default true' ]},
+{ d:'r-registry', n:'BusinessNodeType', note:'Catalogue of node types; also mirrored into every tenant DB.', c:[
+  'id|int|PK', 'name|string', 'code|string|UK', 'category|string' ]},
+{ d:'r-registry', n:'TenantBusinessFlowMaster', note:'Which node types a tenant uses, and in what order. Composite unique index uniq_tenant_node_type on (tenant_id, node_type_code).', c:[
+  'id|int|PK', 'tenant_id|int|FK|→ TenantsName.id', 'node_type_code|string', 'sequence|int',
+  'is_active|bool||default true' ]},
+{ d:'r-registry', n:'State', note:'Geography lookup. timestamps: false.', c:[ 'id|int|PK', 'name|string' ]},
+{ d:'r-registry', n:'District', note:'Geography lookup. timestamps: false. No association is declared for state_id, so there is no enforced FK.', c:[
+  'id|int|PK', 'name|string', 'state_id|int||Intended → State.id, but no association declared' ]},
+
+{ d:'r-access', n:'User', note:'Root-tier user. Same shape as the tenant User model.', c:[
+  'id|int|PK', 'email|string|UK', 'password|string', 'name|jsonb', 'company_name|string',
+  'phone_no|string', 'profile_image|string', 'address|jsonb', 'accessToken|string',
+  'type|enum||internal | external', 'is_active|bool', 'is_owner|bool', 'meta|jsonb' ]},
+{ d:'r-access', n:'Role', c:[ 'id|int|PK', 'role|string', 'status|bool', 'is_default|bool' ]},
+{ d:'r-access', n:'Permission', c:[ 'id|int|PK', 'permission|string' ]},
+{ d:'r-access', n:'UserRoles', note:'Join table for User ↔ Role.', c:[
+  'id|int|PK', 'userId|int|FK|→ Users.id', 'roleId|int|FK|→ Roles.id' ]},
+{ d:'r-access', n:'RolePermissions', note:'Join table for Role ↔ Permission.', c:[
+  'id|int|PK', 'roleId|int|FK|→ Roles.id', 'permissionId|int|FK|→ Permissions.id' ]},
+
+{ d:'r-trade', n:'Connection', note:'A trading partnership between two tenants. buyer_tenant / vendor_tenant are flagged "Depriciate name" in the model — they hold tenant slugs and the roles are not always literally buyer/vendor.', c:[
+  'id|int|PK', 'buyer_tenant|string|FK|→ TenantsName.tenant (targetKey)',
+  'vendor_tenant|string|FK|→ TenantsName.tenant (targetKey)',
+  'connection_status|bool||default false',
+  'connection_type|enum||cfa / c&f agent | 3pl warehouse | super stockist | dealer | distributor | sub-distributor | retail warehouse / backroom storage | supplier | pending' ]},
+{ d:'r-trade', n:'ProductMapping', note:'SKU translation between the two sides of a Connection. Both product columns point into different tenant databases.', c:[
+  'id|int|PK', 'connection_id|int|FK|→ Connections.id',
+  'buyer_product_id|int|SFK|→ buyer tenant Product.id',
+  'vendor_product_id|int|SFK|→ vendor tenant Product.id' ]},
+
+{ d:'r-sourcing', n:'RFQ', note:'Request for quotation, broadcast by a buyer tenant.', c:[
+  'id|int|PK', 'rfq_no|string', 'buyer_tenant|string|FK|→ TenantsName.tenant',
+  'pr_reference_code|string', 'title|string', 'priority|enum||low | normal | high', 'note|text',
+  'status|enum||draft | open | closed | cancelled', 'submission_deadline|date',
+  'grand_total|decimal', 'meta|jsonb' ]},
+{ d:'r-sourcing', n:'RFQItem', c:[
+  'id|int|PK', 'rfq_id|int|FK|→ RFQs.id', 'product_id|int|SFK|→ buyer tenant Product.id',
+  'product_name|string', 'qty|decimal', 'uom|string',
+  'price_limit_type|enum||upper_limit | lower_limit', 'price_limit|decimal' ]},
+{ d:'r-sourcing', n:'RfqQuotation', note:'One vendor tenant\'s response to an RFQ. The actual numbers live on its revisions.', c:[
+  'id|int|PK', 'rfq_id|int|FK|→ RFQs.id', 'vendor_tenant|string|FK|→ TenantsName.tenant',
+  'buyer_name|string', 'status|enum||accept | reject', 'current_revision_no|int||default 1',
+  'valid_till|date', 'meta|jsonb' ]},
+{ d:'r-sourcing', n:'RfqQuotationRevision', note:'Versioned negotiation round. An accepted revision is what a BlanketOrder points back to.', c:[
+  'id|int|PK', 'quotation_id|int|FK|→ RfqQuotations.id', 'revision_no|int||default 1',
+  'status|enum||draft | sent | negotiate | confirmed | pending | closed | cancelled',
+  'grand_total|decimal', 'remarks|text' ]},
+{ d:'r-sourcing', n:'RfqQuotationItem', c:[
+  'id|int|PK', 'revision_id|int|FK|→ RfqQuotationRevisions.id', 'rfq_item_id|int|FK|→ RFQItems.id',
+  'product_map_id|int|FK|→ ProductMappings.id', 'qty|decimal', 'offer_price|decimal' ]},
+{ d:'r-sourcing', n:'BlanketOrder', note:'The master contract (BPO) between two tenants.', c:[
+  'id|int|PK', 'bpo_no|string|UK', 'pr_reference_code|string',
+  'connection_id|int|FK|→ Connections.id (RESTRICT)',
+  'rfq_quotation_revision_id|int|FK|→ RfqQuotationRevisions.id',
+  'status|enum||draft | active | closed', 'valid_until|date' ]},
+{ d:'r-sourcing', n:'BlanketOrderItem', note:'Contract line, drawn down by indents over time.', c:[
+  'id|int|PK', 'bpo_id|int|FK|→ BlanketOrders.id',
+  'product_mapping_id|int|FK|→ ProductMappings.id (RESTRICT)',
+  'total_contracted_qty|decimal', 'consumed_qty|decimal||default 0',
+  'remain_contracted_qty|decimal', 'unit_price|decimal' ]},
+{ d:'r-sourcing', n:'BpoIndent', note:'A release against a blanket order. The two link columns are filled in once each side has created its local document.', c:[
+  'id|int|PK', 'indent_no|string|UK', 'bpo_id|int|FK|→ BlanketOrders.id',
+  'connection_id|int|FK|→ Connections.id (RESTRICT)',
+  'buyer_po_id|int|SFK|→ buyer tenant PurchasOrder.id',
+  'supplier_so_id|int|SFK|→ vendor tenant SalesOrder.id ("supplier" and "vendor" mean the same here)',
+  'status|enum||draft | confirmed | fulfilled | cancelled', 'created_by|int', 'grand_total|decimal' ]},
+{ d:'r-sourcing', n:'BpoIndentItem', c:[
+  'id|int|PK', 'indent_id|int|FK|→ BpoIndents.id', 'bpo_item_id|int|FK|→ BlanketOrderItems.id',
+  'release_qty|decimal', 'unit_price|decimal||locked in from the BPO', 'line_total|decimal' ]},
+
+{ d:'r-inter', n:'IntercompanyRequisition', note:'Direct node-to-node requisition across a Connection. Both node columns point into tenant databases.', c:[
+  'id|int|PK', 'requisition_no|string|UK', 'connection_id|int|FK|→ Connections.id',
+  'buyer_node|int|SFK|→ buyer tenant BusinessNode.id',
+  'seller_node|int|SFK|→ seller tenant BusinessNode.id',
+  'title|string', 'notes|text', 'required_by_date|date', 'created_by|int',
+  'status|enum||pending | assign | dispatched | cancelled | return | closed',
+  'priority|enum||low | normal | high' ]},
+{ d:'r-inter', n:'IntercompanyRequisitionItems', note:'Damage and shortage are reported by the buyer at inward and are visible to both tenants.', c:[
+  'id|int|PK', 'inter_comp_req_id|int|FK|→ IntercompanyRequisitions.id',
+  'product_mapping_id|int|FK|→ ProductMappings.id', 'qty|decimal',
+  'total_damage_qty|decimal||reported by the buyer at inward',
+  'total_shortage_qty|decimal||reported by the buyer at inward',
+  'brand|string||free text, not an FK', 'category|string||free text, not an FK',
+  'sub_category|string||free text, not an FK' ]},
+
+/* =========================== TENANT =========================== */
+{ d:'t-access', n:'User', c:[
+  'id|int|PK', 'email|string|UK', 'password|string', 'name|jsonb', 'company_name|string',
+  'phone_no|string', 'profile_image|string', 'address|jsonb', 'accessToken|string',
+  'type|enum||internal | external', 'is_active|bool||default true', 'is_owner|bool||default false',
+  'meta|jsonb' ]},
+{ d:'t-access', n:'Role', c:[ 'id|int|PK', 'role|string', 'status|bool', 'is_default|bool' ]},
+{ d:'t-access', n:'Permission', c:[ 'id|int|PK', 'permission|string' ]},
+{ d:'t-access', n:'UserRoles', c:[ 'id|int|PK', 'userId|int|FK|→ Users.id', 'roleId|int|FK|→ Roles.id' ]},
+{ d:'t-access', n:'RolePermissions', c:[ 'id|int|PK', 'roleId|int|FK', 'permissionId|int|FK' ]},
+{ d:'t-access', n:'NodeUser', note:'Join table assigning a user to a business node, optionally scoped to one store.', c:[
+  'id|int|PK', 'user_id|int|FK|→ Users.id', 'node_id|int|FK|→ BusinessNodes.id',
+  'store_id|int|FK|→ ManufacturingUnits.id (SET NULL)',
+  'department|enum||purchase | sales | both', 'isNodeAdmin|bool||default false' ]},
+
+{ d:'t-org', n:'BusinessNode', note:'The tenant-side hub. Almost every transactional table carries a node id.', c:[
+  'id|int|PK', 'node_type_code|string|FK|→ BusinessNodeType.code (targetKey)',
+  'tenant_business_flow_id|int|FK|→ TenantBusinessFlows.id', 'name|string' ]},
+{ d:'t-org', n:'BusinessNodeType', c:[ 'id|int|PK', 'name|string', 'code|string|UK', 'category|string' ]},
+{ d:'t-org', n:'TenantBusinessFlow', note:'The tenant-local copy of its node-type sequence.', c:[
+  'id|int|PK', 'node_type_code|string|UK', 'sequence|int', 'is_active|bool' ]},
+{ d:'t-org', n:'NodeDetails', note:'One-to-one profile for a business node.', c:[
+  'id|int|PK', 'business_node_id|int|FK|→ BusinessNodes.id', 'name|string', 'location|string',
+  'address|jsonb||address, state, district, lat, long', 'image|string', 'gst_no|string',
+  'license_no|string', 'desc|text', 'meta|jsonb' ]},
+{ d:'t-org', n:'ManufacturingUnit', note:'The operational store. This — not the Store table — is what every store_id / mfg_unit_id / fg_store_id column points at.', c:[
+  'id|int|PK', 'business_node_id|int|FK|→ BusinessNodes.id', 'name|string|UK',
+  'store_type|enum||rm_store | fg_store | production', 'location|string',
+  'address|jsonb||address, state, district, lat, long, pincode', 'isActive|bool', 'meta|jsonb' ]},
+{ d:'t-org', n:'Store', note:'A newer, thinner store record. Nothing else references it yet.', c:[
+  'id|int|PK', 'store_name|string', 'node_id|int|FK|→ BusinessNodes.id', 'location|string',
+  'address|jsonb', 'status|bool||default true' ]},
+
+{ d:'t-product', n:'Product', note:'Four of its columns are FKs keyed on a natural key rather than an id: hsn_code, unit_type and package_type join on name/code.', c:[
+  'id|int|PK', 'name|string', 'sku|string|UK', 'barcode|string|UK',
+  'hsn_code|string|FK|→ HSN.hsn_code (targetKey)', 'brand_id|int|FK|→ Brands.id (SET NULL)',
+  'linked_vendor|int|FK|→ Vendors.id (SET NULL)', 'product_type|enum||raw | finished',
+  'package_type|string|FK|→ PackageType.name (targetKey)',
+  'unit_type|string|FK|→ UnitType.name (targetKey)', 'measure|string', 'description|string',
+  'reorder_level|int', 'is_active|bool', 'has_expiry|bool', 'shelf_life|int', 'mrp|decimal',
+  'photo|string' ]},
+{ d:'t-product', n:'Brand', c:[
+  'id|int|PK', 'name|string', 'slug|string', 'vendor_id|int|FK|→ Vendors.id',
+  'description|text', 'logo|string', 'website|string', 'origin_country|string', 'isActive|bool' ]},
+{ d:'t-product', n:'Category', note:'Self-referencing tree via parent_id.', c:[
+  'id|int|PK', 'name|string', 'description|string', 'parent_id|int|FK|→ Categories.id (self)',
+  'status|bool' ]},
+{ d:'t-product', n:'CategoryProducts', note:'Join table for Product ↔ Category. The equivalent Brand join is commented out — Product.brand_id is a plain one-to-many instead.', c:[
+  'id|int|PK', 'category_id|int|FK|→ Categories.id', 'product_id|int|FK|→ Products.id' ]},
+{ d:'t-product', n:'HSN', note:'Tax master. Intra-state splits default_gst_rate into CGST + SGST; inter-state uses it as IGST.', c:[
+  'id|int|PK', 'hsn_code|string|UK|4, 6 or 8 digits', 'default_gst_rate|decimal||total GST, e.g. 18.00',
+  'cess_rate|decimal||tobacco, luxury, special categories', 'is_exempt|bool',
+  'effective_from|date', 'effective_to|date', 'is_active|bool', 'description|text' ]},
+{ d:'t-product', n:'UnitType', c:[ 'id|int|PK', 'name|string|UK', 'isActive|bool' ]},
+{ d:'t-product', n:'PackageType', c:[ 'id|int|PK', 'name|string|UK', 'isActive|bool' ]},
+{ d:'t-product', n:'Vendor', note:'The tenant-local mirror of a trading partner. Three of its columns reach outside this database.', c:[
+  'id|int|PK', 'name|string', 'tenant|string|SFK|→ root TenantsName.tenant',
+  'linked_business_node_id|int|SFK|→ partner tenant BusinessNode.id (documented as cross-tenant in the model)',
+  'connection_id|int|SFK|→ root Connection.id',
+  'type|enum||vendor when a PO is raised for them, buyer when an SO is',
+  'contact_phone|string', 'contact_email|string|UK', 'address|jsonb', 'gst_no|string',
+  'license_no|string', 'is_active|bool', 'meta|jsonb' ]},
+{ d:'t-product', n:'BOM', note:'Bill of materials for one finished good.', c:[
+  'id|int|PK', 'finished_product_id|int|FK|→ Products.id', 'finished_product_barcode|string',
+  'output_qty|decimal', 'output_uom|string|FK|→ UnitType.name (targetKey)', 'desc|text',
+  'is_active|bool' ]},
+{ d:'t-product', n:'BOMItem', c:[
+  'id|int|PK', 'bom_id|int|FK|→ BOMs.id', 'raw_product_id|int|FK|→ Products.id',
+  'required_qty|decimal', 'uom|string|FK|→ UnitType.name (targetKey)' ]},
+
+{ d:'t-procure', n:'Requisition', c:[
+  'id|int|PK', 'requisition_no|string|UK', 'buyer_business_node_id|int|FK|→ BusinessNodes.id (requester)',
+  'requisition_category_id|int|FK|→ RequisitionCategories.id', 'created_by|int|FK|→ Users.id',
+  'title|string', 'notes|text', 'grandTotal|decimal', 'type|enum||internal | external',
+  'required_by_date|date', 'price_limit_type|enum||upper_limit | lower_limit',
+  'status|enum||pending | quoted | po_created | cancelled | closed | bpo_created | assign | dispatched',
+  'priority|enum||low | normal | high' ]},
+{ d:'t-procure', n:'RequisitionItem', note:'brand / category / sub_category are stored as free text — the corresponding belongsTo associations are commented out.', c:[
+  'id|int|PK', 'requisition_id|int|FK|→ Requisitions.id', 'product_id|int|FK|→ Products.id',
+  'brand|string||free text, not an FK', 'category|string||free text, not an FK',
+  'sub_category|string||free text, not an FK', 'qty|int', 'price_limit|decimal', 'remarks|text' ]},
+{ d:'t-procure', n:'RequisitionSupplier', note:'Join table fanning a requisition out to candidate supplier nodes, tracking each one\'s response.', c:[
+  'id|int|PK', 'requisition_id|int|FK|→ Requisitions.id',
+  'supplier_business_node_id|int|FK|→ BusinessNodes.id (internal supplier)',
+  'status|enum||sent | viewed | quoted | accepted | rejected | assign | Waiting_for_dispatched' ]},
+{ d:'t-procure', n:'RequisitionCategory', c:[
+  'id|int|PK', 'name|string|UK', 'is_active|bool', 'desc|text' ]},
+{ d:'t-procure', n:'Quotation', note:'requisition_id is unique — at most one quotation per requisition.', c:[
+  'id|int|PK', 'quotation_no|string|UK', 'requisition_id|int|FK UK|→ Requisitions.id, one per requisition',
+  'type|enum||internal | external', 'from_supplier_id|int||no association declared',
+  'to_business_node_id|int|FK|→ BusinessNodes.id (requester)',
+  'status|enum||draft | submitted | accepted | rejected | expired', 'valid_till|date',
+  'revision_no|int', 'grandTotal|decimal', 'note|text', 'created_by|int|FK|→ Users.id' ]},
+{ d:'t-procure', n:'QuotationItem', c:[
+  'id|int|PK', 'quotation_id|int|FK|→ Quotations.id',
+  'requisition_item_id|int|FK|→ RequisitionItems.id', 'offer_price|decimal',
+  'tax_percent|decimal', 'total_price|decimal', 'note|text' ]},
+{ d:'t-procure', n:'PurchasOrder', note:'Note the spelling — missing "e". The model name, table PurchasOrders, and every association alias all use it.', c:[
+  'id|int|PK', 'po_no|string|UK', 'central_bpo_id|int|SFK|→ root BlanketOrder.id, only for BPO releases',
+  'central_indent_id|int|SFK|→ root BpoIndent.id, only for indent-generated POs',
+  'quotation_id|int|FK|→ Quotations.id, nullable for BPO indents',
+  'requisition_id|int|FK|→ Requisitions.id, nullable for BPO indents',
+  'from_business_node_id|int|FK|→ BusinessNodes.id', 'to_supplier_id|int||no association declared',
+  'target_store_id|int||no association declared', 'type|enum||internal | external | bpo_release',
+  'priority|enum||low | medium | high | urgent', 'required_by|date',
+  'status|enum||draft | sent_to_supplier | waiting_for_poi | poi_received | approved | picking_in_progress | closed | cancelled',
+  'created_by|int|FK|→ Users.id', 'grand_total|decimal', 'note|text' ]},
+{ d:'t-procure', n:'PurchaseOrderItem', c:[
+  'id|int|PK', 'purchase_order_id|int|FK|→ PurchasOrders.id',
+  'bpo_item_id|int|SFK|→ root BlanketOrderItem.id, only when generated from a BPO',
+  'buyer_product_id|int|FK|→ Products.id', 'qty|decimal', 'unit_price|decimal',
+  'tax_percent|decimal', 'line_total|decimal' ]},
+
+{ d:'t-sales', n:'SalesOrder', c:[
+  'id|int|PK', 'so_no|string|UK',
+  'source_po_no|string|SFK|the buyer\'s PO **number**, not their database id',
+  'central_bpo_id|int|SFK|→ root BlanketOrder.id', 'central_indent_id|int|SFK|→ root BpoIndent.id',
+  'seller_business_node_id|int|FK|→ BusinessNodes.id',
+  'buyer_business_node_id|int|SFK|buyer tenant BusinessNode.id — no association declared',
+  'type|enum||internal | external | bpo_release', 'priority|enum||low | medium | high | urgent',
+  'delivery_address|jsonb||destination RM store chosen by the buyer', 'required_by|date',
+  'status|enum||draft | waiting_for_approval | approved | assign_fg | closed | cancelled',
+  'grand_total|decimal', 'note|text', 'meta|jsonb' ]},
+{ d:'t-sales', n:'SalesOrderItem', c:[
+  'id|int|PK', 'sales_order_id|int|FK|→ SalesOrders.id',
+  'vendor_product_id|int|FK|→ Products.id', 'qty|decimal', 'unit_price|decimal',
+  'line_total|decimal' ]},
+{ d:'t-sales', n:'Outward', note:'The pick-and-dispatch document. Links to a Sales Order when external, to a requisition number when internal.', c:[
+  'id|int|PK', 'outward_no|string|UK', 'sales_order_id|int|FK|→ SalesOrders.id, when type = external',
+  'pr_no|string|SFK|Requisition.requisition_no, when type = internal',
+  'seller_business_node_id|int|FK|→ BusinessNodes.id',
+  'store_id|int|FK|→ ManufacturingUnits.id (the dispatching FG store)',
+  'buyer_business_node_id|int|SFK|an internal node or a vendor — no association declared',
+  'type|enum||internal | external', 'picker_id|int||no association declared',
+  'priority|enum||low | normal | high | urgent',
+  'status|enum||pending | picking | picked | cancelled | dispatched | return',
+  'required_by|date', 'dispatch_date|date', 'invoice_no|string', 'meta|jsonb', 'note|text' ]},
+{ d:'t-sales', n:'OutwardItem', c:[
+  'id|int|PK', 'outward_id|int|FK|→ Outwards.id',
+  'sales_order_item_id|int|FK|→ SalesOrderItems.id', 'vendor_product_id|int|FK|→ Products.id',
+  'requested_qty|decimal', 'dispatch_qty|decimal', 'total_shortage_qty|decimal',
+  'total_damage_qty|decimal', 'unit_price|decimal' ]},
+{ d:'t-sales', n:'OutwardAllocation', note:'Which batch each dispatched unit came from.', c:[
+  'id|int|PK', 'outward_item_id|int|FK|→ OutwardItems.id',
+  'product_id|int||no association declared', 'batch_id|int|FK|→ Batches.id',
+  'allocated_qty|decimal', 'shortage_qty|decimal', 'damage_qty|decimal',
+  'status|enum||allocated | picked | dispatched' ]},
+{ d:'t-sales', n:'Invoice', note:'Carries both parties. The seller side is enforced with FKs; the buyer side lives in another database and is not.', c:[
+  'id|int|PK', 'invoice_no|string|UK', 'seller_tenant|string|SFK|→ root TenantsName.tenant',
+  'seller_businessNode_id|int|FK|→ BusinessNodes.id',
+  'seller_store_id|int|FK|→ ManufacturingUnits.id (dispatch store)',
+  'buyer_tenant|string|SFK|→ root TenantsName.tenant',
+  'buyer_businessNode_id|int|SFK|buyer tenant BusinessNode.id — no association declared',
+  'outward_id|int|FK|→ Outwards.id', 'invoice_date|date', 'sub_total|decimal',
+  'tax_type|enum||intra | inter | noTax', 'total_tax_amount|decimal', 'discount|decimal',
+  'grand_total|decimal' ]},
+{ d:'t-sales', n:'InvoiceItem', note:'Both sides\' product identity is denormalised onto the line so the invoice stays readable to buyer and seller alike.', c:[
+  'id|int|PK', 'invoice_id|int|FK|→ Invoices.id', 'seller_product_id|int|FK|→ Products.id',
+  'seller_product_name|string', 'seller_product_sku|string',
+  'buyer_product_id|int|SFK|buyer tenant Product.id', 'buyer_product_name|string',
+  'buyer_product_sku|string', 'hsn_code|string', 'batch_no|string', 'mfg_date|date',
+  'expiry_date|date', 'unit_price|decimal', 'qty|decimal', 'itemLevel_sub_total|decimal',
+  'tax_rate|decimal', 'tax_amount|decimal', 'itemLevel_grand_total|decimal' ]},
+
+{ d:'t-inventory', n:'Batch', note:'The unit of stock. location_type is a discriminator, but the associations still bind location_id → BusinessNode and store_id → ManufacturingUnit as real FKs.', c:[
+  'id|int|PK', 'batch_no|string', 'product_id|int|FK|→ Products.id',
+  'location_id|int|FK|→ BusinessNodes.id', 'store_id|int|FK|→ ManufacturingUnits.id',
+  'location_type|enum||mfg_unit | business_node', 'available_qty|decimal', 'reserved_qty|decimal',
+  'reference_id|int|POLY|resolved by reference_type',
+  'reference_type|enum||opening_stock | grn | transfer | others | production',
+  'batch_status|enum||active | quarantine | expired | consumed', 'unit_price|decimal',
+  'mfg_date|date', 'expiry_date|date', 'received_date|date', 'is_active|bool' ]},
+{ d:'t-inventory', n:'GRN', note:'Goods receipt. For grn_type = purchase, sender_id is the seller and receiver_id + mfg_unit_id the buyer. For transfer, sender_id (plus optionally mfg_unit_id) is the sender.', c:[
+  'id|int|PK', 'grn_no|string|UK',
+  'purchase_order|string|FK|→ PurchasOrder.po_no (targetKey)',
+  'grn_type|enum||purchase | transfer | return',
+  'sender_id|int|SFK|a node id that may be remote — no association declared',
+  'receiver_id|int|FK|→ BusinessNodes.id', 'mfg_unit_id|int|FK|→ ManufacturingUnits.id',
+  'received_date|date', 'status|enum||draft | accepted | cancelled | return',
+  'reference|jsonb', 'created_by|int|FK|→ Users.id (SET NULL)' ]},
+{ d:'t-inventory', n:'GRNItem', c:[
+  'id|int|PK', 'grn_id|int|FK|→ GRNs.id',
+  'purchase_order_item_id|int|FK|→ PurchaseOrderItems.id', 'product_id|int|FK|→ Products.id',
+  'ordered_qty|decimal', 'shortage_qty|decimal', 'damage_qty|decimal', 'received_qty|decimal' ]},
+{ d:'t-inventory', n:'GRNItemBatch', note:'Splits one received line into supplier batches. A product_id FK exists in the code but is commented out.', c:[
+  'id|int|PK', 'grn_item_id|int|FK|→ GRNItems.id',
+  'batch_no|string||supplier\'s batch number if available', 'received_qty|decimal',
+  'damage_qty|decimal', 'shortage_qty|decimal', 'expiry_date|date' ]},
+{ d:'t-inventory', n:'NodeStockLedger', note:'Movement header. Both endpoints and the source document are polymorphic — no FKs on any of them.', c:[
+  'id|int|PK', 'ledger_no|string',
+  'transaction_type|enum||opening_stock | internal_transfer | external_transfer | others',
+  'txn_date|date', 'from_location_id|int|POLY|resolved by from_location_type',
+  'from_location_type|enum||mfg_unit | business_node',
+  'to_location_id|int|POLY|resolved by to_location_type',
+  'to_location_type|enum||mfg_unit | business_node',
+  'reference_id|int|POLY|resolved by reference_type',
+  'reference_type|enum||transfer_order | grn | sales_order | others', 'created_by|int' ]},
+{ d:'t-inventory', n:'NodeStockLedgerItem', c:[
+  'id|int|PK', 'ledger_id|int|FK|→ NodeStockLedgers.id', 'product_id|int|FK|→ Products.id',
+  'batch_id|int|FK|→ Batches.id', 'qty|decimal', 'unit_type|string||kg, litre, pcs, box…',
+  'unit_price|decimal', 'total_value|decimal' ]},
+{ d:'t-inventory', n:'TransferOrder', note:'Requested internal movement. Both endpoints are polymorphic pairs, so neither is an enforced FK.', c:[
+  'id|int|PK', 'transfer_no|string|UK', 'type|enum||material_issue | production_transfer',
+  'from_parent_node_id|int|POLY|optional business node',
+  'from_location_id|int|POLY|mfg unit or store, resolved by from_location_type',
+  'from_location_type|enum||mfg_unit | business_node',
+  'to_parent_node_id|int|POLY|optional business node',
+  'to_location_id|int|POLY|resolved by to_location_type',
+  'to_location_type|enum||mfg_unit | business_node', 'required_date|date',
+  'status|enum||draft | requested | dispatched | received | returns | cancelled',
+  'created_by|int|FK|→ Users.id' ]},
+{ d:'t-inventory', n:'TransferOrderItem', c:[
+  'id|int|PK', 'transfer_order_id|int|FK|→ TransferOrders.id', 'product_id|int|FK|→ Products.id',
+  'requested_qty|decimal', 'dispatched_qty|decimal', 'received_qty|decimal' ]},
+{ d:'t-inventory', n:'TransferOrderAllocation', note:'Note "demaged_qty" — the sibling tables spell it damage_qty.', c:[
+  'id|int|PK', 'transferOrder_item_id|int|FK|→ TransferOrderItems.id',
+  'batch_id|int|FK|→ Batches.id', 'allocated_qty|decimal',
+  'demaged_qty|decimal||spelling differs from every sibling table', 'shortage_qty|decimal' ]},
+{ d:'t-inventory', n:'DirectTransfer', note:'Unlike TransferOrder, both endpoints here are real FKs to BusinessNode.', c:[
+  'id|int|PK', 'dir_trans_no|string|UK', 'from_location_id|int|FK|→ BusinessNodes.id',
+  'from_mfg_unit_id|int|FK|→ ManufacturingUnits.id',
+  'target_location_id|int|FK|→ BusinessNodes.id', 'transfer_date|date',
+  'status|enum||draft | send | accepted | return | cancelled', 'created_by|int|FK|→ Users.id' ]},
+{ d:'t-inventory', n:'DirectTransferItem', c:[
+  'id|int|PK', 'dir_transfer_id|int|FK|→ DirectTransfers.id', 'product_id|int|FK|→ Products.id',
+  'total_send_qty|decimal', 'total_damage_qty|decimal', 'total_shortage_qty|decimal',
+  'is_return|bool||default false' ]},
+{ d:'t-inventory', n:'DirectTransferAllocation', c:[
+  'id|int|PK', 'dir_transfer_item_id|int|FK|→ DirectTransferItems.id',
+  'batch_id|int|FK|→ Batches.id', 'send_qty|decimal', 'damage_qty|decimal',
+  'shortage_qty|decimal' ]},
+
+{ d:'t-production', n:'ProductionOrder', c:[
+  'id|int|PK', 'production_order_no|string|UK', 'business_node_id|int|FK|→ BusinessNodes.id',
+  'mfg_location_id|int|FK|→ ManufacturingUnits.id (the WIP / production unit)',
+  'target_product_id|int|FK|→ Products.id (the finished good)', 'planned_qty|decimal',
+  'produced_qty|decimal||increments as the FG store releases goods', 'wasted_qty|decimal',
+  'part|int', 'status|enum||draft | planned | in_progress | completed | cancelled',
+  'start_date|date', 'completion_date|date', 'created_by|int|FK|→ Users.id' ]},
+{ d:'t-production', n:'ProductionOrderItem', note:'The raw materials a production order consumes.', c:[
+  'id|int|PK', 'production_order_id|int|FK|→ ProductionOrders.id',
+  'rm_product_id|int|FK|→ Products.id', 'required_qty|decimal' ]},
+{ d:'t-production', n:'ProductionReceipt', note:'The handover of finished goods from production to the FG store.', c:[
+  'id|int|PK', 'receipt_no|string|UK', 'production_order_id|int|FK|→ ProductionOrders.id',
+  'fg_store_id|int|FK|→ ManufacturingUnits.id (destination)', 'product_id|int|FK|→ Products.id',
+  'batch_no|string', 'send_qty|decimal', 'received_qty|decimal', 'dmg_qty|decimal',
+  'short_qty|decimal', 'mfg_date|date', 'expiry_date|date', 'remarks|text',
+  'status|enum||pending | accepted | rejected', 'created_by|int|FK|→ Users.id' ]},
+
+{ d:'t-costing', n:'CostCategory', note:'Self-referencing tree; used twice by CostCenter as head and sub-head.', c:[
+  'id|int|PK', 'name|string', 'description|string', 'parent_id|int|FK|→ CostCategories.id (self)',
+  'location_id|int|FK|→ BusinessNodes.id', 'status|bool' ]},
+{ d:'t-costing', n:'CostCenter', c:[
+  'id|int|PK', 'cost_no|string|UK', 'location_id|int|FK|→ BusinessNodes.id',
+  'store_id|int|FK|→ ManufacturingUnits.id', 'costHead_id|int|FK|→ CostCategories.id',
+  'costSubHead_id|int|FK|→ CostCategories.id', 'creator_id|int|FK|→ Users.id',
+  'type|enum||monthly | onetime | yearly', 'amount|decimal', 'cost_date|date',
+  'doc_url|string', 'remarks|text' ]},
+];
+
+/* ------------------------------- diagrams ------------------------------- */
+const DIAGRAMS = {
+'arch': `flowchart LR
+  subgraph ROOT["Root DB — mywms"]
+    TN[TenantsName]
+    CONN[Connection]
+    PM[ProductMapping]
+    RFQD["RFQ / Quotation / BPO / Indent"]
+    ICR[IntercompanyRequisition]
+  end
+  subgraph T1["Tenant DB — acme"]
+    A1["Products, Nodes, Stores"]
+    A2["PR, PO, GRN, Batches"]
+  end
+  subgraph T2["Tenant DB — globex"]
+    B1["Products, Nodes, Stores"]
+    B2["SO, Outward, Invoice"]
+  end
+  TN --> CONN
+  CONN --> PM
+  CONN --> RFQD
+  CONN --> ICR
+  PM -. "buyer_product_id" .-> A1
+  PM -. "vendor_product_id" .-> B1
+  RFQD -. "central_bpo_id" .-> A2
+  RFQD -. "central_indent_id" .-> B2
+  ICR -. "buyer_node / seller_node" .-> A1
+  ICR -. "buyer_node / seller_node" .-> B1`,
+
+'r-registry': `erDiagram
+  TenantsName ||--o| Tenant : "tenant_id"
+  TenantsName ||--o{ TenantBusinessFlowMaster : "tenant_id"
+  TenantsName ||--o{ Connection : "buyer_tenant / vendor_tenant"
+  State ||--o{ District : "state_id (no FK declared)"`,
+
+'r-access': `erDiagram
+  User ||--o{ UserRoles : "userId"
+  Role ||--o{ UserRoles : "roleId"
+  Role ||--o{ RolePermissions : "roleId"
+  Permission ||--o{ RolePermissions : "permissionId"`,
+
+'r-trade': `erDiagram
+  TenantsName ||--o{ Connection : "buyer_tenant -> tenant"
+  TenantsName ||--o{ Connection : "vendor_tenant -> tenant"
+  Connection ||--o{ ProductMapping : "connection_id"
+  Connection ||--o{ BlanketOrder : "connection_id (RESTRICT)"
+  Connection ||--o{ BpoIndent : "connection_id (RESTRICT)"
+  Connection ||--o{ IntercompanyRequisition : "connection_id"`,
+
+'r-sourcing': `erDiagram
+  TenantsName ||--o{ RFQ : "buyer_tenant"
+  TenantsName ||--o{ RfqQuotation : "vendor_tenant"
+  RFQ ||--o{ RFQItem : "rfq_id"
+  RFQ ||--o{ RfqQuotation : "rfq_id"
+  RfqQuotation ||--o{ RfqQuotationRevision : "quotation_id"
+  RfqQuotationRevision ||--o{ RfqQuotationItem : "revision_id"
+  RFQItem ||--o{ RfqQuotationItem : "rfq_item_id"
+  ProductMapping ||--o| RfqQuotationItem : "product_map_id"
+  RfqQuotationRevision ||--o| BlanketOrder : "rfq_quotation_revision_id"
+  Connection ||--o{ BlanketOrder : "connection_id"
+  BlanketOrder ||--o{ BlanketOrderItem : "bpo_id"
+  ProductMapping ||--o{ BlanketOrderItem : "product_mapping_id"
+  BlanketOrder ||--o{ BpoIndent : "bpo_id"
+  Connection ||--o{ BpoIndent : "connection_id"
+  BpoIndent ||--o{ BpoIndentItem : "indent_id"
+  BlanketOrderItem ||--o{ BpoIndentItem : "bpo_item_id"`,
+
+'r-inter': `erDiagram
+  Connection ||--o{ IntercompanyRequisition : "connection_id"
+  IntercompanyRequisition ||--o{ IntercompanyRequisitionItems : "inter_comp_req_id"
+  ProductMapping ||--o{ IntercompanyRequisitionItems : "product_mapping_id"`,
+
+'t-access': `erDiagram
+  User ||--o{ UserRoles : "userId"
+  Role ||--o{ UserRoles : "roleId"
+  Role ||--o{ RolePermissions : "roleId"
+  Permission ||--o{ RolePermissions : "permissionId"
+  BusinessNode ||--o{ NodeUser : "node_id"
+  User ||--o{ NodeUser : "user_id"
+  ManufacturingUnit ||--o{ NodeUser : "store_id (SET NULL)"`,
+
+'t-org': `erDiagram
+  BusinessNodeType ||--o{ BusinessNode : "node_type_code -> code"
+  TenantBusinessFlow ||--o{ BusinessNode : "tenant_business_flow_id"
+  BusinessNode ||--o| NodeDetails : "business_node_id"
+  BusinessNode ||--o{ ManufacturingUnit : "business_node_id"
+  BusinessNode ||--o{ Store : "node_id"`,
+
+'t-product': `erDiagram
+  Brand ||--o{ Product : "brand_id (SET NULL)"
+  Vendor ||--o{ Brand : "vendor_id"
+  Vendor ||--o{ Product : "linked_vendor (SET NULL)"
+  HSN ||--o{ Product : "hsn_code -> hsn_code"
+  UnitType ||--o{ Product : "unit_type -> name"
+  PackageType ||--o{ Product : "package_type -> name"
+  Product ||--o{ CategoryProducts : "product_id"
+  Category ||--o{ CategoryProducts : "category_id"
+  Category ||--o{ Category : "parent_id (self)"
+  Product ||--o{ BOM : "finished_product_id"
+  BOM ||--o{ BOMItem : "bom_id"
+  Product ||--o{ BOMItem : "raw_product_id"
+  UnitType ||--o{ BOM : "output_uom -> name"
+  UnitType ||--o{ BOMItem : "uom -> name"`,
+
+'t-procure': `erDiagram
+  RequisitionCategory ||--o{ Requisition : "requisition_category_id"
+  BusinessNode ||--o{ Requisition : "buyer_business_node_id"
+  User ||--o{ Requisition : "created_by"
+  Requisition ||--o{ RequisitionItem : "requisition_id"
+  Product ||--o| RequisitionItem : "product_id"
+  Requisition ||--o{ RequisitionSupplier : "requisition_id"
+  BusinessNode ||--o{ RequisitionSupplier : "supplier_business_node_id"
+  Requisition ||--o| Quotation : "requisition_id"
+  Quotation ||--o{ QuotationItem : "quotation_id"
+  RequisitionItem ||--o| QuotationItem : "requisition_item_id"
+  BusinessNode ||--o{ Quotation : "to_business_node_id"
+  User ||--o{ Quotation : "created_by"
+  Quotation ||--o| PurchasOrder : "quotation_id"
+  Requisition ||--o| PurchasOrder : "requisition_id"
+  BusinessNode ||--o{ PurchasOrder : "from_business_node_id"
+  User ||--o{ PurchasOrder : "created_by"
+  PurchasOrder ||--o{ PurchaseOrderItem : "purchase_order_id"
+  Product ||--o{ PurchaseOrderItem : "buyer_product_id"`,
+
+'t-sales': `erDiagram
+  BusinessNode ||--o{ SalesOrder : "seller_business_node_id"
+  SalesOrder ||--o{ SalesOrderItem : "sales_order_id"
+  Product ||--o{ SalesOrderItem : "vendor_product_id"
+  SalesOrder ||--o{ Outward : "sales_order_id"
+  BusinessNode ||--o{ Outward : "seller_business_node_id"
+  ManufacturingUnit ||--o{ Outward : "store_id"
+  Outward ||--o{ OutwardItem : "outward_id"
+  SalesOrderItem ||--o{ OutwardItem : "sales_order_item_id"
+  Product ||--o{ OutwardItem : "vendor_product_id"
+  OutwardItem ||--o{ OutwardAllocation : "outward_item_id"
+  Batch ||--o{ OutwardAllocation : "batch_id"
+  Outward ||--o{ Invoice : "outward_id"
+  BusinessNode ||--o{ Invoice : "seller_businessNode_id"
+  ManufacturingUnit ||--o{ Invoice : "seller_store_id"
+  Invoice ||--o{ InvoiceItem : "invoice_id"
+  Product ||--o{ InvoiceItem : "seller_product_id"`,
+
+'t-inventory': `erDiagram
+  Product ||--o{ Batch : "product_id"
+  BusinessNode ||--o{ Batch : "location_id"
+  ManufacturingUnit ||--o{ Batch : "store_id"
+  User ||--o{ GRN : "created_by (SET NULL)"
+  PurchasOrder ||--o{ GRN : "purchase_order -> po_no"
+  BusinessNode ||--o{ GRN : "receiver_id"
+  ManufacturingUnit ||--o{ GRN : "mfg_unit_id"
+  GRN ||--o{ GRNItem : "grn_id"
+  PurchaseOrderItem ||--o{ GRNItem : "purchase_order_item_id"
+  Product ||--o{ GRNItem : "product_id"
+  GRNItem ||--o{ GRNItemBatch : "grn_item_id"
+  NodeStockLedger ||--o{ NodeStockLedgerItem : "ledger_id"
+  Product ||--o{ NodeStockLedgerItem : "product_id"
+  Batch ||--o{ NodeStockLedgerItem : "batch_id"
+  User ||--o{ TransferOrder : "created_by"
+  TransferOrder ||--o{ TransferOrderItem : "transfer_order_id"
+  Product ||--o{ TransferOrderItem : "product_id"
+  TransferOrderItem ||--o{ TransferOrderAllocation : "transferOrder_item_id"
+  Batch ||--o{ TransferOrderAllocation : "batch_id"
+  BusinessNode ||--o{ DirectTransfer : "from_location_id / target_location_id"
+  ManufacturingUnit ||--o{ DirectTransfer : "from_mfg_unit_id"
+  User ||--o{ DirectTransfer : "created_by"
+  DirectTransfer ||--o{ DirectTransferItem : "dir_transfer_id"
+  Product ||--o{ DirectTransferItem : "product_id"
+  DirectTransferItem ||--o{ DirectTransferAllocation : "dir_transfer_item_id"
+  Batch ||--o{ DirectTransferAllocation : "batch_id"`,
+
+'t-production': `erDiagram
+  BusinessNode ||--o{ ProductionOrder : "business_node_id"
+  ManufacturingUnit ||--o{ ProductionOrder : "mfg_location_id"
+  Product ||--o{ ProductionOrder : "target_product_id"
+  User ||--o{ ProductionOrder : "created_by"
+  ProductionOrder ||--o{ ProductionOrderItem : "production_order_id"
+  Product ||--o{ ProductionOrderItem : "rm_product_id"
+  ProductionOrder ||--o{ ProductionReceipt : "production_order_id"
+  ManufacturingUnit ||--o{ ProductionReceipt : "fg_store_id"
+  Product ||--o{ ProductionReceipt : "product_id"
+  User ||--o{ ProductionReceipt : "created_by"`,
+
+'t-costing': `erDiagram
+  BusinessNode ||--o{ CostCategory : "location_id"
+  CostCategory ||--o{ CostCategory : "parent_id (self)"
+  BusinessNode ||--o{ CostCenter : "location_id"
+  ManufacturingUnit ||--o{ CostCenter : "store_id"
+  CostCategory ||--o{ CostCenter : "costHead_id"
+  CostCategory ||--o{ CostCenter : "costSubHead_id"
+  User ||--o{ CostCenter : "creator_id"`,
+};
+
+const FLOW = `flowchart TD
+  subgraph BUYER["Buyer tenant DB"]
+    PR["Requisition + RequisitionItem"]
+    RS[RequisitionSupplier]
+    QT["Quotation + QuotationItem"]
+    PO["PurchasOrder + PurchaseOrderItem"]
+    GRN["GRN + GRNItem + GRNItemBatch"]
+    BATCH[(Batch)]
+    LEDGER[NodeStockLedger]
+  end
+  subgraph CENTRAL["Root DB — mywms"]
+    RFQ["RFQ + RFQItem"]
+    RQ["RfqQuotation + Revision + Items"]
+    BPO["BlanketOrder + Items"]
+    IND["BpoIndent + Items"]
+    ICREQ[IntercompanyRequisition]
+    PMAP[(ProductMapping)]
+  end
+  subgraph SELLER["Vendor tenant DB"]
+    SO["SalesOrder + SalesOrderItem"]
+    OUT["Outward + Item + Allocation"]
+    INV["Invoice + InvoiceItem"]
+    SBATCH[(Batch)]
+  end
+  PR -->|internal| RS
+  RS --> QT --> PO
+  PR -->|"external / central"| RFQ
+  RFQ --> RQ --> BPO --> IND
+  IND -->|buyer_po_id| PO
+  IND -->|supplier_so_id| SO
+  ICREQ --> SO
+  SO --> OUT --> INV
+  OUT --> SBATCH
+  INV -->|"goods arrive"| GRN
+  GRN --> BATCH --> LEDGER
+  PMAP -. "translates SKUs" .-> RQ
+  PMAP -. "translates SKUs" .-> IND
+  PMAP -. "translates SKUs" .-> ICREQ`;
+
+const CROSSDB = [
+ ['root.Connection.buyer_tenant / .vendor_tenant','root.TenantsName.tenant','Real FK (same DB), but keyed on the tenant slug rather than the id'],
+ ['root.ProductMapping.buyer_product_id','buyer tenant Product.id','SKU translation, buyer side'],
+ ['root.ProductMapping.vendor_product_id','vendor tenant Product.id','SKU translation, vendor side'],
+ ['root.RFQItem.product_id','buyer tenant Product.id','The requested item'],
+ ['root.BpoIndent.buyer_po_id','buyer tenant PurchasOrder.id','Populated once the local PO exists'],
+ ['root.BpoIndent.supplier_so_id','vendor tenant SalesOrder.id','Populated once the local SO exists'],
+ ['root.IntercompanyRequisition.buyer_node','buyer tenant BusinessNode.id','Requesting node'],
+ ['root.IntercompanyRequisition.seller_node','seller tenant BusinessNode.id','Fulfilling node'],
+ ['tenant.Vendor.connection_id','root.Connection.id','Which partnership this vendor record represents'],
+ ['tenant.Vendor.tenant','root.TenantsName.tenant','Partner tenant slug'],
+ ['tenant.Vendor.linked_business_node_id','partner tenant BusinessNode.id','Explicitly documented as cross-tenant in the model comment'],
+ ['tenant.PurchasOrder.central_bpo_id','root.BlanketOrder.id','Only set for bpo_release POs'],
+ ['tenant.PurchasOrder.central_indent_id','root.BpoIndent.id','Only set for indent-generated POs'],
+ ['tenant.PurchaseOrderItem.bpo_item_id','root.BlanketOrderItem.id','The contract line the release draws down'],
+ ['tenant.SalesOrder.central_bpo_id / .central_indent_id','root.BlanketOrder.id / root.BpoIndent.id','Vendor-side mirror of the above'],
+ ['tenant.SalesOrder.source_po_no','buyer tenant PurchasOrder.po_no','Stored as the buyer\'s PO number string, not an id'],
+ ['tenant.SalesOrder.buyer_business_node_id','buyer tenant BusinessNode.id','No association declared'],
+ ['tenant.Outward.buyer_business_node_id','BusinessNode.id or a Vendor','No association declared'],
+ ['tenant.Outward.pr_no','Requisition.requisition_no','Used when type = internal'],
+ ['tenant.GRN.sender_id','BusinessNode.id, possibly remote','Only receiver_id has a declared association'],
+ ['tenant.Invoice.seller_tenant / .buyer_tenant','root.TenantsName.tenant','Party slugs'],
+ ['tenant.Invoice.buyer_businessNode_id','buyer tenant BusinessNode.id','No association declared'],
+ ['tenant.InvoiceItem.buyer_product_id','buyer tenant Product.id','Denormalised alongside name and SKU'],
+];
+
+const POLY = [
+ ['Batch','reference_id','reference_type','opening_stock | grn | transfer | others | production'],
+ ['NodeStockLedger','from_location_id, to_location_id','from_location_type, to_location_type','mfg_unit | business_node'],
+ ['NodeStockLedger','reference_id','reference_type','transfer_order | grn | sales_order | others'],
+ ['TransferOrder','from_location_id, to_location_id','from_location_type, to_location_type','mfg_unit | business_node'],
+];
+
+const DORMANT = [
+ ['src/models/purchaseInvoice.model.js','Not imported at all — no PurchaseInvoices table exists'],
+ ['src/models/purchaseInvoiceItems.model.js','Not imported at all'],
+ ['src/models/requestOrder.joinModel.js','Not imported at all'],
+ ['src/models/brandProduct.joinModel.js','Imported but commented out; the Product ↔ Brand many-to-many is commented out too, so Product.brand_id is a plain one-to-many instead'],
+];
+
+const QUIRKS = [
+ ['PurchasOrder','Missing the "e". The model name, the table PurchasOrders, and every association alias all use this spelling.'],
+ ['ManufacturingUnit vs Store','ManufacturingUnit is the operational store (rm_store / fg_store / production) and is what every store_id column points at across GRN, Outward, Batch, CostCenter, NodeUser and ProductionReceipt. The separate Store table is a newer, thinner record linked only to BusinessNode.'],
+ ['buyer_tenant / vendor_tenant','Marked "Depriciate name" in connection.model.js — they hold tenant slugs, and the roles are not always literally buyer and vendor.'],
+ ['supplier vs vendor','Used interchangeably; see the comment on BpoIndent.supplier_so_id.'],
+ ['demaged_qty','TransferOrderAllocation spells it this way; every sibling table uses damage_qty or total_damage_qty.'],
+ ['Denormalised strings','RequisitionItem and IntercompanyRequisitionItems store brand / category / sub_category as free text rather than FKs — the corresponding belongsTo associations are commented out.'],
+];
+
+/* ------------------------------- render ------------------------------- */
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const tierOf = id => (DOMAINS.find(d => d.id === id) || {}).tier;
+
+function parseCol(raw) {
+  // Only the first three pipes are delimiters — notes legitimately contain "|"
+  // as an enum-value separator, so everything after the third pipe is the note.
+  const p = raw.split('|');
+  const [name, type = '', flags = ''] = p;
+  return {
+    name,
+    type,
+    flags: flags.trim() ? flags.trim().split(/\s+/) : [],
+    note: p.slice(3).join('|'),
+  };
+}
+
+function cardHTML(t) {
+  const cols = t.c.map(parseCol);
+  const tier = tierOf(t.d);
+  const rows = cols.map(c => {
+    const cls = c.flags.includes('PK') ? 'k-pk' : (c.flags.includes('SFK') ? 'k-sfk' : '');
+    const badges = c.flags.map(f => `<b class="badge b-${f}">${f}</b>`).join('');
+    return `<tr class="${cls}">
+      <td class="c-name">${esc(c.name)}${badges}</td>
+      <td class="c-type">${esc(c.type)}</td>
+      <td class="c-note">${esc(c.note)}</td>
+    </tr>`;
+  }).join('');
+  const searchBlob = (t.n + ' ' + t.d + ' ' + t.c.join(' ') + ' ' + (t.note || '')).toLowerCase();
+  return `<article class="card" id="tbl-${tier}-${t.n}" data-s="${esc(searchBlob)}">
+    <header>
+      <h4>
+        <span class="nm"><i class="dot" style="background:var(--${tier})"></i>${esc(t.n)}</span>
+        <span class="cnt">${cols.length} cols</span>
+      </h4>
+      ${t.note ? `<p class="note">${esc(t.note)}</p>` : ''}
+    </header>
+    <table class="cols"><tbody>${rows}</tbody></table>
+  </article>`;
+}
+
+function gridHTML(head, rows, codeCols = []) {
+  return `<div class="wide"><table class="grid">
+    <thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${r.map((cell, i) =>
+      `<td>${codeCols.includes(i) ? `<code>${esc(cell)}</code>` : esc(cell)}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+const content = document.getElementById('content');
+const navEl = document.getElementById('nav');
+let navHTML = '', bodyHTML = '';
+let lastTier = 'x';
+
+for (const dm of DOMAINS) {
+  const mine = TABLES.filter(t => t.d === dm.id);
+
+  if (dm.tier !== lastTier) {
+    lastTier = dm.tier;
+    navHTML += `<p class="grp">${dm.tier === 'root' ? 'Root DB — mywms'
+      : dm.tier === 'tenant' ? 'Tenant DB (per tenant)' : 'Overview'}</p>`;
+  }
+  navHTML += `<a href="#${dm.id}" data-d="${dm.id}">${esc(dm.name)}${
+    mine.length ? `<span class="n">${mine.length}</span>` : ''}</a>`;
+
+  const badge = dm.tier ? `<span class="tier ${dm.tier}">${dm.tier}</span>` : '';
+  let inner = '';
+
+  if (DIAGRAMS[dm.id]) {
+    inner += `<div class="diagram"><pre class="mermaid">${esc(DIAGRAMS[dm.id])}</pre></div>`;
+  }
+  if (dm.id === 'arch') {
+    inner += `<div class="nodiag">${gridHTML(
+      ['Tier', 'Database', 'Contents', 'Defined by'],
+      [['Root / Central', 'mywms (single)',
+        'Tenant registry, cross-company trade documents (RFQ → Quotation → Blanket Order → Indent), inter-company requisitions, product mappings',
+        'defineRootModels()'],
+       ['Tenant', 'one PostgreSQL database per tenant, created at signup',
+        'Everything operational: products, nodes, stores, procurement, inventory, production, sales, costing',
+        'defineTenantModels()']], [3])}
+      <h4 style="margin:34px 0 6px;font-size:15px">Document flow, end to end</h4>
+      <p class="lede" style="margin-bottom:14px">How a requisition travels through the central database and lands as a GRN and a batch on the other side.</p>
+      <div class="diagram" style="margin-bottom:0"><pre class="mermaid">${esc(FLOW)}</pre></div>`;
+  }
+  if (dm.id === 'crossdb') {
+    inner += `<div class="nodiag">
+      ${gridHTML(['From (DB.Table.Column)', 'Points at', 'Meaning'], CROSSDB, [0, 1])}
+      <h4 style="margin:34px 0 6px;font-size:15px">Polymorphic references (within a tenant)</h4>
+      <p class="lede" style="margin-bottom:14px">These pair an id column with a discriminator column instead of a foreign key. Note that <code>Batch.location_id</code> and <code>Batch.store_id</code> <em>are</em> real FKs despite <code>location_type</code> existing alongside them.</p>
+      ${gridHTML(['Table', 'Id column', 'Discriminator', 'Possible targets'], POLY, [1, 2])}</div>`;
+  }
+  if (dm.id === 'dormant') {
+    inner += `<div class="nodiag">
+      <p class="lede" style="margin-bottom:14px">These <code>.model.js</code> files exist but are never passed to <code>defineRootModels()</code> or <code>defineTenantModels()</code>, so <strong>no table is created for them</strong>.</p>
+      ${gridHTML(['File', 'Note'], DORMANT, [0])}
+      <h4 style="margin:34px 0 6px;font-size:15px">Naming quirks worth knowing</h4>
+      ${gridHTML(['Quirk', 'Detail'], QUIRKS, [0])}</div>`;
+  }
+  if (mine.length) inner += `<div class="cards">${mine.map(cardHTML).join('')}</div>`;
+
+  bodyHTML += `<section id="${dm.id}" data-d="${dm.id}">
+    <h3>${esc(dm.name)}${badge}</h3>
+    <p class="lede">${esc(dm.lede)}</p>
+    ${inner}
+  </section>`;
+}
+
+navEl.innerHTML = navHTML;
+content.innerHTML = bodyHTML;
+
+/* stats */
+const nRoot = TABLES.filter(t => tierOf(t.d) === 'root').length;
+const nTenant = TABLES.filter(t => tierOf(t.d) === 'tenant').length;
+const nCols = TABLES.reduce((a, t) => a + t.c.length, 0);
+const nSoft = TABLES.reduce((a, t) => a + t.c.filter(c => parseCol(c).flags.includes('SFK')).length, 0);
+document.getElementById('stats').innerHTML = [
+  [nRoot, 'root DB tables'],
+  [nTenant, 'tenant DB tables'],
+  [nCols, 'columns documented'],
+  ['120', 'belongsTo declarations'],
+  [nSoft, 'soft cross-DB FKs'],
+].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+
+/* search */
+const search = document.getElementById('search');
+const emptyEl = document.getElementById('empty');
+search.addEventListener('input', () => {
+  const q = search.value.trim().toLowerCase();
+  if (!q) {
+    document.body.classList.remove('searching');
+    document.querySelectorAll('.card.hide, section.hide').forEach(e => e.classList.remove('hide'));
+    emptyEl.classList.remove('show');
+    return;
+  }
+  document.body.classList.add('searching');
+  let total = 0;
+  document.querySelectorAll('section').forEach(sec => {
+    const cards = sec.querySelectorAll('.card');
+    let hits = 0;
+    cards.forEach(c => {
+      const hit = c.dataset.s.includes(q);
+      c.classList.toggle('hide', !hit);
+      if (hit) hits++;
+    });
+    sec.classList.toggle('hide', hits === 0);
+    total += hits;
+  });
+  emptyEl.classList.toggle('show', total === 0);
+});
+search.addEventListener('keydown', e => { if (e.key === 'Escape') { search.value = ''; search.dispatchEvent(new Event('input')); } });
+
+/* scroll-spy */
+const links = [...navEl.querySelectorAll('a')];
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) {
+      links.forEach(a => a.classList.toggle('on', a.dataset.d === en.target.dataset.d));
+    }
+  });
+}, { rootMargin: '-10% 0px -75% 0px' });
+document.querySelectorAll('section').forEach(s => spy.observe(s));
+
+/* theme */
+const root = document.documentElement;
+const stored = localStorage.getItem('mywms-erd-theme');
+root.dataset.theme = stored || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.getElementById('themebtn').addEventListener('click', () => {
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('mywms-erd-theme', root.dataset.theme);
+  location.reload(); // re-render mermaid against the new palette
+});
+
+/* mermaid — loaded from CDN; the page is fully usable without it */
+try {
+  const mermaid = (await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')).default;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: root.dataset.theme === 'dark' ? 'dark' : 'default',
+    er: { useMaxWidth: true },
+    flowchart: { useMaxWidth: true, curve: 'basis' },
+  });
+  await mermaid.run({ querySelector: 'pre.mermaid' });
+} catch (err) {
+  console.warn('Mermaid failed to load — showing diagram source instead.', err);
+  document.querySelectorAll('.diagram').forEach(d => {
+    const w = document.createElement('p');
+    w.className = 'dgwarn';
+    w.textContent = 'Diagram renderer unavailable offline — showing the Mermaid source below. Paste it into mermaid.live to view it, or open this page with an internet connection.';
+    d.prepend(w);
+  });
+}
+</script>
+</body>
+</html>
