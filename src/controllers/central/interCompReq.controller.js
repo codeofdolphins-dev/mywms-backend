@@ -8,7 +8,8 @@ import { generateNo } from "../../helper/generate.js";
 const STATUS_FLOW = {
     pending: ["dispatched", "cancelled"],
     assign: ["dispatched", "cancelled"],
-    dispatched: ["closed"],
+    dispatched: ["closed", "return"],
+    return: ["closed"],
     cancelled: [],
     closed: [],
 };
@@ -613,8 +614,8 @@ export const updateTradingRequisitionStatus = asyncHandler(async (req, res) => {
         if (nextStatus === "dispatched" && !isVendor) {
             return res.status(403).json({ success: false, code: 403, message: "Only vendor can dispatch this requisition!!!" });
         }
-        if (["cancelled", "closed"].includes(nextStatus) && isVendor) {
-            return res.status(403).json({ success: false, code: 403, message: "Only buyer can cancel or close this requisition!!!" });
+        if (["cancelled", "closed", "return"].includes(nextStatus) && isVendor) {
+            return res.status(403).json({ success: false, code: 403, message: "Only buyer can cancel, return or close this requisition!!!" });
         }
 
         await requisition.update({ status: nextStatus });

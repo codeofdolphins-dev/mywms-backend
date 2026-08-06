@@ -14,15 +14,19 @@ export const allOutwardList = asyncHandler(async (req, res) => {
     try {
         const { activeNode } = await getUserContext(req);
 
-        let { page = 1, limit = 10, id = "", outward_no = "", isAdmin = false } = req.query;
+        let { page = 1, limit = 10, id = "", outward_no = "", status = "", isAdmin = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
+
+        /** comma separated so a tab can group several statuses */
+        const statusList = String(status).split(",").map(s => s.trim()).filter(Boolean);
 
         const outward = await Outward.findAndCountAll({
             where: {
                 ...(id && { id: Number(id) }),
                 ...(outward_no && { outward_no: { [Op.iLike]: `%${outward_no.trim()}%` } }),
+                ...(statusList.length && { status: { [Op.in]: statusList } }),
                 ...(isAdmin ? {} : {
                     seller_business_node_id: activeNode.id,
                     ...(activeNode?.store && { store_id: activeNode.store.id })
@@ -175,7 +179,8 @@ export const outwardItem = asyncHandler(async (req, res) => {
             delete jsonOutward.meta;
         }
 
-        if (jsonOutward.status !== "dispatched") {
+        /** a returned outward is still dispatched stock — it keeps the allocated batch view */
+        if (!["dispatched", "return"].includes(jsonOutward.status)) {
             /** attach all batch details */
             for (const item of jsonOutward.outwardItemList) {
                 const batch = await Batch.findAll({

@@ -14,6 +14,15 @@ function IntercompanyRequisitionItems(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
+        // reported by the buyer at inward — visible to both tenants
+        total_damage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0,
+        },
+        total_shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0,
+        },
         brand: {
             type: DataTypes.STRING,
             allowNull: true,

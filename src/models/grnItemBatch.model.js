@@ -19,6 +19,10 @@ function GRNItemBatch(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0
         },
+        shortage_qty: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0
+        },
         expiry_date: {
             type: DataTypes.DATEONLY,
             allowNull: true
