@@ -1,5 +1,6 @@
 import { Op, Sequelize } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { getTenantConnection } from "../db/tenantMenager.service.js";
 
 // GET
 export const tenantBusinessNodeList = asyncHandler(async (req, res) => {
@@ -56,7 +57,7 @@ export const allMfgNodes = asyncHandler(async (req, res) => {
     }
 });
 
-
+/** all registered node/location of current tenant */
 export const allRegisteredNodes = asyncHandler(async (req, res) => {
     const { BusinessNode, BusinessNodeType, NodeDetails } = req.dbModels;
     try {
@@ -122,6 +123,45 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
                     limit
                 }
             })
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+/** all registered node/location of any tenant */
+export const registeredNodesOfTenant = asyncHandler(async (req, res) => {
+    try {
+        const { sequelize, models } = await getTenantConnection(req.params.tenant_code);
+        const { BusinessNode, BusinessNodeType, NodeDetails } = models;
+
+
+        const businessNode = await NodeDetails.findAll({
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "businessNode",
+                    where: {
+                        node_type_code: { [Op.ne]: null }
+                    },
+                    include: [
+                        {
+                            model: BusinessNodeType,
+                            as: "type",
+                        }
+                    ]
+                }
+            ],
+        });
+        if (!businessNode) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
+
+        return res.status(200).json({
+            success: true,
+            data: businessNode,
+            code: 200,
+            message: "Fetched Successfully.",
         });
 
     } catch (error) {

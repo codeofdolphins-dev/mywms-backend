@@ -14,6 +14,10 @@ function IntercompanyRequisition(sequelize) {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        seller_node: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
         title: {
             type: DataTypes.STRING,
             allowNull: false

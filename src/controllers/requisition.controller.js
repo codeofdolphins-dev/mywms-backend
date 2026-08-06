@@ -517,7 +517,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
     const dbName = req.headers["x-tenant-id"];
 
     try {
-        const { title = "", vendor_id = "", buyer_node = "", required_by_date = "", priority = "", notes = "", items = [] } = req.body;
+        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", required_by_date = "", priority = "", notes = "", items = [] } = req.body;
         const userDetails = req.user;
         const current_node = Number(buyer_node) || req.activeNode;
 
@@ -565,6 +565,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
         const requisition = await IntercompanyRequisition.create({
             connection_id: connection.id,
             buyer_node: current_node,
+            seller_node,
             title: title?.trim(),
             notes: notes?.trim(),
             ...(required_by_date && { required_by_date }),
