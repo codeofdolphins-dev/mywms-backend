@@ -7,7 +7,7 @@ import { generatePDF } from "../../../utils/pdf.service.js"
 
 export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { BpoIndent, BpoIndentItem, BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
+    const { BpoIndent, BpoIndentItem, BlanketOrder, BlanketOrderItem, ProductMapping, Connection, TenantsName, Tenant } = models;
 
     try {
         const { id = "", indent_no = "", po_id = "", so_id = "" } = req.body;
@@ -34,27 +34,23 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
                         {
                             model: BlanketOrderItem,
                             as: "parentBlanketOrderItem",
-                            attributes: ["id", "buyer_product_id", "total_contracted_qty", "unit_price"],
+                            attributes: ["id", "product_mapping_id", "total_contracted_qty", "unit_price"],
                         }
                     ]
                 },
                 {
-                    model: TenantsName,
-                    as: "bpoIndentBuyerTenant",
+                    model: Connection,
+                    as: "connection",
                     include: [
                         {
-                            model: Tenant,
-                            as: "tenantDetails",
-                        }
-                    ]
-                },
-                {
-                    model: TenantsName,
-                    as: "bpoIndentVendorTenant",
-                    include: [
+                            model: TenantsName,
+                            as: "buyer",
+                            include: [{ model: Tenant, as: "tenantDetails" }]
+                        },
                         {
-                            model: Tenant,
-                            as: "tenantDetails",
+                            model: TenantsName,
+                            as: "vendor",
+                            include: [{ model: Tenant, as: "tenantDetails" }]
                         }
                     ]
                 },
@@ -62,8 +58,35 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
         });
 
         if (!indent) throw new Error("Indent record not found!!!");
+        if (!indent.connection) throw new Error("Indent connection not found!!!");
 
         let templateData = indent.toJSON();
+
+        /** Attached separately, NOT as a nested include: the generated column alias
+         *  "bpoIndentItem.parentBlanketOrderItem.productMapping.buyer_product_id" is
+         *  68 chars, past postgres' 63 byte identifier limit — postgres truncates it
+         *  and the values silently come back undefined. */
+        const mappingIds = [...new Set(
+            (templateData.bpoIndentItem || []).map(i => i.parentBlanketOrderItem?.product_mapping_id).filter(Boolean)
+        )];
+        if (mappingIds.length > 0) {
+            const mappings = await ProductMapping.findAll({
+                where: { id: mappingIds },
+                attributes: ["id", "buyer_product_id", "vendor_product_id"]
+            });
+            const mappingById = new Map(mappings.map(pm => [pm.id, pm.toJSON()]));
+            for (const item of templateData.bpoIndentItem || []) {
+                if (item.parentBlanketOrderItem) {
+                    item.parentBlanketOrderItem.productMapping = mappingById.get(item.parentBlanketOrderItem.product_mapping_id) || null;
+                }
+            }
+        }
+
+        /** shape the template still expects */
+        templateData.buyer_tenant = templateData.connection.buyer_tenant;
+        templateData.vendor_tenant = templateData.connection.vendor_tenant;
+        templateData.bpoIndentBuyerTenant = templateData.connection.buyer;
+        templateData.bpoIndentVendorTenant = templateData.connection.vendor;
 
         if (templateData.buyer_tenant) {
             try {
@@ -72,7 +95,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
 
                 if (BuyerModels && Product) {
                     const productIds = templateData.bpoIndentItem
-                        ?.map(item => item.parentBlanketOrderItem?.buyer_product_id)
+                        ?.map(item => item.parentBlanketOrderItem?.productMapping?.buyer_product_id)
                         .filter(id => id);
 
                     if (productIds && productIds.length > 0) {
@@ -85,7 +108,7 @@ export const generateProformaInvoicePDF = asyncHandler(async (req, res) => {
 
                         templateData.bpoIndentItem = templateData.bpoIndentItem.map(item => ({
                             ...item,
-                            product: productMap.get(item.parentBlanketOrderItem?.buyer_product_id) || null
+                            product: productMap.get(item.parentBlanketOrderItem?.productMapping?.buyer_product_id) || null
                         }));
                     }
                 }

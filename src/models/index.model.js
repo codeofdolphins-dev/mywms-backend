@@ -69,6 +69,8 @@ import CostCenter from "./costCenter.model.js";
 import Store from "./store.model.js";
 import InvoiceItem from "./invoiceItem.model.js";
 import Connection from "./main/connection.model.js";
+import IntercompanyRequisition from "./main/intercompanyRequisition.model.js";
+import IntercompanyRequisitionItems from "./main/intercompanyRequisitionItems.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -93,6 +95,8 @@ const defineRootModels = (rootSequelize) => {
     BpoIndentItem(rootSequelize);
     ProductMapping(rootSequelize);
     Connection(rootSequelize);
+    IntercompanyRequisition(rootSequelize);
+    IntercompanyRequisitionItems(rootSequelize);
 
     return rootSequelize.models;
 }

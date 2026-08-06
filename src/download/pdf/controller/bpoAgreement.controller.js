@@ -7,7 +7,7 @@ import path from "path";
 
 export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem } = models;
+    const { BlanketOrder, BlanketOrderItem, ProductMapping, Connection } = models;
 
     try {
         const { bpoNo = "" } = req.body;
@@ -17,15 +17,28 @@ export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
         const bpo = await BlanketOrder.findOne({
             where: { bpo_no: bpoNo },
             include: [
+                { model: Connection, as: "connection" },
                 {
                     model: BlanketOrderItem,
-                    as: "blanketOrderItems"
+                    as: "blanketOrderItems",
+                    include: [
+                        {
+                            model: ProductMapping,
+                            as: "productMapping",
+                            attributes: ["id", "buyer_product_id", "vendor_product_id"]
+                        }
+                    ]
                 }
             ],
         });
         if (!bpo) throw new Error("BPO record not found!!!");
+        if (!bpo.connection) throw new Error("BPO connection not found!!!");
 
         let formatData = bpo.toJSON();
+
+        /** the template still renders these as a fallback label */
+        formatData.buyer_tenant = formatData.connection.buyer_tenant;
+        formatData.vendor_tenant = formatData.connection.vendor_tenant;
 
         const logoPath = path.join(process.cwd(), "public", "logo192.png");
         let watermarkLogo = "";
@@ -39,8 +52,8 @@ export const generateBpoAgreementPDF = asyncHandler(async (req, res) => {
 
         formatData.blanketOrderItems = await Promise.all(formatData.blanketOrderItems?.map(async item => {
 
-            const buyerProduct = await buyerModel.Product.findByPk(Number(item.buyer_product_id))
-            const vendorProduct = await vendorModel.Product.findByPk(Number(item.vendor_product_id))
+            const buyerProduct = await buyerModel.Product.findByPk(Number(item.productMapping?.buyer_product_id))
+            const vendorProduct = await vendorModel.Product.findByPk(Number(item.productMapping?.vendor_product_id))
 
             const buyerDetails = await buyerModel.User.findOne({
                 where: { is_owner: true },

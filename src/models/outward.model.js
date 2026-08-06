@@ -47,8 +47,8 @@ function Outward(sequelize) {
             allowNull: true
         },
         priority: {
-            type: DataTypes.ENUM("low", "medium", "high", "urgent"),
-            defaultValue: "medium"
+            type: DataTypes.ENUM("low", "normal", "high", "urgent"),
+            defaultValue: "normal"
         },
         status: {
             type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched", "return"),

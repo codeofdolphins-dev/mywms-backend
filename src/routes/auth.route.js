@@ -12,18 +12,20 @@ const router = Router();
 // register company - POSTMAN ONLY
 router.route("/register-company").post(upload.none(), defineUserScope, defineDbObject, register_company);
 
+
+
 // register tenant company
 router.route("/register-new-company").post(registerNewTenant, register_company);
 
-router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registeredUserWithNodes);
-router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: update"), updateUser);
+router.route("/register-user").post(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user:create"), registeredUserWithNodes);
+router.route("/update-user").put(upload.single("image"), defineUserScope, defineDbObject, verifyJWT, verifyPermission("user:update"), updateUser);
 
 // delete user
-router.route("/delete/:targetEmail").delete(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: delete"), deleteUser);
+router.route("/delete/:targetEmail").delete(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user:delete"), deleteUser);
 
 
 // register vendor
-router.route("/register-vendor").post(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user: create"), registerVendor);
+router.route("/register-vendor").post(defineUserScope, defineDbObject, verifyJWT, verifyPermission("user:create"), registerVendor);
 
 
 

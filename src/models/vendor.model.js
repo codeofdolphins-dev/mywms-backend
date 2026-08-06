@@ -20,7 +20,12 @@ function Vendor(sequelize) {
             type: DataTypes.ENUM("vendor", "buyer"),
             allowNull: false,
             defaultValue: "vendor",
-            comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer"
+            comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer, may change in furture"
+        },
+        connection_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            comment: "connect to Connnection model in root DB"
         },
         contact_phone: {
             type: DataTypes.STRING,

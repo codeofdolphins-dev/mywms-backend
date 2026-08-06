@@ -38,3 +38,5 @@ bun.*
 
 # yarn
 yarn.*
+
+cron.*

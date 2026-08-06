@@ -21,10 +21,10 @@ router.route("/company-list").get(verifyPermission("company:read"), all_company)
 
 router.route("/update-tenant-business-flow").put(verifyJWT, verifyPermission("tenant-flow:update"), updateTenantBusinessFlow);
 
+router.route("/delete").delete(verifyPermission("company:delete"), delete_company);
 
 
 // router.route("/register-tenant").post(verifyPermission("company:create"), registerNewTenant);
-// router.route("/delete").post(verifyPermission("company:delete"), delete_company);
 // router.route("/update-company-details").put(upload.single("image"), verifyJWT, verifyPermission("company:update"), updateCompanyDetails);
 
 

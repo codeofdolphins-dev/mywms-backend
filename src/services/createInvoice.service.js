@@ -10,6 +10,7 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
         const indent = await models.BpoIndent.findOne({
             where: { id: salesOrder.central_indent_id },
             include: [
+                { model: models.Connection, as: "connection" },
                 {
                     model: models.BpoIndentItem,
                     as: "bpoIndentItem",
@@ -17,24 +18,39 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
                         {
                             model: models.BlanketOrderItem,
                             as: "parentBlanketOrderItem",
-                            attributes: ["buyer_product_id", "vendor_product_id"]
+                            attributes: ["id", "product_mapping_id"]
                         }
                     ]
                 }
             ]
         });
         if (!indent) throw new Error("Indent not found!!!");
+        if (!indent.connection) throw new Error("Indent connection not found!!!");
 
-        const { models: buyerModels } = await getTenantConnection(indent.buyer_tenant);
+        /** Resolved separately, NOT as a nested include: the generated column alias
+         *  "bpoIndentItem.parentBlanketOrderItem.productMapping.vendor_product_id" is
+         *  69 chars, past postgres' 63 byte identifier limit — postgres truncates it
+         *  and the values silently come back undefined. */
+        const mappingIds = [...new Set(
+            indent.bpoIndentItem.map(i => i.parentBlanketOrderItem?.product_mapping_id).filter(Boolean)
+        )];
+        const mappings = await models.ProductMapping.findAll({
+            where: { id: mappingIds },
+            attributes: ["id", "buyer_product_id", "vendor_product_id"]
+        });
+        const mappingById = new Map(mappings.map(pm => [pm.id, pm]));
+        const mappingOf = (indentItem) => mappingById.get(indentItem?.parentBlanketOrderItem?.product_mapping_id);
+
+        const { models: buyerModels } = await getTenantConnection(indent.connection.buyer_tenant);
 
         const isIntra = await isIntraState(buyerModels, req.dbModels, indent);
 
         // create invoice header
         const invoice = await Invoice.create({
-            seller_tenant: indent.vendor_tenant,
+            seller_tenant: indent.connection.vendor_tenant,
             seller_businessNode_id: outward.seller_business_node_id,
             seller_store_id: outward.store_id,
-            buyer_tenant: indent.buyer_tenant,
+            buyer_tenant: indent.connection.buyer_tenant,
             buyer_businessNode_id: outward.buyer_business_node_id,
             outward_id: outward.id,
             invoice_date: new Date()
@@ -49,10 +65,10 @@ export async function createInvoice(req, outward, salesOrder, allocatedItems, tr
             const { vendor_product_id, requested_qty, allocated_batches } = item;
             const vendorProduct = await getProduct(req.dbModels, vendor_product_id);
 
-            const indentItem = indent.bpoIndentItem.find(i => i.parentBlanketOrderItem.vendor_product_id === vendor_product_id);
+            const indentItem = indent.bpoIndentItem.find(i => mappingOf(i)?.vendor_product_id === vendor_product_id);
             if (indentItem == undefined) throw new Error("No Product ID found for vendor_product_id");
 
-            const buyerProduct = await getProduct(buyerModels, indentItem.parentBlanketOrderItem.buyer_product_id);
+            const buyerProduct = await getProduct(buyerModels, mappingOf(indentItem).buyer_product_id);
 
             const unitPrice = indentItem.unit_price;
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { allUserList, currentUser, updateEmployeeDetails } from "../controllers/user.controller.js";
+import { allUserList, currentUser, updateEmployeeDetails, userCountByNode } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { defineUserScope } from "../middlewares/defineUserScope.middleware.js";
 import { defineDbObject } from "../middlewares/defineDBObject.middleware.js";
@@ -13,6 +13,7 @@ router.route("/update-employee-details").put(upload.single("image"), defineUserS
 router.use(defineUserScope, defineDbObject, verifyJWT);
 
 router.route("/current-user").get(currentUser);
-router.route("/list").get(verifyPermission("user:read"), allUserList); // optional ?id= &text=
+router.route("/list").get(verifyPermission("user:read"), allUserList); // optional ?id= &text= &node_id=
+router.route("/count-by-node").get(userCountByNode);
 
 export default router;

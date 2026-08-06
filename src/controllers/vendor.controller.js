@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 export const allVendorList = asyncHandler(async (req, res) => {
     const { Vendor } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", noLimit = true } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", noLimit = false, type = "vendor" } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -13,7 +13,17 @@ export const allVendorList = asyncHandler(async (req, res) => {
         const vendor = await Vendor.findAndCountAll({
             where: {
                 ...(id && { id }),
-                type: "vendor",
+                ...(text ? {
+                    [Op.or]: [
+                        { email: { [Op.iLike]: `${text}%` } },
+                        Sequelize.where(
+                            Sequelize.json("name.full_name"),
+                            { [Op.iLike]: `${text}%` }
+                        ),
+                        { phone: { [Op.iLike]: `${text}%` } },
+                    ]
+                } : {}),
+                type
             },
             ...(noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],

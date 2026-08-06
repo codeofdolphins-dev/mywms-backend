@@ -5,11 +5,7 @@ function BlanketOrderItem(sequelize) {
         bpo_id: {
             type: DataTypes.INTEGER
         },
-        buyer_product_id: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        vendor_product_id: {
+        product_mapping_id: {    // carries both sides — ProductMapping.buyer_product_id / vendor_product_id
             type: DataTypes.INTEGER,
             allowNull: false
         },

@@ -321,6 +321,10 @@ export async function up({ context: queryInterface }) {
                 defaultValue: "vendor",
                 comment: "vendor when PO is created for this vendor or buyer when SO is created for this buyer"
             },
+            connection_id: {
+                type: DataTypes.INTEGER,
+                allowNull: false
+            },
             contact_phone: {
                 type: DataTypes.STRING,
                 allowNull: true
@@ -799,7 +803,7 @@ export async function up({ context: queryInterface }) {
                 onUpdate: 'CASCADE',
             },
             status: {
-                type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign_fg", "dispatched"),
+                type: DataTypes.ENUM("pending", "quoted", "po_created", "cancelled", "closed", "bpo_created", "assign", "dispatched"),
                 defaultValue: "pending"
             },
             priority: {
@@ -1216,7 +1220,7 @@ export async function up({ context: queryInterface }) {
                 onUpdate: 'CASCADE',
             },
             status: {
-                type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign_fg", "Waiting_for_dispatch"),
+                type: DataTypes.ENUM("sent", "viewed", "quoted", "accepted", "rejected", "assign", "Waiting_for_dispatch"),
                 defaultValue: "sent",
             },
             createdAt: { type: DataTypes.DATE, allowNull: false },
@@ -1456,8 +1460,8 @@ export async function up({ context: queryInterface }) {
                 allowNull: true
             },
             priority: {
-                type: DataTypes.ENUM("low", "medium", "high", "urgent"),
-                defaultValue: "medium"
+                type: DataTypes.ENUM("low", "normal", "high", "urgent"),
+                defaultValue: "normal"
             },
             status: {
                 type: DataTypes.ENUM("pending", "picking", "picked", "cancelled", "dispatched"),

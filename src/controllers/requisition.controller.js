@@ -2,7 +2,7 @@ import { Op } from "sequelize";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getAllowedBusinessNodes } from "../services/businessNode.service.js";
 import { generateNo } from "../helper/generate.js";
-import { rootDB } from "../db/tenantMenager.service.js"
+import { getTenantConnection, rootDB } from "../db/tenantMenager.service.js"
 import { fetchNodeDetails } from "../helper/helper.js";
 
 
@@ -315,17 +315,17 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { title = "", supplier_node = [], required_by_date = "", priority = "", notes = "", type = "internal", items = [], } = req.body;
+        const { title = "", vendor_id = [], required_by_date = "", priority = "", notes = "", items = [], } = req.body;
         const userDetails = req.user;
         const current_node = req.activeNode;
 
-        if (!title || items?.length < 1 || supplier_node?.length < 1) throw new Error("Required fields are missing!!!");
+        if (!title || items?.length < 1 || vendor_id?.length < 1) throw new Error("Required fields are missing!!!");
 
         // fetch all supplier nodes
-        const supplierNode = await BusinessNode.findAll({
-            where: { id: { [Op.in]: supplier_node } }
+        const vendorNode = await BusinessNode.findAll({
+            where: { id: { [Op.in]: vendor_id } }
         });
-        if (supplierNode.length != supplier_node.length) throw new Error("Some supplier records not found");
+        if (vendorNode.length != vendor_id.length) throw new Error("Some supplier records not found");
 
         // for (const i of supplierNode) {
         //     console.log(i.toJSON());
@@ -335,7 +335,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         const allowNodes = await getAllowedBusinessNodes(current_node, req.dbModels, false);
 
         // check if at least one supplier node is allowed
-        const isAllowed = supplierNode.some(supplier =>
+        const isAllowed = vendorNode.some(supplier =>
             allowNodes.some(allowed => allowed.id === supplier.id)
         );
         if (!isAllowed) {
@@ -348,7 +348,6 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
             title,
             notes,
-            type,
             type: "internal",
             ...(priority && { priority: priority.toLowerCase() }),
             created_by: parseInt(userDetails.id, 10),
@@ -362,7 +361,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 
         /** push all supplier id into join table (requisitionSupplier) */
         await requisition.addSupplierBusinessNode(
-            supplierNode.map(node => node.node_type_code === "L-101" ? 1 : node.id),
+            vendorNode.map(node => node.node_type_code === "L-101" ? 1 : node.id),
             {
                 through: {
                     status: "sent",
@@ -407,7 +406,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
 });
 
 
-export const createExternalRequisition = asyncHandler(async (req, res) => {
+export const createOpenForumRequisition = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     const { RFQ, RFQItem } = models;
     const rootTransaction = await rootSequelize.transaction();
@@ -507,6 +506,187 @@ export const createExternalRequisition = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
+
+
+export const createTradingRequisition = asyncHandler(async (req, res) => {
+    const { rootSequelize, models } = await rootDB();
+    const { IntercompanyRequisition, IntercompanyRequisitionItems, Connection, ProductMapping } = models;
+    const rootTransaction = await rootSequelize.transaction();
+
+    const { Vendor } = req.dbModels;
+    const dbName = req.headers["x-tenant-id"];
+
+    /** opened on the vendor tenant once the connection is resolved */
+    let sellerTransaction = null;
+
+    /** on an early return either transaction may already be finished */
+    const rollbackAll = async () => {
+        for (const t of [sellerTransaction, rootTransaction]) {
+            if (!t) continue;
+            try { await t.rollback(); } catch { /* already finished */ }
+        }
+    };
+
+    try {
+        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", required_by_date = "", priority = "", notes = "", items = [] } = req.body;
+        const userDetails = req.user;
+        const current_node = Number(buyer_node) || req.activeNode;
+
+        if (!title?.trim() || !vendor_id || !seller_node || items?.length < 1) throw new Error("Required fields are missing!!!");
+
+        /** fetch vendor (tenant level) to resolve its root connection */
+        const vendor = await Vendor.findByPk(Number(vendor_id));
+        if (!vendor) {
+            await rollbackAll();
+            return res.status(404).json({ success: false, code: 404, message: "Vendor not found!!!" });
+        }
+
+        /** validate connection (root level) */
+        const connection = await Connection.findByPk(Number(vendor.connection_id));
+        if (!connection) {
+            await rollbackAll();
+            return res.status(404).json({ success: false, code: 404, message: "Connection with vendor not found!!!" });
+        }
+        if (connection.connection_type === "pending") {
+            await rollbackAll();
+            return res.status(403).json({ success: false, code: 403, message: "Connection with vendor is not active!!!" });
+        }
+        /** product mapping is buyer directional — only the buyer side can raise this */
+        if (connection.buyer_tenant !== dbName) {
+            await rollbackAll();
+            return res.status(403).json({ success: false, code: 403, message: "Only buyer can raise a trading requisition!!!" });
+        }
+
+        /** resolve product mappings before creating anything */
+        const mappedItems = [];
+        for (const item of items) {
+            const { productId = "", reqQty = "" } = item;
+            if (!productId || !reqQty || Number(reqQty) <= 0) throw new Error("productId and valid reqQty are required for every item!!!");
+
+            const productMapping = await ProductMapping.findOne({
+                where: {
+                    connection_id: connection.id,
+                    buyer_product_id: Number(productId),
+                }
+            });
+            if (!productMapping) {
+                await rollbackAll();
+                return res.status(404).json({ success: false, code: 404, message: `Product: ${item.productName || productId} is not mapped with this vendor!!!` });
+            }
+
+            mappedItems.push({ item, mapping: productMapping });
+        }
+
+        /**
+         * The buyer selects the seller location while raising the requisition, so the
+         * outward is created here instead of waiting for a vendor side assignment.
+         */
+        const { sequelize: sellerSequelize, models: sellerModels } = await getTenantConnection(connection.vendor_tenant);
+        const { Outward, OutwardItem, Product: SellerProduct, BusinessNode: SellerBusinessNode } = sellerModels;
+
+        /** the selected location must be a node of the vendor tenant */
+        const sellerNode = await SellerBusinessNode.findByPk(Number(seller_node));
+        if (!sellerNode) {
+            await rollbackAll();
+            return res.status(404).json({ success: false, code: 404, message: "Seller location not found!!!" });
+        }
+
+        /** resolve the vendor side product of every mapping before creating anything */
+        for (const mapped of mappedItems) {
+            const sellerProduct = mapped.mapping.vendor_product_id
+                ? await SellerProduct.findByPk(Number(mapped.mapping.vendor_product_id))
+                : null;
+            if (!sellerProduct) {
+                await rollbackAll();
+                return res.status(404).json({ success: false, code: 404, message: `Vendor product mapping not found for: ${mapped.item.productName || mapped.item.productId}!!!` });
+            }
+            mapped.seller_product_id = sellerProduct.id;
+        }
+
+        sellerTransaction = await sellerSequelize.transaction();
+
+        /** create intercompany requisition — already assigned, its outward exists from the start */
+        const requisition = await IntercompanyRequisition.create({
+            connection_id: connection.id,
+            buyer_node: current_node,
+            seller_node: sellerNode.id,
+            title: title?.trim(),
+            notes: notes?.trim(),
+            status: "assign",
+            ...(required_by_date && { required_by_date }),
+            ...(priority && { priority: priority.toLowerCase() }),
+            created_by: parseInt(userDetails.id, 10),
+        }, { transaction: rootTransaction });
+
+        // update requisition no field
+        const requisition_no = generateNo("TR-REQ", requisition.id);
+        await requisition.update({ requisition_no }, { transaction: rootTransaction });
+
+        /** create requisition items */
+        for (const { item, mapping } of mappedItems) {
+            await IntercompanyRequisitionItems.create({
+                inter_comp_req_id: requisition.id,
+                product_mapping_id: mapping.id,
+                qty: item.reqQty,
+                ...(item.brand && { brand: item.brand }),
+                ...(item.category && { category: item.category }),
+                ...(item.subCategory && { sub_category: item.subCategory }),
+            }, { transaction: rootTransaction });
+        }
+
+        /** create the pending outward on the vendor tenant */
+        const outward = await Outward.create({
+            seller_business_node_id: sellerNode.id,
+            buyer_business_node_id: current_node,
+            type: "internal",
+            priority: requisition.priority,
+            note: requisition.notes,
+            pr_no: requisition_no,
+            ...(required_by_date && { required_by: new Date(required_by_date) }),
+            meta: {
+                trading: true,
+                inter_comp_req_id: requisition.id,
+                connection_id: connection.id,
+                buyer_tenant: connection.buyer_tenant,
+            },
+        }, { transaction: sellerTransaction });
+
+        outward.outward_no = generateNo("OUT", outward.id);
+        await outward.save({ transaction: sellerTransaction });
+
+        /** create outward items from the vendor side of each mapping */
+        for (const { item, seller_product_id } of mappedItems) {
+            await OutwardItem.create({
+                outward_id: outward.id,
+                vendor_product_id: seller_product_id,
+                requested_qty: Number(item.reqQty),
+            }, { transaction: sellerTransaction });
+        }
+
+        await sellerTransaction.commit();
+        await rootTransaction.commit();
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Trading Requisition Created.",
+            data: { id: requisition.id, requisition_no, outward_no: outward.outward_no },
+        });
+
+    } catch (error) {
+        await rollbackAll();
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+
+
+
+
+
+
 
 
 // DELETE

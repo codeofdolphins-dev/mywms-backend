@@ -6,10 +6,10 @@ import { generateNo } from "../helper/generate.js";
  * @param {object} buyerTransaction buyer/vendor models transaction
  * @param {object} VendorModels vendor/buyer models
  * @param {string} tenant tenant name
- * @param {string} type when passed "buyer" then create buyer record on vendor side
+ * @param {string} type when passed "buyer" it create buyer record on vendor side
  * @returns buyer side vendor local data record
  */
-export async function createVendor(buyerModels, buyerTransaction, VendorModels, tenant, type = "") {
+export async function createVendor(buyerModels, buyerTransaction, VendorModels, tenant, connection_id, type = "") {
 
     const { User, BusinessNode, NodeDetails } = VendorModels;
     const { Vendor } = buyerModels;
@@ -38,19 +38,18 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
         const formatedDetails = vendorDetails?.toJSON();
         const node = formatedDetails.userBusinessNode[0];
 
-        // console.log("formatedDetails", formatedDetails)
-        // console.log("node", node)
-
         const [vendor, created] = await Vendor.findOrCreate({
             where: {
                 contact_email: formatedDetails.email,
                 linked_business_node_id: node.id,
+                connection_id,
                 tenant: tenant,
                 is_active: true
             },
             defaults: {
                 name: node.name,
                 linked_business_node_id: node.id,
+                connection_id,
                 tenant: tenant,
                 ...(type && { type }),
                 contact_email: formatedDetails.email,
@@ -77,12 +76,14 @@ export async function createVendor(buyerModels, buyerTransaction, VendorModels, 
  * @param {integer} vendor_id vendor/supplier id
  * @param {integer} bpo_id Blanket Purchase Order id
  * @param {object} requisition requisition details
+ * @param {array} items line items with buyer_product_id / remaining_qty resolved
+ *                      server side from the blanket order item's product mapping
  * @returns purchase order record
  */
-export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, bpo_id, requisition, indent_id) {
+export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendor_id, bpo_id, requisition, indent_id, items = []) {
 
     const { PurchasOrder, PurchaseOrderItem, User } = buyerModels;
-    const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "", items = "" } = req.body;
+    const { priority = "", required_by = "", target_store_id = "", grand_total = "", instructions = "" } = req.body;
 
     try {
         const purchaseOrder = await PurchasOrder.create({
@@ -135,11 +136,13 @@ export async function createPO_PoItems(buyerModels, buyerTransaction, req, vendo
  * @param {object} BuyerModels buyer models
  * @param {object} reqBody reques body
  * @param {object} purchaseOrder buyer PO record
+ * @param {array} items line items with vendor_product_id resolved server side
+ *                      from the blanket order item's product mapping
  * @returns salse order record
  */
-export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer, store, indent_id) {
+export async function createSO_SOItems(VendorModels, VendorTransaction, BuyerModels, reqBody, purchaseOrder, seller, buyer, store, indent_id, items = []) {
     const { SalesOrder, SalesOrderItem } = VendorModels;
-    const { grand_total, instructions, priority, required_by, items } = reqBody;
+    const { grand_total, instructions, priority, required_by } = reqBody;
 
     const { ManufacturingUnit } = BuyerModels;
 

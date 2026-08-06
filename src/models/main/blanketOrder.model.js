@@ -10,12 +10,8 @@ function BlanketOrder(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        buyer_tenant: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        vendor_tenant: {
-            type: DataTypes.STRING,
+        connection_id: {         // carries both parties — Connection.buyer_tenant / vendor_tenant
+            type: DataTypes.INTEGER,
             allowNull: false
         },
         rfq_quotation_revision_id: {

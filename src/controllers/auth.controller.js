@@ -516,7 +516,7 @@ export const login = asyncHandler(async (req, res) => {
         if (!email || !password) return res.status(400).json({ success: false, code: 400, message: "Email and Password are required!" });
 
         const user = await User.findOne({
-            where: { email: email.toLowerCase().trim() },
+            where: { email: { [Op.iLike]: email.trim() } },
             attributes: ["id", "email", "password"],
             include: [
                 {
@@ -573,7 +573,7 @@ export const request_otp = asyncHandler(async (req, res) => {
 
         if (!email) return res.status(400).json({ success: false, code: 400, message: "Email must required!" });
 
-        const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
+        const user = await User.findOne({ where: { email: { [Op.iLike]: email.trim() } } });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User Not Found!" });
 
         const otp = generateOTP();

@@ -5,11 +5,12 @@ export const dataSeederRoot = asyncHandler(async (models) => {
     try {
         const { State, District, Role, Permission, BusinessNodeType } = models;
 
-        await State.bulkCreate(states);
-        await District.bulkCreate(districts);
-        await Role.bulkCreate(roles);
-        await Permission.bulkCreate(permissions);
-        await BusinessNodeType.bulkCreate(businessNodeTypes);
+        /** seed only empty tables so re-runs stay idempotent */
+        if (await State.count() === 0) await State.bulkCreate(states);
+        if (await District.count() === 0) await District.bulkCreate(districts);
+        if (await Role.count() === 0) await Role.bulkCreate(roles);
+        if (await Permission.count() === 0) await Permission.bulkCreate(permissions);
+        if (await BusinessNodeType.count() === 0) await BusinessNodeType.bulkCreate(businessNodeTypes);
 
     } catch (error) {
         console.log("error from seeder file");
@@ -26,9 +27,10 @@ export const dataSeederTenant = asyncHandler(async (models) => {
         // await District.bulkCreate(districts);
         // await WarehouseType.bulkCreate(warehouseTypeMaster);
         
-        await Role.bulkCreate(roles);
-        await Permission.bulkCreate(permissions);
-        await BusinessNodeType.bulkCreate(businessNodeTypes);
+        /** seed only empty tables so re-runs stay idempotent */
+        if (await Role.count() === 0) await Role.bulkCreate(roles);
+        if (await Permission.count() === 0) await Permission.bulkCreate(permissions);
+        if (await BusinessNodeType.count() === 0) await BusinessNodeType.bulkCreate(businessNodeTypes);
 
     } catch (error) {
         console.log("error from seeder file");

@@ -36,6 +36,8 @@ export const getQuotation = asyncHandler(async (req, res) => {
     }
 });
 
+
+/** ========================================= Helper methods ========================================== */
 const getExternalQuotationDetails = async (reqNo) => {
     const { rootSequelize, models } = await rootDB()
     const { RFQ, RfqQuotation, RfqQuotationRevision, RfqQuotationItem, ProductMapping, Connection } = models;

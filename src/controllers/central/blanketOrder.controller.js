@@ -7,7 +7,7 @@ import { generateNo } from "../../helper/generate.js";
 // GET
 export const allBlanketOrderList = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem, TenantsName, Tenant } = models;
+    const { BlanketOrder, BlanketOrderItem, ProductMapping, Connection, TenantsName, Tenant } = models;
 
     const dbName = req.headers["x-tenant-id"];
 
@@ -22,36 +22,43 @@ export const allBlanketOrderList = asyncHandler(async (req, res) => {
             where: {
                 ...(id && { id: Number(id) }),
                 ...(bpo_no && { bpo_no: bpo_no.trim() }),
-                [Op.or]: [
-                    { buyer_tenant: dbName },
-                    { vendor_tenant: dbName }
-                ],
                 ...(status !== "all" && { status: status.toLowerCase() }),
             },
             include: [
                 {
                     model: BlanketOrderItem,
                     as: "blanketOrderItems",
-                },
-                {
-                    model: TenantsName,
-                    as: "buyer",
                     include: [
                         {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            // attributes: ["companyName"]
+                            model: ProductMapping,
+                            as: "productMapping",
+                            attributes: ["id", "buyer_product_id", "vendor_product_id"]
                         }
                     ]
                 },
                 {
-                    model: TenantsName,
-                    as: "vendor",
+                    /** the tenant must be a party of the order — filter on the connection.
+                     *  connection_status is deliberately not checked: an order stays
+                     *  visible even after its connection is deactivated. */
+                    model: Connection,
+                    as: "connection",
+                    required: true,
+                    where: {
+                        [Op.or]: [
+                            { buyer_tenant: dbName },
+                            { vendor_tenant: dbName }
+                        ]
+                    },
                     include: [
                         {
-                            model: Tenant,
-                            as: "tenantDetails",
-                            // attributes: ["companyName"]
+                            model: TenantsName,
+                            as: "buyer",
+                            include: [{ model: Tenant, as: "tenantDetails" }]
+                        },
+                        {
+                            model: TenantsName,
+                            as: "vendor",
+                            include: [{ model: Tenant, as: "tenantDetails" }]
                         }
                     ]
                 },
@@ -68,15 +75,21 @@ export const allBlanketOrderList = asyncHandler(async (req, res) => {
         const formateData = await Promise.all(blanketOrder.rows?.map(async (row) => {
             const i = row.toJSON();
 
-            const buyerConnection = i.buyer_tenant ? await getTenantConnection(i.buyer_tenant).catch(() => null) : null;
-            const vendorConnection = i.vendor_tenant ? await getTenantConnection(i.vendor_tenant).catch(() => null) : null;
+            const buyerTenant = i.connection?.buyer_tenant;
+            const vendorTenant = i.connection?.vendor_tenant;
+
+            const buyerConnection = buyerTenant ? await getTenantConnection(buyerTenant).catch(() => null) : null;
+            const vendorConnection = vendorTenant ? await getTenantConnection(vendorTenant).catch(() => null) : null;
 
             i.blanketOrderItems = await Promise.all((i.blanketOrderItems || [])?.map(async (a) => {
-                const buyer_product = (buyerConnection && a.buyer_product_id)
-                    ? await buyerConnection.models.Product.findByPk(a.buyer_product_id, { attributes: ["id", "name", "barcode"] }).catch(() => null)
+                const buyerProductId = a.productMapping?.buyer_product_id;
+                const vendorProductId = a.productMapping?.vendor_product_id;
+
+                const buyer_product = (buyerConnection && buyerProductId)
+                    ? await buyerConnection.models.Product.findByPk(buyerProductId, { attributes: ["id", "name", "barcode"] }).catch(() => null)
                     : null;
-                const vendor_product = (vendorConnection && a.vendor_product_id)
-                    ? await vendorConnection.models.Product.findByPk(a.vendor_product_id, { attributes: ["id", "name", "barcode"] }).catch(() => null)
+                const vendor_product = (vendorConnection && vendorProductId)
+                    ? await vendorConnection.models.Product.findByPk(vendorProductId, { attributes: ["id", "name", "barcode"] }).catch(() => null)
                     : null;
 
                 return {
@@ -111,7 +124,7 @@ export const allBlanketOrderList = asyncHandler(async (req, res) => {
 // GET
 export const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
     const { models } = await rootDB();
-    const { BlanketOrder, BlanketOrderItem } = models;
+    const { BlanketOrder, BlanketOrderItem, ProductMapping, Connection } = models;
     const { Product } = req.dbModels;
 
     try {
@@ -121,15 +134,26 @@ export const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
         const blanketOrders = await BlanketOrder.findOne({
             where: { bpo_no: bpo_no.trim() },
             include: [
+                /** the caller needs both parties to know which side it is on */
+                { model: Connection, as: "connection" },
                 {
                     model: BlanketOrderItem,
                     as: "blanketOrderItems",
+                    include: [
+                        {
+                            model: ProductMapping,
+                            as: "productMapping",
+                            attributes: ["id", "buyer_product_id", "vendor_product_id"]
+                        }
+                    ]
                 }
             ],
         });
         if (!blanketOrders || blanketOrders.length === 0) return res.status(404).json({ success: false, code: 404, message: "Blanket Order not found" });
 
-        const productIds = blanketOrders?.blanketOrderItems?.flatMap(item => item.buyer_product_id);
+        const productIds = blanketOrders?.blanketOrderItems
+            ?.map(item => item.productMapping?.buyer_product_id)
+            .filter(Boolean);
 
         if (productIds.length === 0) {
             return res.status(200).json({
@@ -148,7 +172,7 @@ export const blanketOrderWithProductDetails = asyncHandler(async (req, res) => {
         const productMap = new Map(products.map(p => [p.id, p.toJSON()]));
 
         const orderJson = blanketOrders.toJSON();
-        orderJson.blanketOrderItems = orderJson.blanketOrderItems.map(item => ({ ...item, product: productMap.get(item.buyer_product_id) || null }));
+        orderJson.blanketOrderItems = orderJson.blanketOrderItems.map(item => ({ ...item, product: productMap.get(item.productMapping?.buyer_product_id) || null }));
 
         return res.status(200).json({
             success: true,
@@ -169,15 +193,15 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
     const { rootSequelize, models } = await rootDB();
     // console.log(req.body); return
 
-    const { RFQ, BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, ProductMapping } = models;
+    const { RFQ, BlanketOrder, BlanketOrderItem, RfqQuotationRevision, RfqQuotation, RfqQuotationItem, ProductMapping } = models;
     const rootTransaction = await rootSequelize.transaction();
 
     const { Requisition } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
-        const { rfq_id = "", rfq_quotation_revision_id = "", buyer_tenant = "", vendor_tenant = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
-        if ([rfq_id, rfq_quotation_revision_id, buyer_tenant, vendor_tenant, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
+        const { rfq_id = "", rfq_quotation_revision_id = "", valid_until = "", items = "", pr_reference_code = "" } = req.body;
+        if ([rfq_id, rfq_quotation_revision_id, items, pr_reference_code].some(i => i === "")) throw new Error("Required fields are missing!!!");
 
         const revision = await RfqQuotationRevision.findByPk(Number(rfq_quotation_revision_id));
         if (!revision) {
@@ -199,10 +223,28 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
         revision.status = "confirmed";
         await revision.save({ transaction: rootTransaction });
 
+        /** ---------------------------------------------------
+         *  Resolve the connection from the quotation revision itself — its items
+         *  point at product mappings created against the connection that was
+         *  verified when the quotation was raised. Never taken from the request.
+         *  --------------------------------------------------- */
+        const revisionItems = await RfqQuotationItem.findAll({
+            where: { revision_id: revision.id },
+            include: [{ model: ProductMapping, as: "productMapping", attributes: ["id", "connection_id"] }],
+            transaction: rootTransaction
+        });
+
+        const connectionIds = [...new Set(revisionItems.map(i => i.productMapping?.connection_id).filter(Boolean))];
+        if (connectionIds.length !== 1) {
+            await rootTransaction.rollback();
+            await transaction.rollback();
+            return res.status(422).json({ success: false, code: 422, message: "Could not resolve a single connection for this quotation!!!" });
+        }
+        const connection_id = connectionIds[0];
+
         /** create blanket order */
         const blanketOrder = await BlanketOrder.create({
-            buyer_tenant,
-            vendor_tenant,
+            connection_id,
             rfq_quotation_revision_id,
             pr_reference_code,
             status: "active",
@@ -215,21 +257,27 @@ export const createBlanketOrder = asyncHandler(async (req, res) => {
 
         /** create blanket order items */
         for (const item of items) {
-            const { buyer_product_id = "", unit_price = "", total_contracted_qty = "", product_map_id = "" } = item;
+            const { unit_price = "", total_contracted_qty = "", product_map_id = "" } = item;
 
-            if ([buyer_product_id, unit_price, total_contracted_qty, product_map_id].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
+            if ([unit_price, total_contracted_qty, product_map_id].some(i => i === "")) throw new Error("Required fields are missing in items array!!!");
 
-            const productMapping = await ProductMapping.findByPk(Number(product_map_id));
+            const productMapping = await ProductMapping.findByPk(Number(product_map_id), { transaction: rootTransaction });
             if (!productMapping) {
                 await rootTransaction.rollback();
                 await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "Product Mapping record not found!!!" });
             }
 
+            /** every line must belong to the same connection as the order itself */
+            if (productMapping.connection_id !== connection_id) {
+                await rootTransaction.rollback();
+                await transaction.rollback();
+                return res.status(422).json({ success: false, code: 422, message: "Product mapping does not belong to this order's connection!!!" });
+            }
+
             await BlanketOrderItem.create({
                 bpo_id: blanketOrder.id,
-                buyer_product_id: buyer_product_id,
-                vendor_product_id: productMapping.vendor_product_id,
+                product_mapping_id: productMapping.id,
                 total_contracted_qty,
                 remain_contracted_qty: total_contracted_qty,
                 unit_price,

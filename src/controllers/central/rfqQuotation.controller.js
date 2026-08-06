@@ -244,11 +244,6 @@ export const createRfqQuotation = asyncHandler(async (req, res) => {
         });
         if (!connection) throw new Error("You are not connected to the buyer!!!");
 
-
-        // console.log(rfq.toJSON())
-        // console.log("dbName", dbName);
-        // throw new Error("testing purpose");
-
         buyerTransaction = await updateRequisitionStatus(rfq);
 
 

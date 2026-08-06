@@ -11,19 +11,12 @@ const allUnit = asyncHandler(async (req, res) => {
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
 
+        const conditions = [];
+        if (id) conditions.push({ id: parseInt(id, 10) });
+        if (name) conditions.push({ name: { [Op.iLike]: `${name}%` } });
+
         const unitRecord = await UnitType.findAndCountAll({
-            where: (name || id) ? {
-                [Op.or]: [
-                    {
-                        id: parseInt(id) || null
-                    },
-                    {
-                        name: {
-                            [Op.iLike]: `${name}%`
-                        }
-                    }
-                ]
-            } : undefined,
+            where: conditions.length > 0 ? { [Op.or]: conditions } : undefined,
             ...(noLimt ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });

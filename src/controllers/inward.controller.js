@@ -424,11 +424,13 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
         /** Get indent record from CENTRAL */
         const bpoIndent = await BpoIndent.findOne({
             where: { buyer_po_id: po.id },
+            include: [{ model: Connection, as: "connection" }]
         });
+        if (!bpoIndent?.connection) throw new Error("Indent connection not found!!!");
 
 
         /****************** supplier db models ******************/
-        const { models: supplierModels } = await getTenantConnection(bpoIndent.vendor_tenant);
+        const { models: supplierModels } = await getTenantConnection(bpoIndent.connection.vendor_tenant);
         const { Outward, OutwardItem, OutwardAllocation, Batch } = supplierModels;
 
         const outward = await Outward.findOne({
@@ -468,30 +470,25 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
 
         const bpoItemIds = bpoIndentItems.map(item => item.bpo_item_id);
         const blanketOrderItems = await BlanketOrderItem.findAll({
-            where: { id: bpoItemIds }
+            where: { id: bpoItemIds },
+            include: [{ model: ProductMapping, as: "productMapping", attributes: ["id", "buyer_product_id", "vendor_product_id"] }]
         });
 
         const productMappingMap = {};
         for (const boItem of blanketOrderItems) {
-            productMappingMap[boItem.vendor_product_id] = boItem.buyer_product_id;
+            if (boItem.productMapping) {
+                productMappingMap[boItem.productMapping.vendor_product_id] = boItem.productMapping.buyer_product_id;
+            }
         }
 
-        // Fallback to ProductMapping just in case
+        // Fallback for dispatched items that are not on this indent — resolve them
+        // straight off the indent's connection
         const vendorProductIds = outward ? outward.outwardItemList.map(item => item.vendor_product_id) : [];
         if (vendorProductIds.length > 0) {
-            const connection = await Connection.findOne({
-                where: {
-                    buyer_tenant: bpoIndent.buyer_tenant,
-                    vendor_tenant: bpoIndent.vendor_tenant,
-                    connection_status: true,
-                }
-            });
-
             const mappings = await ProductMapping.findAll({
                 where: {
-                    connection_id: connection?.id,
+                    connection_id: bpoIndent.connection_id,
                     vendor_product_id: vendorProductIds,
-                    vendor_node: bpoIndent.vendor_tenant
                 }
             });
             for (const map of mappings) {
@@ -585,6 +582,9 @@ export const createInward = asyncHandler(async (req, res) => {
 
         let hasDamageOrShortage = false;
 
+        /** per product totals, carried onto the trading requisition after commit */
+        const itemDiscrepancies = [];
+
         // Optionally find PO (po_no is not mandatory)
         let po = null;
         if (po_no) {
@@ -629,6 +629,11 @@ export const createInward = asyncHandler(async (req, res) => {
 
             if (totalDamageQty > 0 || totalShortageQty > 0) {
                 hasDamageOrShortage = true;
+                itemDiscrepancies.push({
+                    product_id: product.id,
+                    damage: totalDamageQty,
+                    shortage: totalShortageQty,
+                });
             }
 
             /** Process direct transfer item record if it exists */
@@ -736,6 +741,7 @@ export const createInward = asyncHandler(async (req, res) => {
                             batch_no: finalBatchNo,
                             received_qty: Number(r_qty || 0),
                             damage_qty: Number(d_qty || 0),
+                            shortage_qty: Number(s_qty || 0),
                             ...(e_date && { expiry_date: new Date(e_date) }),
                         }, { transaction });
                     }
@@ -747,6 +753,7 @@ export const createInward = asyncHandler(async (req, res) => {
                         batch_no: finalBatchNo,
                         received_qty: Number(r_qty || 0),
                         damage_qty: Number(d_qty || 0),
+                        shortage_qty: Number(s_qty || 0),
                         ...(e_date && { expiry_date: new Date(e_date) })
                     }, { transaction });
                 }
@@ -823,6 +830,51 @@ export const createInward = asyncHandler(async (req, res) => {
                 }
             } catch (err) {
                 console.error("Failed to update seller outward record:", err);
+                // Non-blocking: buyer inward is already committed
+            }
+        }
+
+        /** Settle the trading requisition once its dispatched items are inwarded (cross-tenant, root DB) */
+        if (grn.reference && grn.reference.trading && grn.reference.requisition_no) {
+            try {
+                const { models: rootModels } = await rootDB();
+                const { IntercompanyRequisition, IntercompanyRequisitionItems, ProductMapping } = rootModels;
+
+                const requisition = await IntercompanyRequisition.findOne({
+                    where: { requisition_no: grn.reference.requisition_no }
+                });
+
+                if (requisition) {
+                    /**
+                     * The requisition is the only record both tenants read, so the reported
+                     * discrepancy is written back onto its items — the GRN item ids are the
+                     * buyer's products, resolved to the shared mapping.
+                     */
+                    for (const { product_id, damage, shortage } of itemDiscrepancies) {
+                        const mapping = await ProductMapping.findOne({
+                            where: {
+                                connection_id: requisition.connection_id,
+                                buyer_product_id: Number(product_id),
+                            }
+                        });
+                        if (!mapping) continue;
+
+                        await IntercompanyRequisitionItems.update(
+                            { total_damage_qty: damage, total_shortage_qty: shortage },
+                            {
+                                where: {
+                                    inter_comp_req_id: requisition.id,
+                                    product_mapping_id: mapping.id,
+                                }
+                            }
+                        );
+                    }
+
+                    /** a short or damaged receipt is not a clean close — it mirrors the GRN and the seller's outward */
+                    await requisition.update({ status: hasDamageOrShortage ? "return" : "closed" });
+                }
+            } catch (err) {
+                console.error("Failed to settle trading requisition:", err);
                 // Non-blocking: buyer inward is already committed
             }
         }

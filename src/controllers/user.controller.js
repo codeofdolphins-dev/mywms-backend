@@ -20,10 +20,12 @@ const currentUser = asyncHandler(async (req, res) => {
 const allUserList = asyncHandler(async (req, res) => {
     const { User, Role, Permission, BusinessNode, NodeDetails, BusinessNodeType } = req.dbModels;
     try {
-        let { page = 1, limit = 10, id = "", text = "", type = "internal", noLimit = false } = req.query;
+        let { page = 1, limit = 10, id = "", text = "", type = "internal", node_id = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
+
+        noLimit = noLimit === "true" || noLimit === true;
 
         const user = await User.findAndCountAll({
             where: {
@@ -62,6 +64,7 @@ const allUserList = asyncHandler(async (req, res) => {
                 {
                     model: BusinessNode,
                     as: "userBusinessNode",
+                    ...(node_id ? { where: { id: Number(node_id) }, required: true } : {}),
                     through: {
                         attributes: ["isNodeAdmin", "department"]
                     },
@@ -77,7 +80,8 @@ const allUserList = asyncHandler(async (req, res) => {
                     ]
                 },
             ],
-            ...(noLimit && { limit, offset }),
+            ...(noLimit ? {} : { limit, offset }),
+            distinct: true,
             order: [["createdAt", "ASC"]],
         });
         if (!user) return res.status(400).json({ success: false, code: 400, message: "User not found!!!" });
@@ -96,6 +100,41 @@ const allUserList = asyncHandler(async (req, res) => {
                 currentPage: page,
                 limit
             }
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+const userCountByNode = asyncHandler(async (req, res) => {
+    const { User, BusinessNode } = req.dbModels;
+    try {
+        const counts = await User.findAll({
+            attributes: [
+                [Sequelize.col("userBusinessNode.id"), "node_id"],
+                [Sequelize.fn("COUNT", Sequelize.col("User.id")), "count"]
+            ],
+            where: { is_owner: false, type: "internal" },
+            include: [
+                {
+                    model: BusinessNode,
+                    as: "userBusinessNode",
+                    attributes: [],
+                    through: { attributes: [] },
+                    required: true
+                }
+            ],
+            group: ["userBusinessNode.id"],
+            raw: true
+        });
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "Counts fetched successfully.",
+            data: counts
         });
 
     } catch (error) {
@@ -177,4 +216,4 @@ const updateEmployeeDetails = asyncHandler(async (req, res) => {
 });
 
 
-export { currentUser, allUserList, updateEmployeeDetails };
+export { currentUser, allUserList, userCountByNode, updateEmployeeDetails };

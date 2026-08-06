@@ -79,7 +79,7 @@ export const sampleProductUpload = async (req, res) => {
         ];
 
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", "attachment; filename=sample_product_upload.xlsx");
+        res.setHeader("Content-Disposition", `attachment; filename=sample_${type}_product_upload.xlsx`);
 
         await workBook.xlsx.write(res);
         res.end();

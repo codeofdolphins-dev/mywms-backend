@@ -8,12 +8,14 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
 
     try {
         const indent = await BpoIndent.findOne({
-            where: { id: salesOrder.central_indent_id }
+            where: { id: salesOrder.central_indent_id },
+            include: [{ model: Connection, as: "connection" }]
         });
         if (!indent) throw new Error("Indent not found!!!");
+        if (!indent.connection) throw new Error("Indent connection not found!!!");
 
 
-        const { models: tenantModels, sequelize } = await getTenantConnection(indent.buyer_tenant);
+        const { models: tenantModels, sequelize } = await getTenantConnection(indent.connection.buyer_tenant);
         const { GRN, Vendor, PurchasOrder, GRNItem, GRNItemBatch, PurchaseOrderItem, ManufacturingUnit } = tenantModels;
         transaction = await sequelize.transaction();
 
@@ -24,7 +26,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
 
         const vendor = await Vendor.findOne({
             where: {
-                tenant: indent.vendor_tenant,
+                tenant: indent.connection.vendor_tenant,
                 linked_business_node_id: salesOrder.seller_business_node_id,
                 type: "vendor"
             }
@@ -43,7 +45,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
             sender_id: vendor.id,
             status: "draft",
             reference: {
-                tenant: indent.buyer_tenant,
+                tenant: indent.connection.buyer_tenant,
                 outward_no: outward_no
             },
             ...(store ?
@@ -60,18 +62,12 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
             // Attempt to iterate over the extracted allocated batches passed from outward allocation
             for (const item of allocatedItems) {
 
-                const connection = await Connection.findOne({
-                    where: {
-                        buyer_tenant: indent.buyer_tenant,
-                        vendor_tenant: indent.vendor_tenant,
-                        connection_status: true,
-                    }
-                });
-
-                // Fetch Product mapping to match vendor tenant product id with buyer tenant product id
+                // Fetch Product mapping to match vendor tenant product id with buyer tenant product id.
+                // The indent carries its connection directly, so no tenant-pair lookup is needed —
+                // that lookup could pick the wrong row when a pair has several connections.
                 const productMap = await ProductMapping.findOne({
                     where: {
-                        connection_id: connection?.id,
+                        connection_id: indent.connection_id,
                         vendor_product_id: item.vendor_product_id
                     }
                 });
@@ -99,6 +95,124 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
                     purchase_order_item_id: poItem.id,
                     product_id: productMap.buyer_product_id,
                     ordered_qty: poItem.qty,
+                    received_qty: item.requested_qty
+                }, { transaction });
+
+                // Iterate over allocated batches associated with the current item to create GRN item batches
+                for (const batch of item.allocated_batches) {
+                    await GRNItemBatch.create({
+                        grn_item_id: grnItem.id,
+                        batch_no: batch.batch_no,
+                        received_qty: batch.allocated_qty,
+                        expiry_date: batch.expiry_date || null
+                    }, { transaction });
+                }
+            }
+        }
+
+        await transaction.commit();
+        return grn;
+
+    } catch (error) {
+        if (transaction) await transaction.rollback();
+        throw error;
+    }
+}
+
+
+export async function createGrn_items_trading(req, outward, allocatedItems = [], outward_no = "") {
+    const { models } = await rootDB();
+    const { ProductMapping, IntercompanyRequisition } = models;
+
+    const vendorTenant = req.headers["x-tenant-id"];
+
+    let transaction = null;
+
+    try {
+        const { buyer_tenant = "", connection_id = "", inter_comp_req_id = "" } = outward.meta || {};
+        if (!buyer_tenant || !connection_id) throw new Error("Trading details not found on outward!!!");
+
+        const requisition = await IntercompanyRequisition.findByPk(Number(inter_comp_req_id));
+        if (!requisition) throw new Error("Trading requisition not found!!!");
+
+        const { models: buyerModels, sequelize } = await getTenantConnection(buyer_tenant);
+        const { GRN, GRNItem, GRNItemBatch, Vendor } = buyerModels;
+        transaction = await sequelize.transaction();
+
+        /** buyer side vendor record of the seller company — create from seller root node if missing */
+        let vendor = await Vendor.findOne({
+            where: {
+                tenant: vendorTenant,
+                type: "vendor",
+                connection_id: Number(connection_id)
+            }
+        });
+        if (!vendor) {
+            const { BusinessNode, NodeDetails, User } = req.dbModels;
+
+            const sellerDetails = await BusinessNode.findOne({
+                where: {
+                    node_type_code: null,
+                    tenant_business_flow_id: null
+                },
+                include: [{ model: NodeDetails, as: "nodeDetails" }]
+            });
+            if (!sellerDetails?.nodeDetails) throw new Error("Seller company details not found!!!");
+
+            const owner = await User.findOne({
+                where: { is_owner: true },
+                attributes: ["id", "phone_no", "email"]
+            });
+
+            vendor = await Vendor.create({
+                name: sellerDetails.nodeDetails.name,
+                tenant: vendorTenant,
+                type: "vendor",
+                connection_id: Number(connection_id),
+                contact_email: owner?.email,
+                contact_phone: owner?.phone_no,
+                address: sellerDetails.nodeDetails.address,
+                gst_no: sellerDetails.nodeDetails.gst_no,
+                license_no: sellerDetails.nodeDetails.license_no,
+            }, { transaction });
+        }
+
+        const grn = await GRN.create({
+            grn_no: `GRN-${Date.now()}`,
+            grn_type: "purchase",
+            sender_id: vendor.id,
+            receiver_id: requisition.buyer_node,
+            status: "draft",
+            reference: {
+                tenant: buyer_tenant,
+                outward_no: outward_no,
+                trading: true,
+                requisition_no: requisition.requisition_no
+            },
+        }, { transaction });
+
+        if (allocatedItems && allocatedItems.length > 0) {
+            // Attempt to iterate over the extracted allocated batches passed from outward allocation
+            for (const item of allocatedItems) {
+
+                // Fetch Product mapping to match vendor tenant product id with buyer tenant product id
+                const productMap = await ProductMapping.findOne({
+                    where: {
+                        connection_id: Number(connection_id),
+                        vendor_product_id: item.vendor_product_id
+                    }
+                });
+
+                if (!productMap) {
+                    throw new Error(`Product Mapping not found for vendor product ${item.vendor_product_id}`);
+                }
+
+                // Create the GRN item record with received quantities
+                const grnItem = await GRNItem.create({
+                    grn_id: grn.id,
+                    purchase_order_item_id: null,
+                    product_id: productMap.buyer_product_id,
+                    ordered_qty: item.requested_qty,
                     received_qty: item.requested_qty
                 }, { transaction });
 

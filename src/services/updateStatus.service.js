@@ -1,8 +1,12 @@
 import { getTenantConnection } from "../db/tenantMenager.service.js";
 
 /** update PO status */
+/** indentData must be loaded with its `connection` — both tenants live there */
 export const updatePOStatus = async (indentData, status, updateStatus = true) => {
-    const { sequelize, models } = await getTenantConnection(indentData.buyer_tenant);
+    const buyerTenant = indentData.connection?.buyer_tenant;
+    if (!buyerTenant) throw new Error("Indent connection not loaded — buyer tenant unavailable!!!");
+
+    const { sequelize, models } = await getTenantConnection(buyerTenant);
     const { PurchasOrder } = models;
     const transaction = await sequelize.transaction();
 
@@ -32,7 +36,10 @@ export const updateSOStatus = async (indentData, status, updateStatus = true) =>
     // no need to update status if status is already closed
     if (!updateStatus) return;
 
-    const { sequelize, models } = await getTenantConnection(indentData.vendor_tenant);
+    const vendorTenant = indentData.connection?.vendor_tenant;
+    if (!vendorTenant) throw new Error("Indent connection not loaded — vendor tenant unavailable!!!");
+
+    const { sequelize, models } = await getTenantConnection(vendorTenant);
     const { SalesOrder } = models;
     const transaction = await sequelize.transaction();
 
