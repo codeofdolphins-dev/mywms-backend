@@ -22,17 +22,18 @@ function InvoiceItem(sequelize) {
             allowNull: false
         },
 
+        // null on b2c invoices — a retail customer has no product catalogue to map into
         buyer_product_id: {
             type: DataTypes.INTEGER,
-            allowNull: false
+            allowNull: true
         },
         buyer_product_name: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         buyer_product_sku: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
 
         hsn_code: {

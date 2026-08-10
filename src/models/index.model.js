@@ -71,6 +71,10 @@ import InvoiceItem from "./invoiceItem.model.js";
 import Connection from "./main/connection.model.js";
 import IntercompanyRequisition from "./main/intercompanyRequisition.model.js";
 import IntercompanyRequisitionItems from "./main/intercompanyRequisitionItems.model.js";
+import Customer from "./customer.model.js";
+import RetailSale from "./retailSale.model.js";
+import RetailSaleItem from "./retailSaleItem.model.js";
+import RetailSaleAllocation from "./retailSaleAllocation.model.js";
 
 const defineRootModels = (rootSequelize) => {
     Tenant(rootSequelize);
@@ -156,7 +160,13 @@ const defineTenantModels = (sequelize) => {
     DirectTransferAllocation(sequelize);
     CostCategory(sequelize);
     CostCenter(sequelize);
-    Store(sequelize);
+
+    Store(sequelize); // NOTE: this model may not required need verify before remove
+
+    Customer(sequelize);
+    RetailSale(sequelize);
+    RetailSaleItem(sequelize);
+    RetailSaleAllocation(sequelize);
 
     return sequelize.models;
 }
