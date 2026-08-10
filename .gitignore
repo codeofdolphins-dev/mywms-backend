@@ -10,11 +10,8 @@ dist/
 build/
 
 # Environment variables
-.env
-.env.local
 
 # IDE and OS specific files
-.vscode/
 .idea/
 .DS_Store
 Thumbs.db
@@ -40,3 +37,4 @@ bun.*
 yarn.*
 
 cron.*
+config.bat
