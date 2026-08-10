@@ -184,10 +184,11 @@ export async function createGrn_items_trading(req, outward, allocatedItems = [],
             receiver_id: requisition.buyer_node,
             status: "draft",
             reference: {
-                tenant: buyer_tenant,
-                outward_no: outward_no,
                 trading: true,
-                requisition_no: requisition.requisition_no
+                buyer_tenant: buyer_tenant,
+                requisition_no: requisition.requisition_no,
+                vendor_tenant: vendorTenant,
+                outward_no: outward_no,
             },
         }, { transaction });
 

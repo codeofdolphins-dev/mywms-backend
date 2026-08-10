@@ -12,7 +12,7 @@ function Requisition(sequelize) {
         },
         title: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         },
         notes: {
             type: DataTypes.TEXT,

@@ -66,6 +66,19 @@ function Outward(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
+        total_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
+        },
+        vehicle_no: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        tpass_no: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         meta: {
             type: DataTypes.JSONB,
             allowNull: true,

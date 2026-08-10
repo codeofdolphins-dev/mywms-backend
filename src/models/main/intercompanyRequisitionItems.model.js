@@ -34,6 +34,11 @@ function IntercompanyRequisitionItems(sequelize) {
         sub_category: {
             type: DataTypes.STRING,
             allowNull: true,
+        },
+        line_total_price: {
+            type: DataTypes.DECIMAL(12, 2),
+            allowNull: false,
+            defaultValue: 0,
         }
     });
 }

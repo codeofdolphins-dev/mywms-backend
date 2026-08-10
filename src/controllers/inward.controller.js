@@ -292,6 +292,17 @@ export const grnList = asyncHandler(async (req, res) => {
             distinct: true, // Needed when using includes with hasMany
         });
 
+        await Promise.all(rows.map(async (item) => {
+            const formatData = item.toJSON();
+            const reference = formatData?.reference;
+
+            if (!reference?.vendor_tenant || !reference?.outward_no) return;
+
+            const { models } = await getTenantConnection(reference.vendor_tenant);
+            reference.outward = await models.Outward.findOne({ where: { outward_no: reference.outward_no } }) || null;
+            item.dataValues.reference = reference;
+        }));
+
         const totalPages = Math.ceil(count / limit);
 
         return res.status(200).json({
@@ -444,7 +455,7 @@ export const getTenantOutwardData = asyncHandler(async (req, res) => {
                 {
                     model: OutwardItem,
                     as: "outwardItemList",
-                    attributes: ["id", "vendor_product_id", "requested_qty", "unit_price"],
+                    attributes: ["id", "vendor_product_id", "requested_qty", "line_total_price"],
                     include: [
                         {
                             model: OutwardAllocation,

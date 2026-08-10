@@ -18,13 +18,19 @@ function OutwardAllocation(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
-
+        
         shortage_qty: {
             type: DataTypes.DECIMAL(10, 2),
             defaultValue: 0
         },
         damage_qty: {
             type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0
+        },
+        
+        unit_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
             defaultValue: 0
         },
 

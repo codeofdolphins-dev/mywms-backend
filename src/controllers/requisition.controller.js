@@ -319,7 +319,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         const userDetails = req.user;
         const current_node = req.activeNode;
 
-        if (!title || items?.length < 1 || vendor_id?.length < 1) throw new Error("Required fields are missing!!!");
+        if (items?.length < 1 || vendor_id?.length < 1) throw new Error("Required fields are missing!!!");
 
         // fetch all supplier nodes
         const vendorNode = await BusinessNode.findAll({
@@ -346,7 +346,7 @@ export const createInternalRequisition = asyncHandler(async (req, res) => {
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
             ...(required_by_date && { required_by_date: new Date(required_by_date) }),
-            title,
+            ...(title && { title: title.trim() }),
             notes,
             type: "internal",
             ...(priority && { priority: priority.toLowerCase() }),
@@ -424,13 +424,13 @@ export const createOpenForumRequisition = asyncHandler(async (req, res) => {
 
         // console.log(current_node); return
 
-        if (!title || items?.length < 1) throw new Error("Required fields are missing!!!");
+        if (items?.length < 1) throw new Error("Required fields are missing!!!");
 
         const rCat = await RequisitionCategory.findByPk(Number(requisition_category_id));
 
         const requisition = await Requisition.create({
             buyer_business_node_id: current_node,
-            title: title?.trim(),
+            ...(title && { title: title.trim() }),
             notes: notes?.trim(),
             ...(total !== "" && { grandTotal: total }),
             requisition_category_id: rCat?.id,
@@ -450,7 +450,7 @@ export const createOpenForumRequisition = asyncHandler(async (req, res) => {
         const rfq = await RFQ.create({
             buyer_tenant: dbName,
             pr_reference_code: requisition_no,
-            title: title?.trim(),
+            ...(title && { title: title.trim() }),
             ...(priority && { priority: priority.toLowerCase() }),
             note: notes?.trim(),
             status: "open",
@@ -516,6 +516,8 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
     const { Vendor } = req.dbModels;
     const dbName = req.headers["x-tenant-id"];
 
+    // console.log(req.body); return
+
     /** opened on the vendor tenant once the connection is resolved */
     let sellerTransaction = null;
 
@@ -528,11 +530,11 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
     };
 
     try {
-        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", required_by_date = "", priority = "", notes = "", items = [] } = req.body;
+        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", required_by_date = "", priority = "", notes = "", total = "", items = [] } = req.body;
         const userDetails = req.user;
         const current_node = Number(buyer_node) || req.activeNode;
 
-        if (!title?.trim() || !vendor_id || !seller_node || items?.length < 1) throw new Error("Required fields are missing!!!");
+        if (!vendor_id || !seller_node || items?.length < 1) throw new Error("Required fields are missing!!!");
 
         /** fetch vendor (tenant level) to resolve its root connection */
         const vendor = await Vendor.findByPk(Number(vendor_id));
@@ -610,8 +612,9 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
             connection_id: connection.id,
             buyer_node: current_node,
             seller_node: sellerNode.id,
-            title: title?.trim(),
+            ...(title && { title: title.trim() }),
             notes: notes?.trim(),
+            total_price: Number(total || 0),
             status: "assign",
             ...(required_by_date && { required_by_date }),
             ...(priority && { priority: priority.toLowerCase() }),
@@ -628,6 +631,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
                 inter_comp_req_id: requisition.id,
                 product_mapping_id: mapping.id,
                 qty: item.reqQty,
+                line_total_price: Number(item.reqQty) * Number(item?.mrp),
                 ...(item.brand && { brand: item.brand }),
                 ...(item.category && { category: item.category }),
                 ...(item.subCategory && { sub_category: item.subCategory }),
@@ -642,6 +646,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
             priority: requisition.priority,
             note: requisition.notes,
             pr_no: requisition_no,
+            total_price: Number(total || 0),
             ...(required_by_date && { required_by: new Date(required_by_date) }),
             meta: {
                 trading: true,
@@ -660,6 +665,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
                 outward_id: outward.id,
                 vendor_product_id: seller_product_id,
                 requested_qty: Number(item.reqQty),
+                line_total_price: Number(item.reqQty) * Number(item?.mrp),
             }, { transaction: sellerTransaction });
         }
 

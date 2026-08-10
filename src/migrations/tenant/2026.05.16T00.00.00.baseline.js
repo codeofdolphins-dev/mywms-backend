@@ -770,7 +770,7 @@ export async function up({ context: queryInterface }) {
             },
             title: {
                 type: DataTypes.STRING,
-                allowNull: false
+                allowNull: true
             },
             notes: {
                 type: DataTypes.TEXT,

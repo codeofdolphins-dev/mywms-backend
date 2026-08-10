@@ -343,7 +343,7 @@ export const createOutward = asyncHandler(async (req, res) => {
                 ...(sales_order_item_id && { sales_order_item_id: Number(sales_order_item_id) }),
                 vendor_product_id: product.id,
                 requested_qty: Number(requested_qty),
-                ...(unit_price && { unit_price: Number(unit_price) }),
+                ...(unit_price && { line_total_price: Number(unit_price) }),
             }, { transaction });
         };
 
@@ -367,7 +367,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
     // console.log(req.body); return
 
     try {
-        const { outward_no = "", items = [] } = req.body;
+        const { outward_no = "", tpass_no = "", vehicle_no = "", items = [] } = req.body;
 
         if (!outward_no || !Array.isArray(items) || items.length === 0) {
             await transaction.rollback()
@@ -503,6 +503,10 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
         /** update outward record */
         outward.dispatch_date = new Date();
         outward.status = "dispatched";
+
+        if (tpass_no) outward.tpass_no = tpass_no.trim();
+        if (vehicle_no) outward.vehicle_no = vehicle_no.trim();
+
         await outward.save({ transaction });
 
 
