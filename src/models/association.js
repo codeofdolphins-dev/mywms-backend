@@ -516,6 +516,10 @@ const defineTenantAssociations = (models) => {
         Store,
         Invoice,
         InvoiceItem,
+        Customer,
+        RetailSale,
+        RetailSaleItem,
+        RetailSaleAllocation,
 
 
     } = models;
@@ -1495,6 +1499,122 @@ const defineTenantAssociations = (models) => {
         foreignKey: "seller_product_id",
         as: "sellerInvoiceItems",
         onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+
+    // ******************************************** Retail Sale (POS) *********************************
+
+    // retailSale <-> businessNode
+    RetailSale.belongsTo(BusinessNode, {
+        foreignKey: "business_node_id",
+        as: "saleNode",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    BusinessNode.hasMany(RetailSale, {
+        foreignKey: "business_node_id",
+        as: "retailSales",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSale <-> user (cashier)
+    RetailSale.belongsTo(User, {
+        foreignKey: "cashier_id",
+        as: "cashier",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+    User.hasMany(RetailSale, {
+        foreignKey: "cashier_id",
+        as: "cashierSales",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSale <-> customer
+    RetailSale.belongsTo(Customer, {
+        foreignKey: "customer_id",
+        as: "customer",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+    Customer.hasMany(RetailSale, {
+        foreignKey: "customer_id",
+        as: "customerSales",
+        onDelete: "SET NULL",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSale <-> retailSaleItem
+    RetailSaleItem.belongsTo(RetailSale, {
+        foreignKey: "sale_id",
+        as: "sale",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RetailSale.hasMany(RetailSaleItem, {
+        foreignKey: "sale_id",
+        as: "saleItems",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSaleItem <-> product
+    RetailSaleItem.belongsTo(Product, {
+        foreignKey: "product_id",
+        as: "retailProduct",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+    Product.hasMany(RetailSaleItem, {
+        foreignKey: "product_id",
+        as: "retailSaleItems",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSaleItem <-> retailSaleAllocation
+    RetailSaleAllocation.belongsTo(RetailSaleItem, {
+        foreignKey: "sale_item_id",
+        as: "saleItem",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+    RetailSaleItem.hasMany(RetailSaleAllocation, {
+        foreignKey: "sale_item_id",
+        as: "saleAllocations",
+        onDelete: "CASCADE",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSaleAllocation <-> batch
+    RetailSaleAllocation.belongsTo(Batch, {
+        foreignKey: "batch_id",
+        as: "saleBatch",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+    Batch.hasMany(RetailSaleAllocation, {
+        foreignKey: "batch_id",
+        as: "retailAllocations",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+
+    // retailSale <-> invoice — RESTRICT, not the usual CASCADE: an invoice is a tax
+    // document, deleting a sale that has one must fail loudly rather than take it along
+    RetailSale.hasOne(Invoice, {
+        foreignKey: "retail_sale_id",
+        as: "saleInvoice",
+        onDelete: "RESTRICT",
+        onUpdate: "CASCADE",
+    });
+    Invoice.belongsTo(RetailSale, {
+        foreignKey: "retail_sale_id",
+        as: "invoiceRetailSale",
+        onDelete: "RESTRICT",
         onUpdate: "CASCADE",
     });
 

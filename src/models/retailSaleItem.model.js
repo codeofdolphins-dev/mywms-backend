@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-function RetailsSaleItem(sequelize) {
-    return sequelize.define("RetailsSaleItem", {
+function RetailSaleItem(sequelize) {
+    return sequelize.define("RetailSaleItem", {
         sale_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -15,22 +15,22 @@ function RetailsSaleItem(sequelize) {
             allowNull: true,
         },
         unit_price: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: true,
         },
         tax_rate: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(5, 2),
             allowNull: true,
         },
         tax_amount: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
         },
         line_total: {
-            type: DataTypes.DECIMAL(10, 2),
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false,
         }
     });
 }
 
-export default RetailsSaleItem;
+export default RetailSaleItem;

@@ -12,40 +12,44 @@ function RetailSale(sequelize) {
             allowNull: true,
         },
         cashier_id: {
-            type: DataTypes.DATEONLY,
-            allowNull: true
+            type: DataTypes.INTEGER,
+            allowNull: false
         },
         customer_id: {
-            type: DataTypes.DATEONLY,
-            allowNull: true
+            type: DataTypes.INTEGER,
+            allowNull: true         // anonymous walk-in sales have no customer record
         },
         status: {
-            type: DataTypes.ENUM("completed ", "void", "returned"),
+            type: DataTypes.ENUM("completed", "void", "returned"),
             allowNull: true
         },
         sub_total: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         tax_type: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.ENUM("inter", "intra", "noTax"),
             allowNull: false
         },
         total_tax_amount: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         discount: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         grand_total: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DECIMAL(18, 2),
             allowNull: false
         },
         payment_mode: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.ENUM("cash", "card", "upi"),
             allowNull: false
+        },
+        payment_details: {
+            type: DataTypes.JSONB,
+            allowNull: true
         }
     });
 

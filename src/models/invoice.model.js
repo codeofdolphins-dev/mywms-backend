@@ -18,11 +18,11 @@ function Invoice(sequelize) {
         
         buyer_tenant: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,        // null for b2c — a retail customer has no tenant
         },
         buyer_businessNode_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,        // null for b2c — a retail customer has no node
         },
         // buyer_store_id: {
         //     type: DataTypes.INTEGER,
@@ -64,6 +64,17 @@ function Invoice(sequelize) {
         },
 
         outward_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+
+        invoice_type: {
+            type: DataTypes.ENUM("b2b", "b2c"),
+            allowNull: false,
+            defaultValue: "b2b",
+        },
+        // source retail sale when invoice_type is b2c — mirrors outward_id for the b2b flow
+        retail_sale_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
         },
