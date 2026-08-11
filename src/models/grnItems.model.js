@@ -33,6 +33,11 @@ function GRNItem(sequelize) {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
             defaultValue: 0
+        },
+        line_total_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
         }
     });
 

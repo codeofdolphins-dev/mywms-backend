@@ -182,13 +182,16 @@ export const sentTradingRequisitionList = asyncHandler(async (req, res) => {
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
+        /** comma separated so a tab can group several statuses */
+        const statusList = String(status).split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+
         const requisition = await IntercompanyRequisition.findAndCountAll({
             distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
                 ...(requisition_no?.trim() && { requisition_no: { [Op.iLike]: `%${requisition_no?.trim()}%` } }),
                 ...(title?.trim() && { title: { [Op.iLike]: `%${title?.trim()}%` } }),
-                ...(status !== "" && { status: status?.toLowerCase().trim() }),
+                ...(statusList.length && { status: { [Op.in]: statusList } }),
                 ...(priority?.toLowerCase().trim() !== "all" && { priority: priority?.toLowerCase().trim() }),
             },
             include: [
@@ -255,13 +258,16 @@ export const receiveTradingRequisitionList = asyncHandler(async (req, res) => {
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
 
+        /** comma separated so a tab can group several statuses */
+        const statusList = String(status).split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+
         const requisition = await IntercompanyRequisition.findAndCountAll({
             distinct: true,
             where: {
                 ...(id && { id: Number(id) }),
                 ...(requisition_no?.trim() && { requisition_no: { [Op.iLike]: `%${requisition_no?.trim()}%` } }),
                 ...(title?.trim() && { title: { [Op.iLike]: `%${title?.trim()}%` } }),
-                ...(status !== "" && { status: status?.toLowerCase().trim() }),
+                ...(statusList.length && { status: { [Op.in]: statusList } }),
                 ...(priority?.toLowerCase().trim() !== "all" && { priority: priority?.toLowerCase().trim() }),
             },
             include: [

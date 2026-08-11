@@ -453,7 +453,8 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                     batch_no: batchRecord.batch_no,
                     allocated_qty,
                     mfg_date: batchRecord.mfg_date,
-                    expiry_date: batchRecord.expiry_date
+                    expiry_date: batchRecord.expiry_date,
+                    unit_price: batchRecord.unit_price
                 });
 
                 await OutwardAllocation.create({
@@ -470,6 +471,7 @@ export const confirmAllocation = asyncHandler(async (req, res) => {
                 allocatedItems.push({
                     vendor_product_id: product.id,
                     requested_qty: requested_qty,
+                    line_total_price: outwardItem.line_total_price,
                     allocated_batches: itemAllocatedBatches
                 });
             }

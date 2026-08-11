@@ -70,9 +70,6 @@ const getInward = asyncHandler(async (req, res) => {
     }
 });
 
-
-
-
 // DELETE
 const deleteInward = asyncHandler(async (req, res) => {
     const { Inward } = req.dbModels;
@@ -90,8 +87,6 @@ const deleteInward = asyncHandler(async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
-
-
 
 // PUT
 const updateInward = asyncHandler(async (req, res) => {
@@ -236,6 +231,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
     }
 });
 
+// not in use ^^^
 
 
 
@@ -245,7 +241,7 @@ const updateInwardItems = asyncHandler(async (req, res) => {
 
 
 export const grnList = asyncHandler(async (req, res) => {
-    const { GRN, User, GRNItem } = req.dbModels;
+    const { GRN, User, GRNItem, Product } = req.dbModels;
 
     try {
         const { activeNode } = await getUserContext(req)
@@ -278,6 +274,13 @@ export const grnList = asyncHandler(async (req, res) => {
                     model: GRNItem,
                     as: "grnLineItems",
                     required: false,
+                    include: [
+                        {
+                            model: Product,
+                            as: "grnProduct",
+                            required: false,
+                        },
+                    ]
                 },
                 {
                     model: User,
@@ -325,7 +328,39 @@ export const grnList = asyncHandler(async (req, res) => {
 });
 
 
-export const grnItemDetailsViaPO = asyncHandler(async (req, res) => {
+/** PUT /inward/report/:grn_no — accept a transit GRN at the gate: transit -> report, stamping the report time */
+export const markGrnReport = asyncHandler(async (req, res) => {
+    const { GRN } = req.dbModels;
+
+    try {
+        const { grn_no } = req.params;
+
+        const grn = await GRN.findOne({ where: { grn_no } });
+        if (!grn) return res.status(404).json({ success: false, code: 404, message: "GRN not found!!!" });
+
+        if (grn.status !== "transit") {
+            return res.status(400).json({ success: false, code: 400, message: "Only a transit GRN can be reported!!!" });
+        }
+
+        grn.status = "report";
+        grn.report_date = new Date();
+        await grn.save();
+
+        return res.status(200).json({
+            success: true,
+            code: 200,
+            message: "GRN Reported Successfully.",
+            data: grn,
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+});
+
+
+export const grnItemDetails = asyncHandler(async (req, res) => {
 
     /****************** buyer db models ******************/
     const { Product, GRN, GRNItem, GRNItemBatch, Vendor, BusinessNode, NodeDetails, User } = req.dbModels;

@@ -122,7 +122,7 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
 
 export async function createGrn_items_trading(req, outward, allocatedItems = [], outward_no = "") {
     const { models } = await rootDB();
-    const { ProductMapping, IntercompanyRequisition } = models;
+    const { ProductMapping, IntercompanyRequisition, IntercompanyRequisitionItems } = models;
 
     const vendorTenant = req.headers["x-tenant-id"];
 
@@ -134,6 +134,16 @@ export async function createGrn_items_trading(req, outward, allocatedItems = [],
 
         const requisition = await IntercompanyRequisition.findByPk(Number(inter_comp_req_id));
         if (!requisition) throw new Error("Trading requisition not found!!!");
+
+        /** price fallback — outwards created by the vendor-assign flow carry no line prices,
+         * but the central requisition items always do (keyed by product_mapping_id) */
+        const requisitionItems = await IntercompanyRequisitionItems.findAll({
+            where: { inter_comp_req_id: requisition.id }
+        });
+        const reqItemPriceByMapping = {};
+        for (const reqItem of requisitionItems) {
+            reqItemPriceByMapping[reqItem.product_mapping_id] = reqItem.line_total_price;
+        }
 
         const { models: buyerModels, sequelize } = await getTenantConnection(buyer_tenant);
         const { GRN, GRNItem, GRNItemBatch, Vendor } = buyerModels;
@@ -182,7 +192,8 @@ export async function createGrn_items_trading(req, outward, allocatedItems = [],
             grn_type: "purchase",
             sender_id: vendor.id,
             receiver_id: requisition.buyer_node,
-            status: "draft",
+            status: "transit",
+            total_price: Number(outward.total_price || requisition.total_price || 0),
             reference: {
                 trading: true,
                 buyer_tenant: buyer_tenant,
@@ -214,7 +225,8 @@ export async function createGrn_items_trading(req, outward, allocatedItems = [],
                     purchase_order_item_id: null,
                     product_id: productMap.buyer_product_id,
                     ordered_qty: item.requested_qty,
-                    received_qty: item.requested_qty
+                    received_qty: item.requested_qty,
+                    line_total_price: Number(item.line_total_price || reqItemPriceByMapping[productMap.id] || 0)
                 }, { transaction });
 
                 // Iterate over allocated batches associated with the current item to create GRN item batches
@@ -223,7 +235,8 @@ export async function createGrn_items_trading(req, outward, allocatedItems = [],
                         grn_item_id: grnItem.id,
                         batch_no: batch.batch_no,
                         received_qty: batch.allocated_qty,
-                        expiry_date: batch.expiry_date || null
+                        expiry_date: batch.expiry_date || null,
+                        unit_price: Number(batch.unit_price || 0)
                     }, { transaction });
                 }
             }

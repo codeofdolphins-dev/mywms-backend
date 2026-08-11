@@ -26,6 +26,11 @@ function GRNItemBatch(sequelize) {
         expiry_date: {
             type: DataTypes.DATEONLY,
             allowNull: true
+        },
+        unit_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
         }
     });
 }

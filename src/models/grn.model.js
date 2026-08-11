@@ -31,9 +31,19 @@ function GRN(sequelize) {
             type: DataTypes.DATEONLY,
             allowNull: true
         },
+        // stamped when a transit GRN is accepted at the gate (transit -> report)
+        report_date: {
+            type: DataTypes.DATE,
+            allowNull: true
+        },
         status: {
-            type: DataTypes.ENUM("draft", "accepted", "cancelled", "return"),
-            defaultValue: "accepted"
+            type: DataTypes.ENUM("draft", "accepted", "cancelled", "return", "transit", "report"),
+            defaultValue: "draft"
+        },
+        total_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0
         },
         reference: {
             type: DataTypes.JSONB,
