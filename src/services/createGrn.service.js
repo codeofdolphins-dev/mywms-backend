@@ -43,9 +43,10 @@ export async function createGrn_items_external(salesOrder, allocatedItems = [], 
             purchase_order: po.po_no,
             grn_type: "purchase",
             sender_id: vendor.id,
-            status: "draft",
+            status: "transit",
             reference: {
-                tenant: indent.connection.buyer_tenant,
+                buyer_tenant: indent.connection.buyer_tenant,
+                vendor_tenant: indent.connection.vendor_tenant,
                 outward_no: outward_no
             },
             ...(store ?
@@ -274,7 +275,7 @@ export async function createGrn_items_internal(req, transaction, outward, alloca
             sender_id: outward.seller_business_node_id,
             ...(store && { mfg_unit_id: outward?.store_id }),
             receiver_id: outward.buyer_business_node_id,
-            status: "draft",
+            status: "transit",
             ...(transNo && { reference: { directTransferNo: transNo } })
         }, { transaction });
 

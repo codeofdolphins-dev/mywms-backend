@@ -135,7 +135,7 @@ export const allRegisteredNodes = asyncHandler(async (req, res) => {
 export const registeredNodesOfTenant = asyncHandler(async (req, res) => {
     try {
         const { sequelize, models } = await getTenantConnection(req.params.tenant_code);
-        const { BusinessNode, BusinessNodeType, NodeDetails } = models;
+        const { BusinessNode, BusinessNodeType, NodeDetails, ManufacturingUnit } = models;
 
 
         const businessNode = await NodeDetails.findAll({
@@ -150,6 +150,14 @@ export const registeredNodesOfTenant = asyncHandler(async (req, res) => {
                         {
                             model: BusinessNodeType,
                             as: "type",
+                        },
+                        /** FG stores — a trading requisition to a manufacturing node is routed to one of these */
+                        {
+                            model: ManufacturingUnit,
+                            as: "unitLocations",
+                            where: { store_type: "fg_store" },
+                            required: false,
+                            attributes: ["id", "name", "location", "store_type"]
                         }
                     ]
                 }

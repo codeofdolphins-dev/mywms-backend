@@ -36,8 +36,8 @@ export const bulkOpeningStockInsertion = asyncHandler(async (req, res) => {
                     barcode,
                     qty: Number(qty),
                     batchNumber,
-                    mfgDate: new Date(mfgDate),
-                    expiryDate: new Date(expiryDate),
+                    mfgDate: toDateOrNull(mfgDate, `Mfg date (row ${rowNumber})`),
+                    expiryDate: toDateOrNull(expiryDate, `Expiry date (row ${rowNumber})`),
                     unitPrice: Number(unitPrice)
                 });
             }
@@ -126,3 +126,24 @@ export const getBatch = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, code: 400, message: error.message })
     }
 });
+
+/**
+ * Excel cell -> Date. Empty cell gives null (new Date(null) would silently become 1970-01-01).
+ * @param {*} value ExcelJS cell value (Date, string, serial number, formula / rich-text object)
+ * @param {string} label used in the error message
+ * @returns {Date|null}
+ */
+function toDateOrNull(value, label) {
+    if (value && typeof value === "object" && !(value instanceof Date)) {
+        value = value.result ?? value.text ?? value.richText?.map(t => t.text).join("") ?? null;
+    }
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+
+    // unformatted Excel date cells come through as serial day numbers (days since 1899-12-30)
+    const date = typeof value === "number"
+        ? new Date(Math.round((value - 25569) * 86400 * 1000))
+        : new Date(value);
+
+    if (isNaN(date.getTime())) throw new Error(`${label} is not a valid date: "${value}"`);
+    return date;
+}

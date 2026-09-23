@@ -120,10 +120,12 @@ export const createProductionReceipt = asyncHandler(async (req, res) => {
         }, { transaction });
 
         // generate receipe number
-        if (!receipt_no) {
-            productionReceipt.receipt_no = generateNo("PR", productionReceipt.id)
-            await productionReceipt.save({ transaction });
-        }
+        if (!receipt_no) productionReceipt.receipt_no = generateNo("PR", productionReceipt.id);
+
+        // generate batch no here so production and FG store both see the same batch no
+        if (!productionReceipt.batch_no) productionReceipt.batch_no = generateBatch("BAT", productionReceipt.id);
+
+        if (productionReceipt.changed()) await productionReceipt.save({ transaction });
 
         /** 
          * update produced qty in production order
@@ -253,10 +255,11 @@ export const acceptProductionReceipt = asyncHandler(async (req, res) => {
             reference_type: "production",
         }, { transaction });
 
-        /** auto-generate batch_no if not provided */
+        /** fallback for receipts created before batch_no was generated at creation — keep receipt and batch in sync */
         if (!productionReceipt?.batch_no) {
             const generatedBatchNo = generateBatch("BAT", batchRecord.id);
             await batchRecord.update({ batch_no: generatedBatchNo }, { transaction });
+            productionReceipt.batch_no = generatedBatchNo;
         }
 
         /** create NodeStockLedgerItem record */

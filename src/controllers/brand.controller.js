@@ -7,7 +7,7 @@ const allBrand = asyncHandler(async (req, res) => {
     const { Brand } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, text = "", id = "", noLimt = false } = req.query;
+        let { page = 1, limit = 10, text = "", id = "", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -30,7 +30,7 @@ const allBrand = asyncHandler(async (req, res) => {
             attributes: {
                 exclude: ["vendor_id", "website", "origin_country"]
             },
-            ...(noLimt ? {} : { limit, offset }),
+            ...(noLimit ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!brand) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -43,7 +43,7 @@ const allBrand = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: brand.rows,
-            ...(!noLimt && {
+            ...(!noLimit && {
                 meta: {
                     totalItems,
                     totalPages,
