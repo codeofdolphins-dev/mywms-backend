@@ -128,7 +128,7 @@ export const productionOrderItemDetails = asyncHandler(async (req, res) => {
 
 // POST
 export const createProductionOrder = asyncHandler(async (req, res) => {
-    const { ProductionOrder, ProductionOrderItem, Product } = req.dbModels;
+    const { ProductionOrder, ProductionOrderItem, Product, Batch, NodeStockLedger, NodeStockLedgerItem } = req.dbModels;
     const transaction = await req.dbObject.transaction();
 
     try {
@@ -164,22 +164,95 @@ export const createProductionOrder = asyncHandler(async (req, res) => {
         productionOrder.production_order_no = generateNo("MFG-PRO", productionOrder.id);
         await productionOrder.save({ transaction });
 
-        /** create production order items */
+        /** ledger header — raw material consumed out of the production store */
+        const nodeStockLedger = await NodeStockLedger.create({
+            transaction_type: "others",
+            txn_date: new Date(),
+
+            from_location_id: store.id,
+            from_location_type: "mfg_unit",
+
+            reference_id: productionOrder.id,
+            reference_type: "others",
+            created_by: user.id,
+        }, { transaction });
+
+        const ledger_no = generateNo("LEDG", nodeStockLedger.id);
+        await nodeStockLedger.update({ ledger_no }, { transaction });
+
+        /** create production order items and consume their stock from the production store */
         for (const item of items) {
             const { raw_product_id = "", required_qty = "" } = item;
 
             if ([raw_product_id, required_qty].some(i => i === "")) throw new Error("Required fields are missing in items!!!");
 
-            const product = await Product.findByPk(Number(raw_product_id));
+            const product = await Product.findByPk(Number(raw_product_id), { transaction });
             if (!product) {
+                await transaction.rollback();
                 return res.status(404).json({ success: false, code: 404, message: "product record not found in items!!!" });
             };
+
+            const requiredQty = Number(required_qty);
 
             await ProductionOrderItem.create({
                 production_order_id: productionOrder.id,
                 rm_product_id: product.id,
-                required_qty: Number(required_qty)
+                required_qty: requiredQty
             }, { transaction });
+
+            /** FEFO: earliest expiry first, then oldest received; rows locked so parallel orders can't consume the same stock */
+            const batches = await Batch.findAll({
+                where: {
+                    product_id: product.id,
+                    location_id: store.business_node_id,
+                    store_id: store.id,
+                    location_type: "mfg_unit",
+                    is_active: true,
+                    batch_status: "active",
+                    available_qty: { [Op.gt]: 0 },
+                },
+                order: [["expiry_date", "ASC NULLS LAST"], ["received_date", "ASC"], ["id", "ASC"]],
+                lock: transaction.LOCK.UPDATE,
+                transaction
+            });
+
+            const totalAvailable = batches.reduce((sum, b) => sum + Number(b.available_qty), 0);
+            if (totalAvailable < requiredQty) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    code: 400,
+                    message: `Insufficient stock for ${product.name}: available ${totalAvailable}, required ${requiredQty}!!!`
+                });
+            }
+
+            let remainingQty = requiredQty;
+            for (const batchRecord of batches) {
+                if (remainingQty <= 0) break;
+
+                const available = Number(batchRecord.available_qty);
+                const consumedQty = Math.min(available, remainingQty);
+
+                batchRecord.available_qty = Number((available - consumedQty).toFixed(2));
+                if (batchRecord.available_qty === 0) {
+                    batchRecord.batch_status = "consumed";
+                    batchRecord.is_active = false;
+                }
+                await batchRecord.save({ transaction });
+
+                const unitPrice = Number(batchRecord.unit_price || 0);
+                await NodeStockLedgerItem.create({
+                    ledger_id: nodeStockLedger.id,
+                    product_id: product.id,
+                    batch_id: batchRecord.id,
+                    qty: consumedQty,
+                    unit_type: product.unit_type || "pcs",
+                    unit_price: unitPrice,
+                    total_value: consumedQty * unitPrice,
+                }, { transaction });
+
+                remainingQty = Number((remainingQty - consumedQty).toFixed(2));
+            }
         }
 
         await transaction.commit();

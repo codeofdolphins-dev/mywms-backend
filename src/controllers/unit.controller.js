@@ -6,7 +6,7 @@ const allUnit = asyncHandler(async (req, res) => {
     const { UnitType } = req.dbModels
 
     try {
-        let { page = 1, limit = 10, name = "", id = "", noLimt = false } = req.query;
+        let { page = 1, limit = 10, name = "", id = "", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -17,7 +17,7 @@ const allUnit = asyncHandler(async (req, res) => {
 
         const unitRecord = await UnitType.findAndCountAll({
             where: conditions.length > 0 ? { [Op.or]: conditions } : undefined,
-            ...(noLimt ? {} : { limit, offset }),
+            ...(noLimit ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!unitRecord) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -30,7 +30,7 @@ const allUnit = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: unitRecord.rows,
-            ...(!noLimt && {
+            ...(!noLimit && {
                 meta: {
                     totalItems,
                     totalPages,

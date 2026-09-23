@@ -672,14 +672,14 @@ const defineTenantAssociations = (models) => {
         targetKey: "hsn_code",
         as: "hsn",
         onDelete: "CASCADE",
-        onUpdate: "SET NULL",
+        onUpdate: "CASCADE",
     });
     HSN.hasMany(Product, {
         foreignKey: "hsn_code",
         sourceKey: "hsn_code",
         as: "products",
         onDelete: "CASCADE",
-        onUpdate: "SET NULL",
+        onUpdate: "CASCADE",
     });
 
     /************* requisition (PR) ********************/
@@ -1517,14 +1517,14 @@ const defineTenantAssociations = (models) => {
         as: "unitProducts",
         sourceKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "SET NULL",
+        onUpdate: "CASCADE",
     });
     Product.belongsTo(UnitType, {
         foreignKey: "unit_type",
         as: "unitRef",
         targetKey: "name",
         onDelete: "CASCADE",
-        onUpdate: "SET NULL",
+        onUpdate: "CASCADE",
     });
 
     // PackageType <-> product

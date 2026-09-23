@@ -7,7 +7,7 @@ export const allRequisitionCategoryList = asyncHandler(async (req, res) => {
     const { RequisitionCategory } = req.dbModels;
 
     try {
-        let { page = 1, limit = 10, id = "", name = "", noLimt = false } = req.query;
+        let { page = 1, limit = 10, id = "", name = "", noLimit = false } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
         const offset = (page - 1) * limit;
@@ -17,7 +17,7 @@ export const allRequisitionCategoryList = asyncHandler(async (req, res) => {
                 ...(id && { id: Number(id) }),
                 ...(name && { name: name?.trim }),
             },
-            ...(!noLimt && { limit, offset }),
+            ...(!noLimit && { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!list)
@@ -31,7 +31,7 @@ export const allRequisitionCategoryList = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: list.rows,
-            ...(!noLimt && {
+            ...(!noLimit && {
                 meta: {
                     totalItems,
                     totalPages,

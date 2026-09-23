@@ -771,7 +771,7 @@ export const createInward = asyncHandler(async (req, res) => {
 
                     // Auto-generate batch_no if not provided
                     if (!batch_no) {
-                        const generatedBatchNo = generateBatch(newBatch.id);
+                        const generatedBatchNo = generateBatch("BAT", newBatch.id);
                         await newBatch.update({ batch_no: generatedBatchNo }, { transaction });
                     }
                 }
@@ -864,7 +864,6 @@ export const createInward = asyncHandler(async (req, res) => {
         /** Update seller's outward record with damage/shortage (cross-tenant) */
         if (hasDamageOrShortage && grn.reference && grn.reference.outward_no) {
             try {
-                // grn.reference.tenant is the buyer's own tenant — we need the SELLER's tenant
                 // The GRN's sender_id is the Vendor ID on the buyer's DB, and vendor.tenant holds the seller's tenant name
                 const { Vendor } = req.dbModels;
                 const vendor = await Vendor.findByPk(grn.sender_id);

@@ -530,7 +530,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
     };
 
     try {
-        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", required_by_date = "", priority = "", notes = "", total = "", items = [] } = req.body;
+        const { title = "", vendor_id = "", buyer_node = "", seller_node = "", seller_store_id = "", required_by_date = "", priority = "", notes = "", total = "", items = [] } = req.body;
         const userDetails = req.user;
         const current_node = Number(buyer_node) || req.activeNode;
 
@@ -584,13 +584,35 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
          * outward is created here instead of waiting for a vendor side assignment.
          */
         const { sequelize: sellerSequelize, models: sellerModels } = await getTenantConnection(connection.vendor_tenant);
-        const { Outward, OutwardItem, Product: SellerProduct, BusinessNode: SellerBusinessNode } = sellerModels;
+        const { Outward, OutwardItem, Product: SellerProduct, BusinessNode: SellerBusinessNode, ManufacturingUnit: SellerStore } = sellerModels;
 
         /** the selected location must be a node of the vendor tenant */
         const sellerNode = await SellerBusinessNode.findByPk(Number(seller_node));
         if (!sellerNode) {
             await rollbackAll();
             return res.status(404).json({ success: false, code: 404, message: "Seller location not found!!!" });
+        }
+
+        /**
+         * A location with FG stores (manufacturing node) only sees outwards through its stores,
+         * so the outward must land on one of them — a store-less outward would be visible to nobody there.
+         */
+        const sellerFgStores = await SellerStore.findAll({
+            where: { business_node_id: sellerNode.id, store_type: "fg_store" },
+            attributes: ["id"]
+        });
+
+        let sellerStoreId = null;
+        if (sellerFgStores.length) {
+            sellerStoreId = Number(seller_store_id) || null;
+            if (!sellerStoreId) {
+                await rollbackAll();
+                return res.status(400).json({ success: false, code: 400, message: "FG store of the seller location is required!!!" });
+            }
+            if (!sellerFgStores.some(store => store.id === sellerStoreId)) {
+                await rollbackAll();
+                return res.status(404).json({ success: false, code: 404, message: "FG store not found at the seller location!!!" });
+            }
         }
 
         /** resolve the vendor side product of every mapping before creating anything */
@@ -641,6 +663,7 @@ export const createTradingRequisition = asyncHandler(async (req, res) => {
         /** create the pending outward on the vendor tenant */
         const outward = await Outward.create({
             seller_business_node_id: sellerNode.id,
+            store_id: sellerStoreId,
             buyer_business_node_id: current_node,
             type: "internal",
             priority: requisition.priority,
