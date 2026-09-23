@@ -6,7 +6,7 @@ const allPackageType = asyncHandler(async (req, res) => {
     const { PackageType } = req.dbModels
 
     try {
-        let { page = 1, limit = 10, name = "", id = "", noLimt = false } = req.query;
+        let { page = 1, limit = 10, name = "", id = "", noLimit = false } = req.query;
         page = parseInt(page, 10);
         limit = parseInt(limit, 10);
         const offset = (page - 1) * limit;
@@ -17,7 +17,7 @@ const allPackageType = asyncHandler(async (req, res) => {
 
         const packageRecord = await PackageType.findAndCountAll({
             where: conditions.length > 0 ? { [Op.or]: conditions } : undefined,
-            ...(noLimt ? {} : { limit, offset }),
+            ...(noLimit ? {} : { limit, offset }),
             order: [["createdAt", "ASC"]],
         });
         if (!packageRecord) return res.status(500).json({ success: false, code: 500, message: "Fetched failed!!!" });
@@ -30,7 +30,7 @@ const allPackageType = asyncHandler(async (req, res) => {
             code: 200,
             message: "Fetched Successfully.",
             data: packageRecord.rows,
-            ...(!noLimt && {
+            ...(!noLimit && {
                 meta: {
                     totalItems,
                     totalPages,
@@ -41,7 +41,7 @@ const allPackageType = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        return res.success(500).json({ success: false, code: 500, message: error.message });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 });
 
@@ -74,10 +74,10 @@ const updatePackageType = asyncHandler(async (req, res) => {
         const { id, name, isActive } = req.body;
 
         const packageRecord = await PackageType.findByPk(parseInt(id, 10));
-        if (!unitRecord) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
+        if (!packageRecord) return res.status(404).json({ success: false, code: 404, message: "Record not found!!!" });
 
-        if (name) packageRecord.unit = name;
-        if (isActive) packageRecord.isActive = isActive;
+        if (name) packageRecord.name = name;
+        if (isActive !== undefined) packageRecord.isActive = isActive;
 
         const isUpdate = await packageRecord.save();
         if (!isUpdate) return res.status(500).json({ success: false, code: 500, message: "Record updation failed!!!" });
